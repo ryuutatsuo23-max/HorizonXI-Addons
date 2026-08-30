@@ -99,10 +99,10 @@ function M.new(io, notify)
         if not row.owned then return true; end
         local ok = pcall(function()
             if key == 'clock' then
+                -- Zoning can temporarily clear the session. Skipping restoration
+                -- is expected here; never restore into a different session.
                 if io.session() == row.owner_session then
                     io.clock(false);
-                else
-                    notify('Clock could not be restored after logout or character change. Use /clock on after logging in.');
                 end
             elseif key == 'compass' then
                 io.finish_patch(row.address);

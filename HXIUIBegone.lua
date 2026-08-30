@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 addon.name = 'HXIUIBegone';
 addon.author = 'DragoHorse';
-addon.version = '0.2.1';
+addon.version = '0.2.2';
 addon.desc = 'Choose which parts of the FFXI interface to hide.';
 
 require('common');

@@ -1,4 +1,17 @@
-# Validation — v0.2.1
+# Validation — v0.2.2
+
+## Clock message fix
+
+The author reported a repeated clock-restoration warning during zoning/loading
+with clock hiding enabled. Version 0.2.2 removes that informational notification
+when the session changes. The same-session restoration check, `/clock off` and
+`/clock on` commands, and real error reporting are unchanged. Manual `/clock`
+commands and their chat output are not intercepted or filtered.
+
+The existing clock regression now covers a direct character change, a temporary
+login gap, return to the same or a different character, one-time reapplication,
+and restoration when unchecked, all without the removed message. All 28 offline
+tests pass. The fix still needs an in-game zoning check.
 
 ## Reported in game
 

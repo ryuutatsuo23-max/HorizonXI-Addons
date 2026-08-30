@@ -24,7 +24,7 @@ You choose what stays visible. HXIUIBegone does not draw a replacement interface
 ## Install
 
 1. Open [Releases](https://github.com/ryuutatsuo23-max/HXIUIBegone/releases/latest)
-   and download **HXIUIBegone-v0.2.1.zip** under **Assets**.
+   and download **HXIUIBegone-v0.2.2.zip** under **Assets**.
 2. Extract the ZIP into your `HorizonXI\Game\addons` folder.
 3. In game, load the addon:
 

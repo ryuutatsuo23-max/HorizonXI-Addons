@@ -145,13 +145,31 @@ def test_known_conflicts_release_owned_controls_and_block_further_writes():
     assert str(controller.rows.compass.status).startswith("Blocked")
 
 
-def test_clock_is_not_restored_to_a_different_character_session():
+def test_clock_session_changes_are_quiet_and_keep_restoration_safe():
     lua, _, controller, state, _, messages = load_controller()
     call(controller, "tick", config(lua, clock=True))
     state["session"] = 456
     call(controller, "tick", config(lua))
     assert state["clock"] == [True]
-    assert any("character change" in message for message in messages)
+    assert messages == []
+
+    # A zoning-like login gap must also be quiet, without queuing /clock on.
+    for returning_session in (123, 456):
+        lua, _, controller, state, _, messages = load_controller()
+        selected = config(lua, clock=True)
+        call(controller, "tick", selected)
+        state["session"] = 0
+        call(controller, "tick", selected)
+        call(controller, "tick", selected)
+        assert state["clock"] == [True]
+        assert messages == []
+        state["session"] = returning_session
+        call(controller, "tick", selected)
+        call(controller, "tick", selected)
+        assert state["clock"] == [True, True]  # reapply once after login
+        call(controller, "tick", config(lua))
+        assert state["clock"] == [True, True, False]  # unchecking still restores
+        assert messages == []
 
 
 def test_all_four_frame_controls_are_independent():
