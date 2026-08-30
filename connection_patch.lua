@@ -1,5 +1,5 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Selective netstat drawing bypass. See NATIVE-UI-RESEARCH-2026-08-30.md.
+-- Selective netstat drawing bypass. See docs/research/NATIVE-UI-RESEARCH-2026-08-30.md.
 -- No network-state, mode/timer, menu-pointer, or game-file writes.
 local M = {};
 

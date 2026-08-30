@@ -10,7 +10,7 @@ No game binary or unpacked code section is distributed with the addon.
 - [Windower/Fenestra's menu table](https://github.com/Windower/Fenestra/blob/e5bfb6442f49bdb4d31859bff6218bbeb1bea620/core/src/hooks/ffximain.cpp#L82-L90)
   supplied the layout used to identify the native `netstat` object during research.
   No Windower runtime or source module is included as an addon dependency.
-- See [the detailed research](NATIVE-UI-RESEARCH-2026-08-30.md) for the specific
+- See [the detailed research](research/NATIVE-UI-RESEARCH-2026-08-30.md) for the specific
   control-flow evidence. The new Lua module requires a unique full dispatcher
   match, checks call targets and callee prefixes, retains a code snapshot, and
   changes only the conditional branch opcode, restoring only matching owned code.

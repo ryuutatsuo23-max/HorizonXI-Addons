@@ -1,7 +1,7 @@
 # Expanded native UI research - 2026-08-30
 
 > Historical research record from before implementation. Connection hiding is
-> now implemented and reported working. See [current validation](VALIDATION.md).
+> now implemented and reported working. See [current validation](../VALIDATION.md).
 > The local analysis tools and artifacts mentioned below are not distributed
 > with this repository or required to use the addon.
 

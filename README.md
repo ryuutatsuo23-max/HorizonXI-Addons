@@ -42,6 +42,10 @@ The main file should be at `addons\HXIUIBegone\HXIUIBegone.lua`.
 Use the release ZIP above rather than GitHub's **Source code** downloads to get
 the correct folder layout. Ashita v4 is required; this is not a Windower addon.
 
+The install ZIP contains only four Lua files, the license, and credits.
+Tests and packaging tools are kept in `dev/`; documentation and research are
+kept in `docs/`. None of these folders is included in the install ZIP.
+
 **Updating?** Run `/addon unload HXIUIBegone` first, replace the addon files,
 then load it again. Keep your saved settings.
 
@@ -100,21 +104,12 @@ All commands also work with `/hxiui`.
 
 </details>
 
-## Credits and development
+## Credits
 
 Created by **DragoHorse**. Thanks to the Ashita team and the community projects
-that helped make this possible. See [source credits](SOURCES.md) and
-[validation notes](VALIDATION.md) for details.
+that helped make this possible. See [credits](CREDITS.md) and
+[validation notes](docs/VALIDATION.md) for details.
 
 Licensed under [GPL-3.0-or-later](LICENSE).
 
-The addon needs no Python installation. For developers, the offline tests can
-be run from a clone of this repository with Python and the optional development
-dependency:
-
-```text
-python -m pip install -r requirements-dev.txt
-python tests/test_hxiuibegone.py
-```
-
-These tests use simulated game memory and do not attach to FFXI.
+Working on the addon? See the [developer notes](dev/README.md).

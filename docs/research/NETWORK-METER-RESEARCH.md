@@ -1,7 +1,7 @@
 # Native connection display research - 2026-08-30
 
 > Historical research record from before implementation. Connection hiding is
-> now implemented and reported working. See [current validation](VALIDATION.md).
+> now implemented and reported working. See [current validation](../VALIDATION.md).
 > The local source caches and analysis artifacts below are not distributed.
 
 **Follow-up:** [expanded offline research](NATIVE-UI-RESEARCH-2026-08-30.md)

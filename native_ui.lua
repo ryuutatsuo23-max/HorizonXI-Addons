@@ -2,7 +2,7 @@
 -- Party signatures and primitive visibility layout adapted from atom0s's
 -- hideparty, Copyright (c) 2025 Ashita Development Team (GPL-3.0-or-later).
 -- Compass signature/byte location researched from Arielfy's FancyCompass.
--- See SOURCES.md. Control, validation and restoration logic is implemented here.
+-- See docs/SOURCES.md. Control, validation and restoration logic is implemented here.
 local connection = require('connection_patch');
 local M = {};
 M.controls = {
