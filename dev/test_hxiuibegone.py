@@ -387,7 +387,9 @@ def load_host():
         T = function(t) return t end;
         ImGuiCond_FirstUseEver = 1;
         ImGuiWindowFlags_NoSavedSettings = 256;
+        ImGuiHoveredFlags_AllowWhenDisabled = 1024;
         events = {}; saved = 0; begins = 0; ends = 0; clicks = {};
+        tooltips = {}; texts = {}; disabled = false;
         package.preload.common = function() return {} end;
         package.preload.native_ui = function() return test_native end;
         package.preload.memory_io = function() return test_io end;
@@ -405,9 +407,18 @@ def load_host():
                 return true;
             end,
             End = function() ends = ends + 1 end,
-            TextWrapped = noop, TextDisabled = noop, Separator = noop,
-            BeginDisabled = noop, EndDisabled = noop, SameLine = noop,
+            TextWrapped = function(text) texts[#texts + 1] = text end,
+            TextDisabled = noop, Separator = noop,
+            BeginDisabled = function(value) disabled = value end,
+            EndDisabled = function() disabled = false end, SameLine = noop,
+            IsItemHovered = function(flags)
+                return hovered == last_item and (not last_disabled
+                    or flags == ImGuiHoveredFlags_AllowWhenDisabled);
+            end,
+            SetTooltip = function(text) tooltips[#tooltips + 1] = text end,
             Checkbox = function(label, value)
+                last_item = label; last_disabled = disabled;
+                if disabled then return false end;
                 if clicks[label] ~= nil then
                     value[1] = clicks[label]; clicks[label] = nil; return true;
                 end
@@ -463,6 +474,45 @@ def test_host_recovery_clears_selections_and_leaves_unrelated_commands_alone():
     assert state["mem"][objects[0x402000] + 0x69] == 1
     assert lua.globals().test_config.party is False
     assert lua.globals().test_config.enabled is False
+
+
+def test_host_toggle_pauses_and_resumes_saved_hides_without_opening_settings():
+    for command in ("/hxiuibegone toggle", "/hxiui toggle"):
+        lua, state, objects = load_host()
+        selected = config(lua, party=True, alliance2=True, compass=True,
+                          clock=True, connection=True)
+        lua.globals().settings_callback(selected)
+        lua.globals().events.load()
+        lua.globals().events.d3d_present()
+        original = dict(selected.items())
+        assert lua.globals().begins == 0
+        for enabled in (False, True):
+            event = lua.table(command=command, blocked=False)
+            lua.globals().events.command(event)
+            assert event.blocked is True
+            assert dict(selected.items()) == {**original, "enabled": enabled}
+            assert state["mem"][objects[0x402000] + 0x69] == (0 if enabled else 1)
+            assert state["mem"][objects[0x40200C] + 0x69] == (0 if enabled else 1)
+            assert state["mem"][0x401224] == (0 if enabled else 1)
+            assert state["mem"][0x401332] == (0xEB if enabled else 0x75)
+            writes = list(state["writes"])
+            lua.globals().events.d3d_present()
+            assert state["writes"] == writes  # no redundant patch writes
+            assert lua.globals().begins == 0
+        assert state["clock"] == [True, False, True]
+        assert lua.globals().saved == 2
+        lua.globals().events.command(lua.table(command=command + " extra", blocked=False))
+        assert dict(selected.items()) == original
+        assert lua.globals().saved == 2
+        # Toggling must leave an already-open settings window open too.
+        lua.globals().events.command(lua.table(command="/hxiuibegone", blocked=False))
+        lua.globals().events.d3d_present()
+        lua.globals().events.command(lua.table(command=command, blocked=False))
+        lua.globals().events.d3d_present()
+        assert lua.globals().begins == 2
+        lua.globals().events.unload()
+        assert selected.enabled is False
+        assert selected.party is True
 
 
 def test_host_settings_change_releases_old_controls_before_new_settings_apply():

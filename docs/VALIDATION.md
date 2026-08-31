@@ -1,4 +1,20 @@
-# Validation — v0.2.2
+# Validation — v0.2.3
+
+## Quick toggle and hover hints
+
+Added `/hxiuibegone toggle` (also `/hxiui toggle`) using the existing pause/resume
+path. It changes only the saved enabled state, preserves all individual choices,
+and leaves the settings window open or closed as it was.
+
+Checkbox hints appear on hover, including disabled options. The clock caveat has
+moved from a permanent line to its hint; the target label still warns about the
+arrow. Signature checks, memory operations, restoration, and the quiet zoning
+fix are unchanged.
+
+All 29 offline tests pass, including both toggle aliases, mixed saved choices,
+pause/resume writes and restoration, closed/open settings, and invalid arguments.
+Hover-only hints and disabled checkbox hints were checked with simulated ImGui
+callbacks. Actual tooltip appearance still needs an in-game check.
 
 ## Clock message fix
 
@@ -34,7 +50,7 @@ unload/reload combinations, and other addons still need broader testing.
 
 ## Offline checks
 
-All **28 tests** pass against the Lua modules using LuaJIT through Lupa.
+All **29 tests** pass against the Lua modules using LuaJIT through Lupa.
 They cover independent selections, default settings, command handling, a closed
 window at startup, opening/closing settings, saved hides while settings are
 closed, restoration, missing signatures, conflicts, changed code, partial write

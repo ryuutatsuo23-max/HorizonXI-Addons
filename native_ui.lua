@@ -6,13 +6,20 @@
 local connection = require('connection_patch');
 local M = {};
 M.controls = {
-    {key = 'party', label = 'Hide party list'},
-    {key = 'alliance1', label = 'Hide alliance 1'},
-    {key = 'alliance2', label = 'Hide alliance 2'},
-    {key = 'target', label = 'Hide target box + arrow'},
-    {key = 'compass', label = 'Hide compass / radar'},
-    {key = 'clock', label = 'Hide clock'},
-    {key = 'connection', label = 'Hide connection info (arrows, S/R, %)'},
+    {key = 'party', label = 'Hide party list',
+        hint = 'Unload hideparty before hiding the party list.'},
+    {key = 'alliance1', label = 'Hide alliance 1',
+        hint = 'Hides the first alliance list.\nNot yet tested in an alliance.'},
+    {key = 'alliance2', label = 'Hide alliance 2',
+        hint = 'Hides the second alliance list.\nNot yet tested in an alliance.'},
+    {key = 'target', label = 'Hide target box + arrow',
+        hint = 'Also hides the arrow above your target.'},
+    {key = 'compass', label = 'Hide compass / radar',
+        hint = 'Unload FancyCompass before hiding the compass.'},
+    {key = 'clock', label = 'Hide clock',
+        hint = 'Unchecking turns the clock on, even if it was off before.'},
+    {key = 'connection', label = 'Hide connection info (arrows, S/R, %)',
+        hint = 'Hides the arrows, S/R counters, and percentage.\nMail/friend notifications are not fully tested.'},
 };
 M.signatures = {
     party = '66C78182000000????C7818C000000????????C781900000',

@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 addon.name = 'HXIUIBegone';
 addon.author = 'DragoHorse';
-addon.version = '0.2.2';
+addon.version = '0.2.3';
 addon.desc = 'Choose which parts of the FFXI interface to hide.';
 
 require('common');
@@ -72,6 +72,12 @@ settings.register('settings', 'HXIUIBegone_settings', function(updated)
     normalize();
 end);
 
+local function hint(text)
+    if imgui.IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) then
+        imgui.SetTooltip(text);
+    end
+end
+
 local function draw()
     if not opened[1] then return; end
     imgui.SetNextWindowSize({440, 390}, ImGuiCond_FirstUseEver);
@@ -82,8 +88,9 @@ local function draw()
             save();
             apply();
         end
+        hint('Pause or resume hiding without clearing your choices.');
         imgui.Separator();
-        imgui.TextWrapped('Check the parts you want to hide.');
+        imgui.TextWrapped('Check what you want to hide. Hover for details.');
         local needs_retry = stopped;
         for _, control in ipairs(native.controls) do
             local row = controller.rows[control.key];
@@ -97,6 +104,7 @@ local function draw()
                 apply();
             end
             imgui.EndDisabled();
+            hint(control.hint);
             -- Keep routine status out of the way, but never hide problems.
             if row.fault or row.status:match('^Blocked') then
                 imgui.TextWrapped(row.status);
@@ -110,7 +118,6 @@ local function draw()
             end
         end
         imgui.Separator();
-        imgui.TextWrapped('Unchecking Clock turns the game clock on.');
         if imgui.Button('Reset choices') then restore_everything(); end
         if needs_retry then
             imgui.SameLine();
@@ -143,8 +150,12 @@ ashita.events.register('command', 'HXIUIBegone_command', function(event)
         restore_everything();
     elseif #args == 2 and args[2] == 'recheck' then
         recheck();
-    elseif #args == 2 and (args[2] == 'on' or args[2] == 'off') then
-        config.enabled = args[2] == 'on';
+    elseif #args == 2 and (args[2] == 'on' or args[2] == 'off' or args[2] == 'toggle') then
+        if args[2] == 'toggle' then
+            config.enabled = not config.enabled;
+        else
+            config.enabled = args[2] == 'on';
+        end
         save();
         apply();
         notify(config.enabled and 'Hiding enabled.' or 'Hiding paused. Your choices are kept.');
@@ -155,7 +166,7 @@ ashita.events.register('command', 'HXIUIBegone_command', function(event)
         apply();
         notify(args[3] .. ': ' .. controller.rows[args[3]].status);
     else
-        notify('Use /hxiuibegone for settings, /hxiuibegone off to pause, or /hxiuibegone restore to reset.');
+        notify('Use /hxiuibegone for settings, /hxiuibegone toggle to pause/resume, or /hxiuibegone restore to reset.');
     end
 end);
 

@@ -24,7 +24,7 @@ You choose what stays visible. HXIUIBegone does not draw a replacement interface
 ## Install
 
 1. Open [Releases](https://github.com/ryuutatsuo23-max/HXIUIBegone/releases/latest)
-   and download **HXIUIBegone-v0.2.2.zip** under **Assets**.
+   and download **HXIUIBegone-v0.2.3.zip** under **Assets**.
 2. Extract the ZIP into your `HorizonXI\Game\addons` folder.
 3. In game, load the addon:
 
@@ -62,6 +62,9 @@ Your choices save automatically and apply when the addon loads. The settings
 window stays closed until you type `/hxiuibegone`. Closing it does not stop
 your selected hides. `/hxiui` also opens settings.
 
+Use `/hxiuibegone toggle` to pause or resume hiding without opening settings or
+clearing your choices. Hover over a checkbox for a short hint about special cases.
+
 All hide options start unchecked on a fresh install. The preview shows an
 example setup, not the defaults.
 
@@ -92,6 +95,7 @@ problem remains. Use `/clock on` after login if the clock needs restoring.
 | Command | What it does |
 | --- | --- |
 | `/hxiuibegone` | Open settings |
+| `/hxiuibegone toggle` | Pause/resume hiding without clearing choices or opening settings |
 | `/hxiuibegone on` | Apply your selected hides |
 | `/hxiuibegone off` | Pause hiding, keeping your choices |
 | `/hxiuibegone restore` | Reset choices and stop hiding |

@@ -12,13 +12,13 @@ python -m pip install -r dev/requirements.txt
 python dev/test_hxiuibegone.py
 ```
 
-The 28 tests run the Lua code with simulated memory and Windows calls. They do
+The 29 tests run the Lua code with simulated memory and Windows calls. They do
 not attach to the game. See [validation notes](../docs/VALIDATION.md) for coverage.
 
 ## Release ZIP
 
 ```text
-python dev/package_release.py --ref v0.2.2 --output dist/install-v0.2.2
+python dev/package_release.py --ref v0.2.3 --output dist/install-v0.2.3
 ```
 
 Use a new output directory for each build. The script deliberately packages
