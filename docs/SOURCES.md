@@ -44,8 +44,15 @@ documentation independently records that FFXI creates, queries, and destroys
 this named native menu:
 <https://github.com/atom0s/XiEvents/blob/3ccb5374e1cd5c1610dead0fa4288f527b29290d/OpCodes/0x00B4.md>.
 The descriptor signature and object-slot pointer were verified against the
-exact offline client build identified above. The hide itself remains marked
-experimental until it is tested in game.
+exact offline client build identified above. The author subsequently confirmed
+the cast-bar hide in game on their HorizonXI setup.
+
+HXIUIBegone 0.2.5's target-box separation follows Ashita's documented
+`targetwindow_t` structure. The box children/icon positions and both arrow
+positions are distinct fields:
+<https://github.com/AshitaXI/Ashita-v4beta/blob/2e4b9c86de538ecfedabab918537c550d6378aaa/plugins/sdk/ffxi/target.h#L122-L169>.
+The addon changes only the box/icon position fields and retains the existing
+target object ownership and restoration checks.
 
 Because the party-control implementation is adapted from GPL-covered Ashita
 code, this addon is distributed under GPL version 3 or later. See `LICENSE`.

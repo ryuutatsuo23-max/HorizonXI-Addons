@@ -12,10 +12,10 @@ M.controls = {
         hint = 'Hides the first alliance list.\nNot yet tested in an alliance.'},
     {key = 'alliance2', label = 'Hide alliance 2',
         hint = 'Hides the second alliance list.\nNot yet tested in an alliance.'},
-    {key = 'target', label = 'Hide target box + arrow',
-        hint = 'Also hides the arrow above your target.'},
-    {key = 'castbar', label = 'Hide cast bar (experimental)',
-        hint = 'Hides the game\'s spell and action progress bar.\nNot yet tested in game.'},
+    {key = 'target', label = 'Hide target box',
+        hint = 'Keeps the arrow above your selected target visible.\nNot yet tested in game.'},
+    {key = 'castbar', label = 'Hide cast bar',
+        hint = 'Hides the game\'s spell and action progress bar.\nIt may flash briefly when a cast starts.'},
     {key = 'compass', label = 'Hide compass / radar',
         hint = 'Unload FancyCompass before hiding the compass.'},
     {key = 'clock', label = 'Hide clock',
@@ -23,6 +23,8 @@ M.controls = {
     {key = 'connection', label = 'Hide connection info (arrows, S/R, %)',
         hint = 'Hides the arrows, S/R counters, and percentage.\nMail/friend notifications are not fully tested.'},
 };
+local target_frame_offsets = {0x4C, 0x4E, 0x50, 0x52};
+local target_hidden_coordinate = 30000;
 M.signatures = {
     party = '66C78182000000????C7818C000000????????C781900000',
     alliance = 'A1????????8B0D????????89442424A1????????33DB89',
@@ -126,6 +128,16 @@ function M.new(io, notify)
                 if io.read8(row.address) == 0 then io.patch8(row.address, row.original); end
             elseif key == 'connection' then
                 connection.restore(io, row.patch);
+            elseif key == 'target' then
+                local object = primitive(row);
+                if object == row.object then
+                    for index, offset in ipairs(target_frame_offsets) do
+                        local address = object + offset;
+                        if io.read16(address) == target_hidden_coordinate then
+                            io.write16(address, row.original[index]);
+                        end
+                    end
+                end
             else
                 local object = primitive(row);
                 if object == row.object then
@@ -180,6 +192,34 @@ function M.new(io, notify)
                 io.patch8(row.address, 0);
             else
                 assert(io.read8(row.address) == 0, 'Another component changed the compass patch.');
+            end
+            report(row, 'Hiding enabled');
+        elseif key == 'target' then
+            local object = primitive(row);
+            if not object then
+                row.owned = false;
+                row.object = nil;
+                report(row, 'Waiting for this panel to appear');
+                return;
+            end
+            if not row.owned or object ~= row.object then
+                assert(io.valid(object + target_frame_offsets[1],
+                    target_frame_offsets[#target_frame_offsets] - target_frame_offsets[1] + 2,
+                    true), 'Invalid target-window coordinates.');
+                row.original = {};
+                for index, offset in ipairs(target_frame_offsets) do
+                    row.original[index] = io.read16(object + offset);
+                end
+                row.object = object;
+                row.owned = true;
+            end
+            -- The target arrow uses its own coordinates at +0xBC through +0xC2.
+            -- Move only the four documented box/icon coordinates off-screen.
+            for _, offset in ipairs(target_frame_offsets) do
+                local address = object + offset;
+                if io.read16(address) ~= target_hidden_coordinate then
+                    io.write16(address, target_hidden_coordinate);
+                end
             end
             report(row, 'Hiding enabled');
         else

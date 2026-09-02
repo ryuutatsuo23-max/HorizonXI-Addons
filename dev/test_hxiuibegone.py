@@ -41,6 +41,10 @@ def load_controller():
         mem[first + 8] = obj
         mem[obj + 0x69] = 1
         mem[obj + 0x6A] = 1
+        if slot == 0x402004:
+            for offset, value in zip((0x4C, 0x4E, 0x50, 0x52),
+                                     (320, 40, 330, 50)):
+                mem[obj + offset] = value
     mem[0x401200 + 0x24] = 1
     # Supported dispatcher fixture with synthetic, relocated CALL destinations.
     dispatcher = bytearray.fromhex(
@@ -60,6 +64,7 @@ def load_controller():
     io.in_module = lambda address, size: 0x400000 <= address and address + size <= 0x480000
     io.valid = lambda address, size, writable: address >= 0x400000
     io.read8 = lambda address: mem.get(address, 0)
+    io.read16 = lambda address: mem.get(address, 0)
     io.read_bytes = lambda address, size: bytes(mem.get(address + i, 0) for i in range(size))
     io.read32 = lambda address: (int.from_bytes(io.read_bytes(address, 4), 'little')
                                  if 0x401300 <= address < 0x401364 else mem.get(address, 0))
@@ -69,6 +74,7 @@ def load_controller():
         state["writes"].append((address, value))
 
     io.write8 = write8
+    io.write16 = write8
     io.patch8 = write8
     io.finish_patch = lambda address: None
     io.loaded = lambda name: str(name).lower() in state["loaded"]
@@ -177,8 +183,8 @@ def test_clock_session_changes_are_quiet_and_keep_restoration_safe():
         assert messages == []
 
 
-def test_all_four_frame_controls_are_independent():
-    for key, slot in (("party", 0x402000), ("target", 0x402004),
+def test_all_three_primitive_frame_controls_are_independent():
+    for key, slot in (("party", 0x402000),
                       ("alliance1", 0x402008), ("alliance2", 0x40200C)):
         lua, _, controller, state, objects, _ = load_controller()
         call(controller, "tick", config(lua, **{key: True}))
@@ -186,6 +192,29 @@ def test_all_four_frame_controls_are_independent():
             assert state["mem"][obj + 0x69] == (0 if candidate == slot else 1)
         call(controller, "restore")
         assert all(state["mem"][obj + 0x69] == 1 for obj in objects.values())
+
+
+def test_target_box_moves_only_frame_coordinates_and_keeps_arrow_coordinates():
+    lua, _, controller, state, objects, _ = load_controller()
+    target = objects[0x402004]
+    frame_offsets = (0x4C, 0x4E, 0x50, 0x52)
+    originals = tuple(state["mem"][target + offset] for offset in frame_offsets)
+    arrow_offsets = (0xBC, 0xBE, 0xC0, 0xC2)
+    for offset, value in zip(arrow_offsets, (700, 710, 720, 730)):
+        state["mem"][target + offset] = value
+
+    call(controller, "tick", config(lua, target=True))
+    assert all(state["mem"][target + offset] == 30000 for offset in frame_offsets)
+    assert tuple(state["mem"][target + offset] for offset in arrow_offsets) == (700, 710, 720, 730)
+    assert state["mem"][target + 0x69] == 1
+    assert state["mem"][target + 0x6A] == 1
+    writes = list(state["writes"])
+    call(controller, "tick", config(lua, target=True))
+    assert state["writes"] == writes
+
+    call(controller, "tick", config(lua))
+    assert tuple(state["mem"][target + offset] for offset in frame_offsets) == originals
+    assert tuple(state["mem"][target + offset] for offset in arrow_offsets) == (700, 710, 720, 730)
 
 
 def test_party_hide_pauses_while_fishing_and_reapplies_afterward():
@@ -320,6 +349,25 @@ def test_partial_frame_write_failure_restores_the_first_byte():
     assert controller.rows.party.fault is True
     assert state["mem"][party + 0x69] == 1
     assert state["mem"][party + 0x6A] == 1
+
+
+def test_partial_target_coordinate_failure_restores_prior_words():
+    lua, _, controller, state, objects, _ = load_controller()
+    target = objects[0x402004]
+    original = tuple(state["mem"][target + offset]
+                     for offset in (0x4C, 0x4E, 0x50, 0x52))
+    write = controller.io.write16
+
+    def fail_third_write(address, value):
+        if address == target + 0x50 and value == 30000:
+            raise RuntimeError("synthetic target coordinate failure")
+        write(address, value)
+
+    controller.io.write16 = fail_third_write
+    call(controller, "tick", config(lua, target=True))
+    assert controller.rows.target.fault is True
+    assert tuple(state["mem"][target + offset]
+                 for offset in (0x4C, 0x4E, 0x50, 0x52)) == original
 
 
 def test_failed_conflict_check_blocks_hiding():
@@ -621,9 +669,12 @@ def test_host_toggle_pauses_and_resumes_saved_hides_without_opening_settings():
 def test_host_settings_change_releases_old_controls_before_new_settings_apply():
     lua, state, objects = load_host()
     lua.globals().events.command(lua.table(command="/hxiui hide target on", blocked=False))
-    assert state["mem"][objects[0x402004] + 0x69] == 0
+    target = objects[0x402004]
+    assert state["mem"][target + 0x4C] == 30000
+    assert state["mem"][target + 0x69] == 1
     lua.globals().settings_callback(config(lua, alliance2=True))
-    assert state["mem"][objects[0x402004] + 0x69] == 1
+    assert state["mem"][target + 0x4C] == 320
+    assert state["mem"][target + 0x69] == 1
     lua.globals().events.d3d_present()
     assert state["mem"][objects[0x40200C] + 0x69] == 0
 
@@ -659,7 +710,7 @@ def load_mocked_windows_adapter():
     # no DLL is loaded and no operating-system memory is accessed.
     lua = luajit21.LuaRuntime(unpack_returned_tuples=True)
     lua.execute('''
-        page = 0x20; memory_byte = 0x75; flushes = 0;
+        page = 0x20; memory_byte = 0x75; memory_word = 320; flushes = 0;
         entity_status = 0; entity_server_status = 0;
         fail_protect = false; fail_flush = false; protections = {};
         local kernel = {
@@ -682,7 +733,9 @@ def load_mocked_windows_adapter():
         } end;
         ashita = {memory = {
             read_uint8 = function() return memory_byte end,
+            read_uint16 = function() return memory_word end,
             write_uint8 = function(_, value) memory_byte = value end,
+            write_uint16 = function(_, value) memory_word = value end,
             unprotect = function()
                 local previous = page; page = 0x40; return true, previous;
             end,
@@ -735,6 +788,14 @@ def test_adapter_fishing_checks_local_and_server_statuses():
         setattr(lua.globals(), field, status)
         assert adapter.fishing() is True
         setattr(lua.globals(), field, 0)
+
+
+def test_adapter_word_access_validates_writes():
+    lua, adapter = load_mocked_windows_adapter()
+    lua.globals().page = 0x04
+    assert adapter.read16(0x401000) == 320
+    adapter.write16(0x401000, 30000)
+    assert lua.globals().memory_word == 30000
 
 
 if __name__ == "__main__":

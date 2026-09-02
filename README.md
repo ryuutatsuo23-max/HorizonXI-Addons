@@ -8,14 +8,14 @@ game's interface to hide, without installing a separate addon for each one.
 [Download the latest release](https://github.com/ryuutatsuo23-max/HXIUIBegone/releases/latest)
 · [Report a problem](https://github.com/ryuutatsuo23-max/HXIUIBegone/issues)
 
-![HXIUIBegone settings showing individual options for hiding the party list, alliance lists, target box and arrow, compass, clock, and connection info](docs/preview.png)
+![Earlier HXIUIBegone settings preview showing individual native UI options](docs/preview.png)
 
 ## What can I hide?
 
 - Party list
 - Alliance 1 and alliance 2, separately
-- Target box **and the arrow above your target**
-- Native cast bar *(experimental)*
+- Target box, while keeping the arrow above your selected target
+- Native cast bar
 - Compass / radar
 - Clock
 - Connection info: arrows, S/R counters, and percentage
@@ -25,7 +25,7 @@ You choose what stays visible. HXIUIBegone does not draw a replacement interface
 ## Install
 
 1. Open [Releases](https://github.com/ryuutatsuo23-max/HXIUIBegone/releases/latest)
-   and download **HXIUIBegone-v0.2.4.zip** under **Assets**.
+   and download **HXIUIBegone-v0.2.5.zip** under **Assets**.
 2. Extract the ZIP into your `HorizonXI\Game\addons` folder.
 3. In game, load the addon:
 
@@ -72,23 +72,25 @@ example setup, not the defaults.
 
 ## A few things to know
 
-- **Want to keep the target arrow?** Leave the target option unchecked. The box
-  and arrow cannot currently be hidden separately.
+- **Target arrow:** The target option moves only the native box and icon
+  coordinates off-screen. The separate main-target and sub-target arrow
+  coordinates remain under the game’s control.
 - **Fishing:** The party-list hide pauses automatically while you are fishing so
-  the hooked-fish HP bar can remain visible. It reapplies after fishing ends.
-- **Cast bar:** This option is experimental and has not yet been tested in game.
-  It defaults off and becomes unavailable if this client build's native cast-bar
-  record cannot be found safely.
+  the hooked-fish HP bar can remain visible. The party list also returns during
+  that time because both currently share one native primitive.
+- **Cast bar:** This was confirmed working on the author's HorizonXI setup. The
+  bar may flash for less than a second before the addon hides it.
 - **Clock:** Unchecking it turns the game clock on, even if it was off before.
 - **Other UI addons:** Do not use two addons to hide the same part of the UI.
   `hideparty` blocks the party, alliance, and target options; FancyCompass blocks
   the compass and clock options while loaded. If moving from `hideparty`, run
   `/hideparty show` before unloading it.
-- **Compatibility:** Party, compass, clock, and connection hiding have been
+- **Compatibility:** Party, fishing compatibility, cast bar, compass, clock,
+  and connection hiding have been
   reported working on a HorizonXI setup. Connection info was also confirmed to
-  return when unchecked. The fishing exception, cast bar, alliance controls,
-  notification behavior, and every zoning/login/unload combination have not
-  been fully tested.
+  return when unchecked. Keeping the target arrow, alliance controls,
+  notification behavior, and every zoning/login/unload combination still need
+  broader testing.
 - **Server rules:** Check your server's addon rules before using custom addons.
   This project does not claim official server approval.
 

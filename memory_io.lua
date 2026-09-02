@@ -51,6 +51,11 @@ function M.read8(address)
     return ashita.memory.read_uint8(address);
 end
 
+function M.read16(address)
+    assert(M.valid(address, 2, false), 'Unreadable UI word.');
+    return ashita.memory.read_uint16(address);
+end
+
 function M.read32(address)
     assert(M.valid(address, 4, false), 'Unreadable UI pointer.');
     return ashita.memory.read_uint32(address);
@@ -67,6 +72,12 @@ function M.write8(address, value)
     assert(M.valid(address, 1, true), 'UI byte is not writable.');
     ashita.memory.write_uint8(address, value);
     assert(M.read8(address) == value, 'UI byte write did not take effect.');
+end
+
+function M.write16(address, value)
+    assert(M.valid(address, 2, true), 'UI word is not writable.');
+    ashita.memory.write_uint16(address, value);
+    assert(M.read16(address) == value, 'UI word write did not take effect.');
 end
 
 -- Compass and connection code bytes need temporary page protection changes.
