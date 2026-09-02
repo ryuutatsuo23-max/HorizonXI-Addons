@@ -25,7 +25,7 @@ You choose what stays visible. HXIUIBegone does not draw a replacement interface
 ## Install
 
 1. Open [Releases](https://github.com/ryuutatsuo23-max/HXIUIBegone/releases/latest)
-   and download **HXIUIBegone-v0.2.6.zip** under **Assets**.
+   and download **HXIUIBegone-v0.2.7.zip** under **Assets**.
 2. Extract the ZIP into your `HorizonXI\Game\addons` folder.
 3. In game, load the addon:
 
@@ -77,7 +77,9 @@ example setup, not the defaults.
   coordinates remain under the game’s control.
 - **Fishing:** The party-list hide pauses automatically while you are fishing so
   the hooked-fish HP bar can remain visible. The party list also returns during
-  that time because both currently share one native primitive.
+  that time because both currently share one native primitive. During zoning,
+  a temporarily missing player entity is handled quietly and hiding resumes
+  automatically afterward.
 - **Cast bar:** This was confirmed working on the author's HorizonXI setup. The
   bar may flash for less than a second before the addon hides it.
 - **Clock:** Unchecking it turns the game clock on, even if it was off before.

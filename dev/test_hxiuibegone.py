@@ -253,6 +253,26 @@ def test_party_hide_fails_open_if_fishing_state_cannot_be_checked():
     assert str(controller.rows.party.status).startswith("Blocked")
 
 
+def test_missing_player_during_zone_is_quiet_and_party_hide_reapplies():
+    lua, _, controller, state, objects, messages = load_controller()
+    selected = config(lua, party=True)
+    party = objects[0x402000]
+    call(controller, "tick", selected)
+    assert state["mem"][party + 0x69] == 0
+
+    state["fishing"] = None
+    call(controller, "tick", selected)
+    assert state["mem"][party + 0x69] == 1
+    assert str(controller.rows.party.status).startswith("Waiting")
+    assert messages == []
+
+    state["fishing"] = False
+    call(controller, "tick", selected)
+    assert state["mem"][party + 0x69] == 0
+    assert str(controller.rows.party.status) == "Hiding enabled"
+    assert messages == []
+
+
 def test_castbar_hides_when_present_and_restores_independently():
     lua, _, controller, state, objects, _ = load_controller()
     castbar = objects[0x402010]
@@ -711,7 +731,7 @@ def load_mocked_windows_adapter():
     lua = luajit21.LuaRuntime(unpack_returned_tuples=True)
     lua.execute('''
         page = 0x20; memory_byte = 0x75; memory_word = 320; flushes = 0;
-        entity_status = 0; entity_server_status = 0;
+        entity_status = 0; entity_server_status = 0; entity_available = true;
         fail_protect = false; fail_flush = false; protections = {};
         local kernel = {
             VirtualQuery = function(address, info)
@@ -746,6 +766,7 @@ def load_mocked_windows_adapter():
             end,
         }};
         GetPlayerEntity = function()
+            if not entity_available then return nil end;
             return {Status = entity_status, StatusServer = entity_server_status};
         end;
     ''')
@@ -788,6 +809,8 @@ def test_adapter_fishing_checks_local_and_server_statuses():
         setattr(lua.globals(), field, status)
         assert adapter.fishing() is True
         setattr(lua.globals(), field, 0)
+    lua.globals().entity_available = False
+    assert adapter.fishing() is None
 
 
 def test_adapter_word_access_validates_writes():

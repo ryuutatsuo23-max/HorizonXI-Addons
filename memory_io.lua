@@ -139,8 +139,8 @@ local fishing_status = {
 };
 
 function M.fishing()
-    local entity = GetPlayerEntity();
-    assert(entity ~= nil, 'Player entity is unavailable; cannot check fishing state.');
+    local ok, entity = pcall(GetPlayerEntity);
+    if not ok or entity == nil then return nil; end
     return fishing_status[tonumber(entity.Status)] == true
         or fishing_status[tonumber(entity.StatusServer)] == true;
 end

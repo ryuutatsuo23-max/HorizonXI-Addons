@@ -271,6 +271,8 @@ function M.new(io, notify)
                 if self:release(key) then
                     report(row, 'Blocked - could not check fishing state; click Retry.');
                 end
+            elseif key == 'party' and wanted and fishing == nil then
+                if self:release(key) then report(row, 'Waiting for player after zoning'); end
             elseif key == 'party' and wanted and fishing then
                 if self:release(key) then report(row, 'Paused while fishing'); end
             elseif not wanted then

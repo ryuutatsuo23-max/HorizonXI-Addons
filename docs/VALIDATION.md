@@ -1,4 +1,20 @@
-# Validation — v0.2.6
+# Validation — v0.2.7
+
+## Quiet fishing check during zoning
+
+The author reported `Blocked - could not check fishing state; click Retry.` on
+zone changes while party hiding was selected. A missing player entity is an
+expected transient state during zoning, so the fishing adapter now returns an
+unknown result for that gap instead of raising an error.
+
+While the result is unknown, the controller quietly releases only the party
+hide and records a non-notifying waiting status. It reapplies the saved party
+selection automatically when the player entity returns. Unexpected adapter
+errors still use the existing blocked/error path.
+
+All **38 offline tests** pass. The new regression covers hide, temporary missing
+player, no chat notification, safe party release, player return, and automatic
+rehide.
 
 ## Target box hiding while keeping the target arrow
 
@@ -17,7 +33,7 @@ the selected-target arrow remains visible. Sub-target selection, target
 death/reraise, lock-on, and every unload/zoning combination still need broader
 testing.
 
-All **37 offline tests** pass. The new tests cover independent target-box
+All **38 offline tests** pass. The new tests cover independent target-box
 coordinates, untouched arrow coordinates and primitive visibility, idempotent
 per-frame behavior, restoration, partial-write recovery, settings replacement,
 and validated 16-bit adapter access.
@@ -44,7 +60,7 @@ Clicking **Reset choices** now opens a modal with **Reset** and **Cancel**.
 Nothing changes or saves until Reset is selected. The explicit
 `/hxiuibegone restore` command remains immediate.
 
-All **37 offline tests** pass. New coverage checks the fishing pause/reapply
+All **38 offline tests** pass. New coverage checks the fishing pause/reapply
 lifecycle, fail-open behavior, local and server fishing status fields, cast-bar
 independence and absence, and both reset-dialog outcomes. Windows calls and
 game memory remain simulated. The author subsequently confirmed the fishing
@@ -61,7 +77,7 @@ moved from a permanent line to its hint; the target label still warns about the
 arrow. Signature checks, memory operations, restoration, and the quiet zoning
 fix are unchanged.
 
-All 37 offline tests pass, including both toggle aliases, mixed saved choices,
+All 38 offline tests pass, including both toggle aliases, mixed saved choices,
 pause/resume writes and restoration, closed/open settings, and invalid arguments.
 Hover-only hints and disabled checkbox hints were checked with simulated ImGui
 callbacks. Actual tooltip appearance still needs an in-game check.
@@ -101,7 +117,7 @@ unload/reload combinations, and other addons still need broader testing.
 
 ## Offline checks
 
-All **37 tests** pass against the Lua modules using LuaJIT through Lupa.
+All **38 tests** pass against the Lua modules using LuaJIT through Lupa.
 They cover independent selections, default settings, command handling, a closed
 window at startup, opening/closing settings, saved hides while settings are
 closed, restoration, missing signatures, conflicts, changed code, partial write
