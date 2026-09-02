@@ -17,6 +17,9 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] After loading or reloading HXIChecklist, zone once so the incoming key-item log is received.
 - [ ] Compare at least one owned and one unowned starter map against Key Items.
 - [ ] Before that first zone, confirm unresolved map state is `UNKNOWN`, never falsely `LIVE MISSING`.
+- [ ] Before that first zone, confirm Bastok pilot rows use the existing `MANUAL` / `MANUAL DONE` fallback.
+- [ ] After zoning, compare one current, one completed, and one neither-current-nor-completed pilot quest against the in-game Bastok quest logs; expect `AUTO CURRENT`, `AUTO DONE`, and `AUTO NOT LOGGED`.
+- [ ] Confirm a saved manual mark is not erased: automatic state takes display precedence after zoning, while reloading before the logs arrive exposes the same saved fallback again.
 - [ ] Test immediately after login or zoning; unresolved client data must show `UNKNOWN`, never a false missing state.
 - [ ] Use `/hc refresh` after login and verify unresolved resource names remain explicit.
 
@@ -24,7 +27,7 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 
 - [ ] Confirm `HXQ-0003` displays `UNKNOWN` and is excluded from the denominator.
 - [ ] Enable `Show unavailable`; confirm `HXQ-0012` displays `UNAVAILABLE` and is excluded.
-- [ ] Confirm checking a manual quest changes only that stable ID.
+- [ ] Before automatic logs arrive, confirm checking a manual quest changes only that stable ID.
 - [ ] Open several Source buttons and confirm they lead to the expected HorizonXI Wiki pages.
 - [ ] Confirm the header clearly says the profile is intentionally incomplete.
 

@@ -17,6 +17,9 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         cls.key_item_state = (PACKAGE / "key_item_state.lua").read_text(
             encoding="utf-8"
         )
+        cls.quest_state = (PACKAGE / "quest_state.lua").read_text(
+            encoding="utf-8"
+        )
 
     def test_copy_ready_package_contains_only_runtime_lua(self):
         self.assertEqual(
@@ -27,6 +30,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "checklist_ui.lua",
                 "horizon_profile.lua",
                 "key_item_state.lua",
+                "quest_state.lua",
             },
         )
 
@@ -81,6 +85,37 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         expected = [f"HXQ-{number:04d}" for number in range(1, 20)]
         self.assertEqual(ids, expected)
 
+    def test_bastok_pilot_indices_are_explicit_and_stable(self):
+        expected = {
+            "HXQ-0001": 38,
+            "HXQ-0002": 14,
+            "HXQ-0003": 87,
+            "HXQ-0004": 44,
+            "HXQ-0005": 74,
+            "HXQ-0006": 41,
+            "HXQ-0007": 12,
+            "HXQ-0008": 21,
+            "HXQ-0009": 16,
+            "HXQ-0010": 11,
+            "HXQ-0011": 13,
+            "HXQ-0012": 76,
+            "HXQ-0013": 10,
+            "HXQ-0014": 22,
+            "HXQ-0015": 29,
+            "HXQ-0016": 30,
+            "HXQ-0017": 34,
+            "HXQ-0018": 64,
+            "HXQ-0019": 85,
+        }
+        found = {
+            entry_id: int(quest_index)
+            for entry_id, quest_index in re.findall(
+                r"id = '(HXQ-\d{4})'.*?quest_area = 'bastok'.*?quest_index = (\d+)",
+                self.profile,
+            )
+        }
+        self.assertEqual(found, expected)
+
     def test_unknown_and_inactive_are_explicit(self):
         self.assertIn("id = 'HXQ-0003'", self.profile)
         self.assertIn("availability = 'unknown'", self.profile)
@@ -128,6 +163,18 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("key_items_per_group = 0x200", self.key_item_state)
         self.assertIn("key_item_state.has_key_item(identifier)", self.catalog)
         self.assertIn("return 'unknown', packet_note", self.catalog)
+
+    def test_quest_log_parser_is_bastok_only_and_fail_closed(self):
+        self.assertIn("e.id ~= 0x056", self.quest_state)
+        self.assertIn("flags_offset = 0x04", self.quest_state)
+        self.assertIn("flags_length = 0x20", self.quest_state)
+        self.assertIn("type_offset = 0x24", self.quest_state)
+        self.assertIn("bastok_current_type = 0x0058", self.quest_state)
+        self.assertIn("bastok_completed_type = 0x0098", self.quest_state)
+        self.assertIn("logs.current == nil or logs.completed == nil", self.quest_state)
+        self.assertIn("quest_state.get_bastok(entry.quest_index)", self.catalog)
+        for state in ("auto_complete", "auto_current", "auto_not_logged"):
+            self.assertIn(state, self.catalog)
 
     def test_commands_are_addon_local(self):
         self.assertIn("addon.name = 'HXIChecklist'", self.main)

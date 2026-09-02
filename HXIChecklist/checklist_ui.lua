@@ -5,6 +5,9 @@ local state_colors = {
     missing = { 1.00, 0.72, 0.28, 1.00 },
     manual_complete = { 0.30, 0.90, 0.45, 1.00 },
     manual_open = { 0.35, 0.72, 1.00, 1.00 },
+    auto_complete = { 0.30, 0.90, 0.45, 1.00 },
+    auto_current = { 0.35, 0.72, 1.00, 1.00 },
+    auto_not_logged = { 1.00, 0.72, 0.28, 1.00 },
     unknown = { 1.00, 0.86, 0.35, 1.00 },
     unavailable = { 0.55, 0.58, 0.62, 1.00 },
 };
@@ -14,6 +17,9 @@ local state_badges = {
     missing = 'LIVE MISSING',
     manual_complete = 'MANUAL DONE',
     manual_open = 'MANUAL',
+    auto_complete = 'AUTO DONE',
+    auto_current = 'AUTO CURRENT',
+    auto_not_logged = 'AUTO NOT LOGGED',
     unknown = 'UNKNOWN',
     unavailable = 'UNAVAILABLE',
 };
@@ -40,7 +46,9 @@ local function matches_filter(item, filter)
 end
 
 local function should_show(item, settings, filter)
-    if (item.state == 'complete' or item.state == 'manual_complete')
+    if (item.state == 'complete'
+        or item.state == 'manual_complete'
+        or item.state == 'auto_complete')
         and not settings.show_completed then
         return false;
     end

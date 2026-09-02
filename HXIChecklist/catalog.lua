@@ -3,12 +3,16 @@ require('common');
 local catalog = {};
 local resource_cache = {};
 local key_item_state = require('key_item_state');
+local quest_state = require('quest_state');
 
 local labels = {
     complete = 'Live complete',
     missing = 'Live missing',
     manual_complete = 'Manual complete',
     manual_open = 'Manual',
+    auto_complete = 'Automatic complete',
+    auto_current = 'Automatic current',
+    auto_not_logged = 'Automatic not in log',
     unknown = 'Unknown',
     unavailable = 'Unavailable',
 };
@@ -176,6 +180,30 @@ local function entry_state(entry, manual_completed)
     end
 
     if entry.kind == 'manual' then
+        if entry.quest_area == 'bastok' and type(entry.quest_index) == 'number' then
+            local automatic, automatic_note = quest_state.get_bastok(entry.quest_index);
+            if automatic ~= nil then
+                if automatic.completed then
+                    return 'auto_complete', 'Completed bit is set in the incoming Bastok completed-quest log.';
+                end
+                if automatic.current then
+                    return 'auto_current', 'Current bit is set in the incoming Bastok current-quest log.';
+                end
+                if entry.availability == 'unknown' then
+                    return 'unknown', entry.availability_note;
+                end
+                return 'auto_not_logged', 'Neither the current nor completed bit is set in the received Bastok quest logs.';
+            end
+
+            if entry.availability == 'unknown' then
+                return 'unknown', entry.availability_note;
+            end
+            if manual_completed[entry.id] == true then
+                return 'manual_complete', automatic_note;
+            end
+            return 'manual_open', automatic_note;
+        end
+
         if entry.availability == 'unknown' then
             return 'unknown', entry.availability_note;
         end
@@ -190,10 +218,15 @@ end
 
 local function add_to_summary(summary, item)
     summary.entries = summary.entries + 1;
-    if item.state == 'complete' or item.state == 'manual_complete' then
+    if item.state == 'complete'
+        or item.state == 'manual_complete'
+        or item.state == 'auto_complete' then
         summary.complete = summary.complete + 1;
         summary.known_total = summary.known_total + 1;
-    elseif item.state == 'missing' or item.state == 'manual_open' then
+    elseif item.state == 'missing'
+        or item.state == 'manual_open'
+        or item.state == 'auto_current'
+        or item.state == 'auto_not_logged' then
         summary.open = summary.open + 1;
         summary.known_total = summary.known_total + 1;
     elseif item.state == 'unknown' then

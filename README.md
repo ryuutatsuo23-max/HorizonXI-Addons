@@ -2,13 +2,13 @@
 
 HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately small HorizonXI-oriented starter profile.
 
-Version 0.1.2 is not a complete HorizonXI checklist. It proves three narrow pieces:
+Version 0.2.0 is not a complete HorizonXI checklist. It proves three narrow pieces:
 
 - live, read-only spell ownership through `IPlayer:HasSpell`;
 - live, read-only map key-item ownership from the incoming `0x055` key-item log;
-- per-character manual quest marks for the sourced Bastok Markets pilot.
+- passive current/completed state for the 19-entry Bastok quest pilot, with saved per-character manual marks as a pre-log fallback.
 
-It passively reads the incoming `0x055` key-item log and registers no outgoing packet handler. It injects, modifies, or blocks no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
+It passively reads the incoming `0x055` key-item and `0x056` quest logs and registers no outgoing packet handler. It injects, modifies, blocks, or requests no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
 
 ## Safety and server status
 
@@ -28,8 +28,9 @@ The copy-ready folder contains exactly the required runtime files:
 - `checklist_ui.lua`
 - `horizon_profile.lua`
 - `key_item_state.lua`
+- `quest_state.lua`
 
-Copy the whole `HXIChecklist` folder so these five files stay together.
+Copy the whole `HXIChecklist` folder so these six files stay together.
 
 ## Commands
 
@@ -43,6 +44,7 @@ Copy the whole `HXIChecklist` folder so these five files stay together.
 
 - `LIVE DONE` / `LIVE MISSING`: read from the logged-in character through Ashita.
 - `MANUAL DONE` / `MANUAL`: a per-character user checkbox; no quest flag is claimed.
+- `AUTO DONE` / `AUTO CURRENT` / `AUTO NOT LOGGED`: decoded from both incoming Bastok quest logs. `AUTO NOT LOGGED` claims only that neither bit is set, not that the quest is currently obtainable.
 - `UNKNOWN`: the client state or source status is unresolved and is excluded from the denominator.
 - `UNAVAILABLE`: the source reports the entry inactive; it is excluded from the denominator.
 
@@ -50,15 +52,17 @@ Copy the whole `HXIChecklist` folder so these five files stay together.
 
 Map state remains `UNKNOWN` until the client receives its key-item log. Zone once after loading or reloading HXIChecklist; the incoming log is then decoded without sending a request.
 
+The Bastok quest pilot keeps showing the saved manual fallback until both current and completed quest logs arrive. After zoning, automatic state takes display precedence without deleting or rewriting the saved manual marks.
+
 ## Data compatibility
 
 Manual marks are keyed by stable profile IDs and saved using Ashita's character-scoped settings. Future profile growth should retain existing IDs. Unknown or inactive entries are preserved rather than silently discarded or treated as complete.
 
 ## Explicitly deferred
 
-- packet-derived quest, mission, fame, RoE, and objective state;
+- missions, fame, RoE, objectives, other quest regions, and quests outside the 19-entry Bastok pilot;
 - retail-only XIchecklist categories not verified against HorizonXI;
 - automatic imports from upstream or the HorizonXI wiki;
 - live HorizonXI deployment, publishing, or approval submission.
 
-The next sensible phase is a single, bounded quest-flag pilot using private-server packet captures and synthetic fixtures. That phase should be reviewed independently before expanding the profile.
+The quest pilot should be validated independently on the local private server before its packet mapping or profile scope is expanded.
