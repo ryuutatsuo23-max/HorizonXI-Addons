@@ -13,7 +13,7 @@ M.controls = {
     {key = 'alliance2', label = 'Hide alliance 2',
         hint = 'Hides the second alliance list.\nNot yet tested in an alliance.'},
     {key = 'target', label = 'Hide target box',
-        hint = 'Keeps the arrow above your selected target visible.\nNot yet tested in game.'},
+        hint = 'Keeps the arrow above your selected target visible.'},
     {key = 'castbar', label = 'Hide cast bar',
         hint = 'Hides the game\'s spell and action progress bar.\nIt may flash briefly when a cast starts.'},
     {key = 'compass', label = 'Hide compass / radar',

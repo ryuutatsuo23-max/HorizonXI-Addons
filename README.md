@@ -25,7 +25,7 @@ You choose what stays visible. HXIUIBegone does not draw a replacement interface
 ## Install
 
 1. Open [Releases](https://github.com/ryuutatsuo23-max/HXIUIBegone/releases/latest)
-   and download **HXIUIBegone-v0.2.5.zip** under **Assets**.
+   and download **HXIUIBegone-v0.2.6.zip** under **Assets**.
 2. Extract the ZIP into your `HorizonXI\Game\addons` folder.
 3. In game, load the addon:
 
@@ -85,12 +85,11 @@ example setup, not the defaults.
   `hideparty` blocks the party, alliance, and target options; FancyCompass blocks
   the compass and clock options while loaded. If moving from `hideparty`, run
   `/hideparty show` before unloading it.
-- **Compatibility:** Party, fishing compatibility, cast bar, compass, clock,
-  and connection hiding have been
+- **Compatibility:** Party, fishing compatibility, target-box separation, cast
+  bar, compass, clock, and connection hiding have been
   reported working on a HorizonXI setup. Connection info was also confirmed to
-  return when unchecked. Keeping the target arrow, alliance controls,
-  notification behavior, and every zoning/login/unload combination still need
-  broader testing.
+  return when unchecked. Alliance controls, notification behavior, and every
+  zoning/login/unload combination still need broader testing.
 - **Server rules:** Check your server's addon rules before using custom addons.
   This project does not claim official server approval.
 

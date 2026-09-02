@@ -18,7 +18,7 @@ not attach to the game. See [validation notes](../docs/VALIDATION.md) for covera
 ## Release ZIP
 
 ```text
-python dev/package_release.py --ref v0.2.5 --output dist/install-v0.2.5
+python dev/package_release.py --ref v0.2.6 --output dist/install-v0.2.6
 ```
 
 Use a new output directory for each build. The script deliberately packages

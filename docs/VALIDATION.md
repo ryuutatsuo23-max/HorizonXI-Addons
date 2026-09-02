@@ -1,4 +1,4 @@
-# Validation — v0.2.5
+# Validation — v0.2.6
 
 ## Target box hiding while keeping the target arrow
 
@@ -12,8 +12,10 @@ entity data, or draw code.
 On uncheck, pause, reset, settings replacement, logout, or unload, the addon
 restores only coordinates still carrying its off-screen value and only through
 the currently authoritative target object. A changed or stale object is not
-written. This narrower behavior still needs an in-game check with a normal
-target, sub-target selection, target death/reraise, lock-on, and unload.
+written. The author confirmed in normal in-game use that the box is hidden and
+the selected-target arrow remains visible. Sub-target selection, target
+death/reraise, lock-on, and every unload/zoning combination still need broader
+testing.
 
 All **37 offline tests** pass. The new tests cover independent target-box
 coordinates, untouched arrow coordinates and primitive visibility, idempotent
@@ -87,7 +89,7 @@ The author tested the addon on their HorizonXI / Ashita v4 setup and reported:
 | Compass / radar | Hiding works. |
 | Clock | Hiding works. |
 | Connection info | Hides and returns when unchecked. |
-| Target box | The earlier whole-primitive hide removed the arrow. The new box-only behavior needs an in-game check. |
+| Target box | Box-only hiding works and keeps the selected-target arrow visible in normal use. |
 | Cast bar | Hiding works; the bar can flash for less than a second before disappearing. |
 | Alliance 1 and 2 | Not tested. |
 | Settings window | Author supplied the v0.2.1 preview shown in the README. |
