@@ -15,11 +15,11 @@ The live checks use Ashita v4's installed interface annotations and established 
 - persist per-character preferences with Ashita's `settings` library;
 - draw the checklist with Ashita's `imgui` library.
 
-No packet-derived state is used in version 0.1.0.
+No packet-derived state is used in version 0.1.1.
 
 ## HorizonXI starter profile
 
-The spell and map entries link to their corresponding [HorizonXI Wiki](https://horizonffxi.wiki/) pages. A `wiki_listed` label means only that the page was identified; it is not a claim of current server availability.
+The spell and map entries link to their corresponding [HorizonXI Wiki](https://horizonffxi.wiki/) pages. A `wiki_listed` label means only that the page was identified; it is not a claim of current server availability. The eight starter-map client IDs were cross-checked against the generated Windower `key_items.lua` reference bundled in this workspace; runtime code also verifies each numeric ID back against Ashita's English key-item resource name before reading ownership.
 
 The nineteen Bastok Markets entries preserve the stable `HXQ-0001` through `HXQ-0019` IDs and requirements from the local `HorizonXI-Spreadsheet/data/reference.json` pilot. Each row retains its individual HorizonXI Wiki URL where one was resolved.
 

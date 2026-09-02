@@ -31,6 +31,27 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual(self.profile.count("kind = 'key_item'"), 8)
         self.assertEqual(self.profile.count("kind = 'manual'"), 19)
 
+    def test_map_ids_are_explicit_and_stable(self):
+        expected = {
+            "map.san_doria": 385,
+            "map.bastok": 386,
+            "map.windurst": 387,
+            "map.jeuno": 388,
+            "map.zeruhn": 395,
+            "map.ghelsba": 404,
+            "map.palborough": 406,
+            "map.giddeus": 408,
+        }
+        found = {
+            entry_id: int(resource_id)
+            for entry_id, resource_id in re.findall(
+                r"id = '(map\.[^']+)'.*?resource_id = (\d+)", self.profile
+            )
+        }
+        self.assertEqual(found, expected)
+        self.assertIn("id_matches_name(identifier)", self.catalog)
+        self.assertIn("identifier <= 0", self.catalog)
+
     def test_entry_ids_are_unique(self):
         entry_ids = re.findall(
             r"\{ id = '([^']+)',(?: reference_id = '[^']+',)? kind = '(?:spell|key_item|manual)'",

@@ -71,16 +71,39 @@ local function resolve_key_item_id(entry)
         return nil;
     end
 
+    local expected_name = entry.resource_name or entry.name;
+    local function id_matches_name(identifier)
+        local resolved_name = nil;
+        local ok = pcall(function()
+            resolved_name = manager:GetString('keyitems.names', identifier, 2);
+        end);
+        return ok
+            and type(resolved_name) == 'string'
+            and resolved_name:lower() == expected_name:lower();
+    end
+
+    if type(entry.resource_id) == 'number' then
+        local identifier = math.floor(entry.resource_id);
+        if identifier > 0 and id_matches_name(identifier) then
+            return identifier;
+        end
+        return nil;
+    end
+
     local identifier = nil;
     local ok = pcall(function()
-        identifier = manager:GetString('keyitems.names', entry.resource_name or entry.name, 2);
+        identifier = manager:GetString('keyitems.names', expected_name, 2);
     end);
-    if not ok or type(identifier) ~= 'number' or identifier < 0 then
+    if not ok or type(identifier) ~= 'number' or identifier <= 0 then
         pcall(function()
-            identifier = manager:GetString('keyitems.names', entry.resource_name or entry.name);
+            identifier = manager:GetString('keyitems.names', expected_name);
         end);
     end
-    if type(identifier) ~= 'number' or identifier < 0 then
+    if type(identifier) ~= 'number' or identifier <= 0 then
+        return nil;
+    end
+    identifier = math.floor(identifier);
+    if not id_matches_name(identifier) then
         return nil;
     end
     return identifier;

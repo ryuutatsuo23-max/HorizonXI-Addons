@@ -2,7 +2,7 @@
 
 HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately small HorizonXI-oriented starter profile.
 
-Version 0.1.0 is not a complete HorizonXI checklist. It proves three narrow pieces:
+Version 0.1.1 is not a complete HorizonXI checklist. It proves three narrow pieces:
 
 - live, read-only spell ownership through `IPlayer:HasSpell`;
 - live, read-only map key-item ownership through `IPlayer:HasKeyItem`;
