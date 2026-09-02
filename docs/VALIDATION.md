@@ -14,7 +14,9 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 ## Live state
 
 - [ ] Compare at least one learned and one unlearned starter spell against the in-game magic list.
+- [ ] After loading or reloading HXIChecklist, zone once so the incoming key-item log is received.
 - [ ] Compare at least one owned and one unowned starter map against Key Items.
+- [ ] Before that first zone, confirm unresolved map state is `UNKNOWN`, never falsely `LIVE MISSING`.
 - [ ] Test immediately after login or zoning; unresolved client data must show `UNKNOWN`, never a false missing state.
 - [ ] Use `/hc refresh` after login and verify unresolved resource names remain explicit.
 

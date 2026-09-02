@@ -5,21 +5,22 @@ Profile snapshot: `2026-09-03-foundation`.
 ## Upstream inspiration
 
 - [HiPotionQ8/XIchecklist](https://github.com/HiPotionQ8/XIchecklist): behavioral inspiration and requested conversion target. No Lua code or data table was copied into this implementation.
+- [Windower/Lua packet definitions](https://github.com/Windower/Lua/tree/dev/addons/libs/packets) and Windower's generated key-item resources: protocol and numeric-ID cross-checks for the read-only map implementation. No Windower implementation code is bundled.
 
 ## Ashita v4 behavior
 
 The live checks use Ashita v4's installed interface annotations and established addon patterns:
 
 - resolve spells with `IResourceManager:GetSpellByName`, then read `IPlayer:HasSpell`;
-- resolve key-item names with `IResourceManager:GetString('keyitems.names', ..., 2)`, then read `IPlayer:HasKeyItem`;
+- resolve and validate key-item IDs with `IResourceManager:GetString`, then read the incoming `0x055` ownership bit; a positive `IPlayer:HasKeyItem` remains a pre-log fallback;
 - persist per-character preferences with Ashita's `settings` library;
 - draw the checklist with Ashita's `imgui` library.
 
-No packet-derived state is used in version 0.1.1.
+Version 0.1.2 passively reads only the incoming `0x055` key-item log for map ownership. Its established client layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. It never changes, blocks, injects, or requests a packet.
 
 ## HorizonXI starter profile
 
-The spell and map entries link to their corresponding [HorizonXI Wiki](https://horizonffxi.wiki/) pages. A `wiki_listed` label means only that the page was identified; it is not a claim of current server availability. The eight starter-map client IDs were cross-checked against the generated Windower `key_items.lua` reference bundled in this workspace; runtime code also verifies each numeric ID back against Ashita's English key-item resource name before reading ownership.
+The spell and map entries link to their corresponding [HorizonXI Wiki](https://horizonffxi.wiki/) pages. A `wiki_listed` label means only that the page was identified; it is not a claim of current server availability. The eight starter-map client IDs were cross-checked against the generated Windower `key_items.lua` reference bundled in this workspace; runtime code also verifies each numeric ID back against Ashita's English key-item resource name before reading the corresponding `0x055` ownership bit.
 
 The nineteen Bastok Markets entries preserve the stable `HXQ-0001` through `HXQ-0019` IDs and requirements from the local `HorizonXI-Spreadsheet/data/reference.json` pilot. Each row retains its individual HorizonXI Wiki URL where one was resolved.
 

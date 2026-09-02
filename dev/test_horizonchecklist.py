@@ -14,6 +14,9 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         cls.profile = PROFILE.read_text(encoding="utf-8")
         cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
         cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
+        cls.key_item_state = (PACKAGE / "key_item_state.lua").read_text(
+            encoding="utf-8"
+        )
 
     def test_copy_ready_package_contains_only_runtime_lua(self):
         self.assertEqual(
@@ -23,6 +26,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "catalog.lua",
                 "checklist_ui.lua",
                 "horizon_profile.lua",
+                "key_item_state.lua",
             },
         )
 
@@ -93,13 +97,12 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             self.catalog.index(manual_check, manual_branch),
         )
 
-    def test_no_packet_or_input_automation_surface(self):
+    def test_no_outgoing_packet_or_input_automation_surface(self):
         combined = "\n".join(
             path.read_text(encoding="utf-8")
             for path in PACKAGE.glob("*.lua")
         ).lower()
         forbidden = (
-            "packet_in",
             "packet_out",
             "queuecommand",
             "injectincoming",
@@ -109,6 +112,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
         for token in forbidden:
             self.assertNotIn(token, combined)
+        self.assertIn("ashita.events.register('packet_in'", self.main)
 
     def test_direct_checks_use_read_only_player_interfaces(self):
         self.assertIn("player:HasSpell(identifier)", self.catalog)
@@ -116,11 +120,20 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("manager:GetSpellByName", self.catalog)
         self.assertIn("manager:GetString('keyitems.names'", self.catalog)
 
+    def test_key_item_log_parser_is_read_only_and_fail_closed(self):
+        self.assertIn("e.id ~= 0x055", self.key_item_state)
+        self.assertIn("available_offset = 0x04", self.key_item_state)
+        self.assertIn("available_length = 0x40", self.key_item_state)
+        self.assertIn("type_offset = 0x84", self.key_item_state)
+        self.assertIn("key_items_per_group = 0x200", self.key_item_state)
+        self.assertIn("key_item_state.has_key_item(identifier)", self.catalog)
+        self.assertIn("return 'unknown', packet_note", self.catalog)
+
     def test_commands_are_addon_local(self):
         self.assertIn("addon.name = 'HXIChecklist'", self.main)
         for command in ("/hxichecklist", "/horizonchecklist", "/hcheck", "/hc"):
             self.assertIn(f"'{command}'", self.main)
-        self.assertNotIn("ashita.events.register('packet", self.main)
+        self.assertNotIn("ashita.events.register('packet_out'", self.main)
 
 
 if __name__ == "__main__":

@@ -2,13 +2,13 @@
 
 HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately small HorizonXI-oriented starter profile.
 
-Version 0.1.1 is not a complete HorizonXI checklist. It proves three narrow pieces:
+Version 0.1.2 is not a complete HorizonXI checklist. It proves three narrow pieces:
 
 - live, read-only spell ownership through `IPlayer:HasSpell`;
-- live, read-only map key-item ownership through `IPlayer:HasKeyItem`;
+- live, read-only map key-item ownership from the incoming `0x055` key-item log;
 - per-character manual quest marks for the sourced Bastok Markets pilot.
 
-It registers no packet handler, injects or blocks no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
+It passively reads the incoming `0x055` key-item log and registers no outgoing packet handler. It injects, modifies, or blocks no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
 
 ## Safety and server status
 
@@ -27,8 +27,9 @@ The copy-ready folder contains exactly the required runtime files:
 - `catalog.lua`
 - `checklist_ui.lua`
 - `horizon_profile.lua`
+- `key_item_state.lua`
 
-Copy the whole `HXIChecklist` folder so these four files stay together.
+Copy the whole `HXIChecklist` folder so these five files stay together.
 
 ## Commands
 
@@ -46,6 +47,8 @@ Copy the whole `HXIChecklist` folder so these four files stay together.
 - `UNAVAILABLE`: the source reports the entry inactive; it is excluded from the denominator.
 
 `Wiki-listed` is evidence that a wiki page exists, not proof that the content is currently active or matches every server detail. See [docs/SOURCES.md](docs/SOURCES.md) for provenance and [docs/VALIDATION.md](docs/VALIDATION.md) for the private-server checklist.
+
+Map state remains `UNKNOWN` until the client receives its key-item log. Zone once after loading or reloading HXIChecklist; the incoming log is then decoded without sending a request.
 
 ## Data compatibility
 

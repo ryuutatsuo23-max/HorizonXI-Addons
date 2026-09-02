@@ -26,7 +26,7 @@ local profile = {
         {
             id = 'starter_maps',
             name = 'Starter Maps',
-            description = 'A small map key-item proof set. Ownership is read live by resolving the client key-item name, then calling IPlayer:HasKeyItem.',
+            description = 'A small map key-item proof set. Ownership is read from incoming key-item log 0x055; zone once after loading so the client receives it.',
             entries = {
                 { id = 'map.san_doria', kind = 'key_item', name = "Map of the San d'Oria Area", resource_name = "map of the San d'Oria area", resource_id = 385, availability = 'wiki_listed', description = "Map key item for San d'Oria city areas.", source_url = 'https://horizonffxi.wiki/Map_of_the_San_d%27Oria_Area' },
                 { id = 'map.bastok', kind = 'key_item', name = 'Map of the Bastok Area', resource_name = 'map of the Bastok area', resource_id = 386, availability = 'wiki_listed', description = 'Map key item for Bastok city areas.', source_url = 'https://horizonffxi.wiki/Map_of_the_Bastok_Area' },

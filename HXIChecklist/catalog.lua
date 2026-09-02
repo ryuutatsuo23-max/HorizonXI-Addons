@@ -2,6 +2,7 @@ require('common');
 
 local catalog = {};
 local resource_cache = {};
+local key_item_state = require('key_item_state');
 
 local labels = {
     complete = 'Live complete',
@@ -145,11 +146,23 @@ local function direct_state(entry)
         return 'unknown', 'The client resource name could not be resolved.';
     end
 
-    local ok, has_value = pcall(function()
-        if entry.kind == 'spell' then
-            return player:HasSpell(identifier);
+    if entry.kind == 'key_item' then
+        local packet_value, packet_note = key_item_state.has_key_item(identifier);
+        if packet_value ~= nil then
+            return packet_value and 'complete' or 'missing', nil;
         end
-        return player:HasKeyItem(identifier);
+
+        local fallback_ok, fallback_value = pcall(function()
+            return player:HasKeyItem(identifier);
+        end);
+        if fallback_ok and fallback_value == true then
+            return 'complete', nil;
+        end
+        return 'unknown', packet_note;
+    end
+
+    local ok, has_value = pcall(function()
+        return player:HasSpell(identifier);
     end);
     if not ok then
         return 'unknown', 'Ashita could not read this character value.';

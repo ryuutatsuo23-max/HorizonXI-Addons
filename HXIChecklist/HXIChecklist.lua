@@ -1,6 +1,6 @@
 addon.name = 'HXIChecklist';
 addon.author = 'HXIChecklist contributors';
-addon.version = '0.1.1';
+addon.version = '0.1.2';
 addon.desc = 'Read-only, source-backed checklist foundation for Ashita v4 and HorizonXI.';
 addon.link = 'https://github.com/HiPotionQ8/XIchecklist';
 
@@ -13,6 +13,7 @@ local settings = require('settings');
 local catalog = require('catalog');
 local checklist_ui = require('checklist_ui');
 local profile = require('horizon_profile');
+local key_item_state = require('key_item_state');
 
 local default_settings = T{
     visible = true,
@@ -131,7 +132,13 @@ end);
 
 ashita.events.register('load', 'HXIChecklist_Load', function()
     actions.refresh();
-    header_message('Loaded source-only foundation. Reads character state; sends no packets or gameplay input.');
+    header_message('Loaded source-only foundation. Reads character state and incoming logs; sends no packets or gameplay input.');
+end);
+
+ashita.events.register('packet_in', 'HXIChecklist_PacketIn', function(e)
+    if key_item_state.handle_packet(e) then
+        request_refresh();
+    end
 end);
 
 ashita.events.register('command', 'HXIChecklist_Command', function(e)

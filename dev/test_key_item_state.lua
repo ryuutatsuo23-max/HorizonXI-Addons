@@ -1,0 +1,67 @@
+package.preload['common'] = function()
+    return true;
+end;
+
+package.preload['bit'] = function()
+    return {
+        band = function(left, right)
+            return left & right;
+        end,
+        lshift = function(value, count)
+            return value << count;
+        end,
+    };
+end;
+
+package.preload['struct'] = function()
+    return {
+        unpack = function(format, data, position)
+            assert(format == 'L');
+            local a, b, c, d = data:byte(position, position + 3);
+            assert(d ~= nil);
+            return a + (b << 8) + (c << 16) + (d << 24);
+        end,
+    };
+end;
+
+local function key_item_packet(group, owned_ids)
+    local bytes = {};
+    for index = 1, 0x88 do
+        bytes[index] = 0;
+    end
+
+    for _, identifier in ipairs(owned_ids) do
+        assert(math.floor(identifier / 0x200) == group);
+        local group_index = identifier % 0x200;
+        local byte_index = math.floor(group_index / 8);
+        local position = 0x04 + byte_index + 1;
+        bytes[position] = bytes[position] | (1 << (group_index % 8));
+    end
+
+    local type_position = 0x84 + 1;
+    bytes[type_position] = group & 0xFF;
+    bytes[type_position + 1] = (group >> 8) & 0xFF;
+    bytes[type_position + 2] = (group >> 16) & 0xFF;
+    bytes[type_position + 3] = (group >> 24) & 0xFF;
+
+    local characters = {};
+    for index, value in ipairs(bytes) do
+        characters[index] = string.char(value);
+    end
+    return table.concat(characters);
+end
+
+local state = dofile('HXIChecklist/key_item_state.lua');
+
+assert(state.has_key_item(385) == nil);
+assert(state.handle_packet({ id = 0x055, data = key_item_packet(0, { 385, 388, 395 }) }));
+assert(state.has_key_item(385) == true);
+assert(state.has_key_item(386) == false);
+assert(state.has_key_item(388) == true);
+assert(state.has_key_item(395) == true);
+assert(state.has_key_item(512) == nil);
+
+assert(state.handle_packet({ id = 0x00A, data = '' }));
+assert(state.has_key_item(385) == nil);
+
+print('key-item packet fixture: passed');
