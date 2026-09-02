@@ -120,6 +120,20 @@ function M.session()
     return memory:GetParty():GetMemberServerId(0);
 end
 
+local fishing_status = {
+    [38] = true, [39] = true, [40] = true, [41] = true, [42] = true, [43] = true,
+    [50] = true, [51] = true, [52] = true, [53] = true,
+    [56] = true, [57] = true, [58] = true, [59] = true, [60] = true,
+    [61] = true, [62] = true,
+};
+
+function M.fishing()
+    local entity = GetPlayerEntity();
+    assert(entity ~= nil, 'Player entity is unavailable; cannot check fishing state.');
+    return fishing_status[tonumber(entity.Status)] == true
+        or fishing_status[tonumber(entity.StatusServer)] == true;
+end
+
 function M.clock(hidden)
     AshitaCore:GetChatManager():QueueCommand(-1, hidden and '/clock off' or '/clock on');
 end

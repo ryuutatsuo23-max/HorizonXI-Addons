@@ -1,4 +1,31 @@
-# Validation — v0.2.3
+# Validation — v0.2.4
+
+## Fishing compatibility, cast bar, and reset confirmation
+
+The author reported that hiding the native party list also hid the hooked-fish
+HP bar. The party option now releases only its own hide while either the local
+or server player status is one of the known fishing states, then reapplies it
+after fishing ends. Other selected controls stay hidden. If the player entity
+cannot be read, the party option fails open and reports a blocked state rather
+than risk suppressing the fish HP bar.
+
+The experimental cast-bar option resolves the native `menu    casttime` record
+with a complete 44-byte descriptor signature whose relocated object-slot
+pointer is the only wildcard. That signature has exactly one match in the
+offline supported client build, at descriptor VA `0x10370A90`; its slot is RVA
+`0x575F0C`. There is no fixed-address fallback. The control uses the existing
+primitive ownership and restoration path and waits without writing when the
+cast-bar object does not exist. Its visual result still needs an in-game cast.
+
+Clicking **Reset choices** now opens a modal with **Reset** and **Cancel**.
+Nothing changes or saves until Reset is selected. The explicit
+`/hxiuibegone restore` command remains immediate.
+
+All **34 offline tests** pass. New coverage checks the fishing pause/reapply
+lifecycle, fail-open behavior, local and server fishing status fields, cast-bar
+independence and absence, and both reset-dialog outcomes. Windows calls and
+game memory remain simulated; the fishing and cast-bar results need an in-game
+check.
 
 ## Quick toggle and hover hints
 
@@ -11,7 +38,7 @@ moved from a permanent line to its hint; the target label still warns about the
 arrow. Signature checks, memory operations, restoration, and the quiet zoning
 fix are unchanged.
 
-All 29 offline tests pass, including both toggle aliases, mixed saved choices,
+All 34 offline tests pass, including both toggle aliases, mixed saved choices,
 pause/resume writes and restoration, closed/open settings, and invalid arguments.
 Hover-only hints and disabled checkbox hints were checked with simulated ImGui
 callbacks. Actual tooltip appearance still needs an in-game check.
@@ -50,7 +77,7 @@ unload/reload combinations, and other addons still need broader testing.
 
 ## Offline checks
 
-All **29 tests** pass against the Lua modules using LuaJIT through Lupa.
+All **34 tests** pass against the Lua modules using LuaJIT through Lupa.
 They cover independent selections, default settings, command handling, a closed
 window at startup, opening/closing settings, saved hides while settings are
 closed, restoration, missing signatures, conflicts, changed code, partial write

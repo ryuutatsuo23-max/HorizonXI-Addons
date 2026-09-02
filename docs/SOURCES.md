@@ -38,5 +38,14 @@ CowXIUI. Its ownership checks, fail-closed validation, conflict handling,
 settings panel, command interface, and restoration flow were written for this
 addon.
 
+HXIUIBegone 0.2.4's cast-bar control uses the `menu    casttime` record from the
+same native menu table researched for the connection display. atom0s's XiEvents
+documentation independently records that FFXI creates, queries, and destroys
+this named native menu:
+<https://github.com/atom0s/XiEvents/blob/3ccb5374e1cd5c1610dead0fa4288f527b29290d/OpCodes/0x00B4.md>.
+The descriptor signature and object-slot pointer were verified against the
+exact offline client build identified above. The hide itself remains marked
+experimental until it is tested in game.
+
 Because the party-control implementation is adapted from GPL-covered Ashita
 code, this addon is distributed under GPL version 3 or later. See `LICENSE`.

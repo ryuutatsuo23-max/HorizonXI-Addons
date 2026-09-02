@@ -17,11 +17,13 @@ def load_controller():
         "clock": [],
         "loaded": set(),
         "session": 123,
+        "fishing": False,
     }
     signatures = {
         str(module.signatures.party): 0x401000,
         str(module.signatures.alliance): 0x401100,
         str(module.signatures.compass): 0x401200,
+        str(module.signatures.castbar): 0x401400,
         str(connection.signature): 0x401300,
     }
     mem = state["mem"]
@@ -29,8 +31,9 @@ def load_controller():
     mem[0x401000 + 0x23] = 0x402004
     mem[0x401100 + 0x01] = 0x402008
     mem[0x401100 + 0x07] = 0x40200C
+    mem[0x401400 + 0x20] = 0x402010
     objects = {}
-    for index, slot in enumerate((0x402000, 0x402004, 0x402008, 0x40200C)):
+    for index, slot in enumerate((0x402000, 0x402004, 0x402008, 0x40200C, 0x402010)):
         first = 0x500000 + index * 0x100
         obj = 0x510000 + index * 0x100
         objects[slot] = obj
@@ -70,6 +73,7 @@ def load_controller():
     io.finish_patch = lambda address: None
     io.loaded = lambda name: str(name).lower() in state["loaded"]
     io.session = lambda: state["session"]
+    io.fishing = lambda: state["fishing"]
     io.clock = lambda hidden: state["clock"].append(bool(hidden))
     messages = []
     controller = module.new(io, lambda message: messages.append(str(message)))
@@ -79,7 +83,8 @@ def load_controller():
 
 def config(lua, **values):
     result = lua.table(enabled=True, party=False, alliance1=False,
-                       alliance2=False, target=False, compass=False, clock=False, connection=False)
+                       alliance2=False, target=False, castbar=False, compass=False,
+                       clock=False, connection=False)
     for key, value in values.items():
         result[key] = value
     return result
@@ -181,6 +186,60 @@ def test_all_four_frame_controls_are_independent():
             assert state["mem"][obj + 0x69] == (0 if candidate == slot else 1)
         call(controller, "restore")
         assert all(state["mem"][obj + 0x69] == 1 for obj in objects.values())
+
+
+def test_party_hide_pauses_while_fishing_and_reapplies_afterward():
+    lua, _, controller, state, objects, _ = load_controller()
+    selected = config(lua, party=True, alliance1=True)
+    party = objects[0x402000]
+    alliance = objects[0x402008]
+    call(controller, "tick", selected)
+    assert state["mem"][party + 0x69] == 0
+    assert state["mem"][alliance + 0x69] == 0
+
+    state["fishing"] = True
+    call(controller, "tick", selected)
+    assert state["mem"][party + 0x69] == 1
+    assert state["mem"][party + 0x6A] == 1
+    assert state["mem"][alliance + 0x69] == 0
+    assert str(controller.rows.party.status) == "Paused while fishing"
+    writes = list(state["writes"])
+    call(controller, "tick", selected)
+    assert state["writes"] == writes
+
+    state["fishing"] = False
+    call(controller, "tick", selected)
+    assert state["mem"][party + 0x69] == 0
+    assert state["mem"][alliance + 0x69] == 0
+
+
+def test_party_hide_fails_open_if_fishing_state_cannot_be_checked():
+    lua, _, controller, state, objects, _ = load_controller()
+    selected = config(lua, party=True, alliance1=True)
+    call(controller, "tick", selected)
+    controller.io.fishing = lambda: (_ for _ in ()).throw(RuntimeError("no entity"))
+    call(controller, "tick", selected)
+    assert state["mem"][objects[0x402000] + 0x69] == 1
+    assert state["mem"][objects[0x402008] + 0x69] == 0
+    assert str(controller.rows.party.status).startswith("Blocked")
+
+
+def test_castbar_hides_when_present_and_restores_independently():
+    lua, _, controller, state, objects, _ = load_controller()
+    castbar = objects[0x402010]
+    call(controller, "tick", config(lua, castbar=True))
+    assert state["mem"][castbar + 0x69] == 0
+    assert state["mem"][castbar + 0x6A] == 0
+    assert state["mem"][objects[0x402000] + 0x69] == 1
+    call(controller, "tick", config(lua))
+    assert state["mem"][castbar + 0x69] == 1
+    assert state["mem"][castbar + 0x6A] == 1
+
+    state["mem"][0x402010] = 0
+    state["writes"].clear()
+    call(controller, "tick", config(lua, castbar=True))
+    assert state["writes"] == []
+    assert str(controller.rows.castbar.status).startswith("Waiting")
 
 
 def test_replaced_objects_are_not_written_through_stale_cached_pointers():
@@ -387,8 +446,9 @@ def load_host():
         T = function(t) return t end;
         ImGuiCond_FirstUseEver = 1;
         ImGuiWindowFlags_NoSavedSettings = 256;
+        ImGuiWindowFlags_AlwaysAutoResize = 64;
         ImGuiHoveredFlags_AllowWhenDisabled = 1024;
-        events = {}; saved = 0; begins = 0; ends = 0; clicks = {};
+        events = {}; saved = 0; begins = 0; ends = 0; clicks = {}; popup = nil;
         tooltips = {}; texts = {}; disabled = false;
         package.preload.common = function() return {} end;
         package.preload.native_ui = function() return test_native end;
@@ -424,7 +484,14 @@ def load_host():
                 end
                 return false;
             end,
-            Button = function() return false end,
+            Button = function(label)
+                if clicks[label] then clicks[label] = nil; return true end
+                return false
+            end,
+            OpenPopup = function(id) popup = id end,
+            BeginPopupModal = function(id) return popup == id end,
+            EndPopup = noop,
+            CloseCurrentPopup = function() popup = nil end,
         } end;
         ashita = {events = {register = function(kind, _, callback) events[kind] = callback end}};
         print = noop;
@@ -474,6 +541,42 @@ def test_host_recovery_clears_selections_and_leaves_unrelated_commands_alone():
     assert state["mem"][objects[0x402000] + 0x69] == 1
     assert lua.globals().test_config.party is False
     assert lua.globals().test_config.enabled is False
+
+
+def test_host_reset_button_requires_confirmation():
+    lua, state, objects = load_host()
+    selected = config(lua, party=True, castbar=True)
+    lua.globals().settings_callback(selected)
+    lua.globals().events.command(lua.table(command="/hxiuibegone", blocked=False))
+    lua.globals().events.d3d_present()
+    party = objects[0x402000]
+    castbar = objects[0x402010]
+    assert state["mem"][party + 0x69] == 0
+    assert state["mem"][castbar + 0x69] == 0
+
+    lua.globals().clicks["Reset choices"] = True
+    lua.globals().events.d3d_present()
+    assert lua.globals().popup == "Confirm reset choices"
+    assert selected.party is True
+    assert lua.globals().saved == 0
+
+    lua.globals().clicks["Cancel"] = True
+    lua.globals().events.d3d_present()
+    assert lua.globals().popup is None
+    assert selected.party is True
+    assert state["mem"][party + 0x69] == 0
+
+    lua.globals().clicks["Reset choices"] = True
+    lua.globals().events.d3d_present()
+    lua.globals().clicks["Reset"] = True
+    lua.globals().events.d3d_present()
+    assert lua.globals().popup is None
+    assert selected.enabled is False
+    assert selected.party is False
+    assert selected.castbar is False
+    assert state["mem"][party + 0x69] == 1
+    assert state["mem"][castbar + 0x69] == 1
+    assert lua.globals().saved == 1
 
 
 def test_host_toggle_pauses_and_resumes_saved_hides_without_opening_settings():
@@ -557,6 +660,7 @@ def load_mocked_windows_adapter():
     lua = luajit21.LuaRuntime(unpack_returned_tuples=True)
     lua.execute('''
         page = 0x20; memory_byte = 0x75; flushes = 0;
+        entity_status = 0; entity_server_status = 0;
         fail_protect = false; fail_flush = false; protections = {};
         local kernel = {
             VirtualQuery = function(address, info)
@@ -588,6 +692,9 @@ def load_mocked_windows_adapter():
                 page = previous; return true;
             end,
         }};
+        GetPlayerEntity = function()
+            return {Status = entity_status, StatusServer = entity_server_status};
+        end;
     ''')
     adapter = lua.execute((ADDON / 'memory_io.lua').read_text(encoding='utf-8'))
     return lua, adapter
@@ -619,6 +726,15 @@ def test_adapter_flush_failure_still_restores_page_protection():
     adapter.patch8(0x401332, 0x75)
     assert lua.globals().memory_byte == 0x75
     assert lua.globals().page == 0x20
+
+
+def test_adapter_fishing_checks_local_and_server_statuses():
+    lua, adapter = load_mocked_windows_adapter()
+    assert adapter.fishing() is False
+    for field, status in (("entity_status", 38), ("entity_server_status", 62)):
+        setattr(lua.globals(), field, status)
+        assert adapter.fishing() is True
+        setattr(lua.globals(), field, 0)
 
 
 if __name__ == "__main__":

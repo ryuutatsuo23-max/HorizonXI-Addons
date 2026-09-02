@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 addon.name = 'HXIUIBegone';
 addon.author = 'DragoHorse';
-addon.version = '0.2.3';
+addon.version = '0.2.4';
 addon.desc = 'Choose which parts of the FFXI interface to hide.';
 
 require('common');
@@ -11,7 +11,8 @@ local native = require('native_ui');
 local io_adapter = require('memory_io');
 
 local defaults = T{enabled = true, party = false, alliance1 = false,
-    alliance2 = false, target = false, compass = false, clock = false, connection = false};
+    alliance2 = false, target = false, castbar = false, compass = false,
+    clock = false, connection = false};
 local config = settings.load(defaults);
 local opened = {false};
 local feedback = nil;
@@ -80,7 +81,7 @@ end
 
 local function draw()
     if not opened[1] then return; end
-    imgui.SetNextWindowSize({440, 390}, ImGuiCond_FirstUseEver);
+    imgui.SetNextWindowSize({440, 420}, ImGuiCond_FirstUseEver);
     if imgui.Begin('HXIUIBegone', opened, ImGuiWindowFlags_NoSavedSettings) then
         local enabled = {config.enabled};
         if imgui.Checkbox('Enable hiding', enabled) then
@@ -118,7 +119,18 @@ local function draw()
             end
         end
         imgui.Separator();
-        if imgui.Button('Reset choices') then restore_everything(); end
+        if imgui.Button('Reset choices') then imgui.OpenPopup('Confirm reset choices'); end
+        if imgui.BeginPopupModal('Confirm reset choices', nil,
+            ImGuiWindowFlags_AlwaysAutoResize) then
+            imgui.TextWrapped('Show all native UI and clear every saved choice?');
+            if imgui.Button('Reset') then
+                restore_everything();
+                imgui.CloseCurrentPopup();
+            end
+            imgui.SameLine();
+            if imgui.Button('Cancel') then imgui.CloseCurrentPopup(); end
+            imgui.EndPopup();
+        end
         if needs_retry then
             imgui.SameLine();
             if imgui.Button('Retry') then recheck(); end

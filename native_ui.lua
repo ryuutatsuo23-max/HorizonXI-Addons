@@ -7,13 +7,15 @@ local connection = require('connection_patch');
 local M = {};
 M.controls = {
     {key = 'party', label = 'Hide party list',
-        hint = 'Unload hideparty before hiding the party list.'},
+        hint = 'Automatically pauses while fishing so the hooked-fish HP bar stays visible.\nUnload hideparty before using this option.'},
     {key = 'alliance1', label = 'Hide alliance 1',
         hint = 'Hides the first alliance list.\nNot yet tested in an alliance.'},
     {key = 'alliance2', label = 'Hide alliance 2',
         hint = 'Hides the second alliance list.\nNot yet tested in an alliance.'},
     {key = 'target', label = 'Hide target box + arrow',
         hint = 'Also hides the arrow above your target.'},
+    {key = 'castbar', label = 'Hide cast bar (experimental)',
+        hint = 'Hides the game\'s spell and action progress bar.\nNot yet tested in game.'},
     {key = 'compass', label = 'Hide compass / radar',
         hint = 'Unload FancyCompass before hiding the compass.'},
     {key = 'clock', label = 'Hide clock',
@@ -25,6 +27,7 @@ M.signatures = {
     party = '66C78182000000????C7818C000000????????C781900000',
     alliance = 'A1????????8B0D????????89442424A1????????33DB89',
     compass = '33C0668B81????????483DE3000000',
+    castbar = '6D656E75202020206361737474696D6500000000000000000000000000000000????????03000001FF070000',
 };
 
 function M.new(io, notify)
@@ -68,6 +71,13 @@ function M.new(io, notify)
             row.slot = ok and slot or nil;
             report(row, ok and 'Ready' or 'Unavailable - could not find this panel');
         end
+        local castbar = scan(M.signatures.castbar);
+        local castbar_row = self.rows.castbar;
+        local castbar_ok, castbar_slot = pcall(resolve_slot, castbar, 0x20);
+        castbar_row.available = castbar_ok;
+        castbar_row.slot = castbar_ok and castbar_slot or nil;
+        report(castbar_row, castbar_ok and 'Ready'
+            or 'Unavailable - could not find the cast bar');
         local row = self.rows.compass;
         local match = scan(M.signatures.compass);
         local ok, address = pcall(function()
@@ -206,6 +216,7 @@ function M.new(io, notify)
         local conflict_ok, party_conflict, compass_conflict = pcall(function()
             return io.loaded('hideparty'), io.loaded('fancycompass');
         end);
+        local fishing_ok, fishing = pcall(io.fishing);
         for _, control in ipairs(M.controls) do
             local key, row = control.key, self.rows[control.key];
             local blocker = not conflict_ok and 'could not check other addons; click Retry'
@@ -216,6 +227,12 @@ function M.new(io, notify)
             if blocker then
                 if self:release(key) then report(row, 'Blocked - ' .. blocker
                     .. (conflict_ok and ' is loaded. Unload it first.' or '.')); end
+            elseif key == 'party' and wanted and not fishing_ok then
+                if self:release(key) then
+                    report(row, 'Blocked - could not check fishing state; click Retry.');
+                end
+            elseif key == 'party' and wanted and fishing then
+                if self:release(key) then report(row, 'Paused while fishing'); end
             elseif not wanted then
                 self:release(key);
                 if row.available and not row.fault then report(row, 'Ready'); end

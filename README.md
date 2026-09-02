@@ -15,6 +15,7 @@ game's interface to hide, without installing a separate addon for each one.
 - Party list
 - Alliance 1 and alliance 2, separately
 - Target box **and the arrow above your target**
+- Native cast bar *(experimental)*
 - Compass / radar
 - Clock
 - Connection info: arrows, S/R counters, and percentage
@@ -24,7 +25,7 @@ You choose what stays visible. HXIUIBegone does not draw a replacement interface
 ## Install
 
 1. Open [Releases](https://github.com/ryuutatsuo23-max/HXIUIBegone/releases/latest)
-   and download **HXIUIBegone-v0.2.3.zip** under **Assets**.
+   and download **HXIUIBegone-v0.2.4.zip** under **Assets**.
 2. Extract the ZIP into your `HorizonXI\Game\addons` folder.
 3. In game, load the addon:
 
@@ -55,7 +56,8 @@ Check a box to hide that part of the interface. Uncheck it to let the game
 display it normally again.
 
 - **Enable hiding** turns your selected hides on or pauses them.
-- **Reset choices** clears all selections and turns hiding off.
+- **Reset choices** asks for confirmation, then clears all selections and turns
+  hiding off.
 - **Retry** appears if an option has a problem.
 
 Your choices save automatically and apply when the addon loads. The settings
@@ -72,6 +74,11 @@ example setup, not the defaults.
 
 - **Want to keep the target arrow?** Leave the target option unchecked. The box
   and arrow cannot currently be hidden separately.
+- **Fishing:** The party-list hide pauses automatically while you are fishing so
+  the hooked-fish HP bar can remain visible. It reapplies after fishing ends.
+- **Cast bar:** This option is experimental and has not yet been tested in game.
+  It defaults off and becomes unavailable if this client build's native cast-bar
+  record cannot be found safely.
 - **Clock:** Unchecking it turns the game clock on, even if it was off before.
 - **Other UI addons:** Do not use two addons to hide the same part of the UI.
   `hideparty` blocks the party, alliance, and target options; FancyCompass blocks
@@ -79,8 +86,9 @@ example setup, not the defaults.
   `/hideparty show` before unloading it.
 - **Compatibility:** Party, compass, clock, and connection hiding have been
   reported working on a HorizonXI setup. Connection info was also confirmed to
-  return when unchecked. Alliance controls, notification behavior, and every
-  zoning/login/unload combination have not been fully tested.
+  return when unchecked. The fishing exception, cast bar, alliance controls,
+  notification behavior, and every zoning/login/unload combination have not
+  been fully tested.
 - **Server rules:** Check your server's addon rules before using custom addons.
   This project does not claim official server approval.
 
@@ -103,7 +111,7 @@ problem remains. Use `/clock on` after login if the clock needs restoring.
 | `/hxiuibegone hide connection off` | Stop hiding connection info |
 
 The last command also accepts `party`, `alliance1`, `alliance2`, `target`,
-`compass`, or `clock`. Use `on` to hide and `off` to stop hiding.
+`castbar`, `compass`, or `clock`. Use `on` to hide and `off` to stop hiding.
 All commands also work with `/hxiui`.
 
 </details>
