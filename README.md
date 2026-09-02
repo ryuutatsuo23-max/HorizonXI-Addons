@@ -1,6 +1,6 @@
-# HorizonChecklist
+# HorizonChecklist repository / HXIChecklist addon
 
-HorizonChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately small HorizonXI-oriented starter profile.
+HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately small HorizonXI-oriented starter profile.
 
 Version 0.1.0 is not a complete HorizonXI checklist. It proves three narrow pieces:
 
@@ -16,16 +16,23 @@ This repository is for local private-server evaluation. It has not been submitte
 
 ## Install for a private Ashita v4 test
 
-1. Copy the entire `HorizonChecklist` directory into the private test client's `addons` directory.
+1. Copy the `HXIChecklist` folder from this repository into the private test client's `addons` directory. Do not copy the repository's outer `HorizonChecklist` folder.
 2. Start the test client and log into a character.
-3. Run `/addon load HorizonChecklist`.
+3. Run `/addon load HXIChecklist`.
 4. Use `/hc` to toggle the window.
 
-Do not copy only the main file; the profile, catalog, and UI modules are required.
+The copy-ready folder contains exactly the required runtime files:
+
+- `HXIChecklist.lua`
+- `catalog.lua`
+- `checklist_ui.lua`
+- `horizon_profile.lua`
+
+Copy the whole `HXIChecklist` folder so these four files stay together.
 
 ## Commands
 
-- `/hc`, `/hcheck`, or `/horizonchecklist`: toggle the window.
+- `/hc`, `/hcheck`, `/hxichecklist`, or `/horizonchecklist`: toggle the window.
 - `/hc show` and `/hc hide`: explicitly show or hide it.
 - `/hc refresh`: clear resource-name caches and refresh the snapshot.
 - `/hc status`: print the current profile summary.

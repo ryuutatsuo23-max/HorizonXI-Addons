@@ -4,7 +4,8 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 
 ## Load and settings
 
-- [ ] Load with `/addon load HorizonChecklist` and confirm no Lua error.
+- [ ] Copy the inner `HXIChecklist` folder to the private client's `addons` directory.
+- [ ] Load with `/addon load HXIChecklist` and confirm no Lua error.
 - [ ] Toggle with `/hc`; show/hide and window close should remain synchronized.
 - [ ] Change scale and filters, reload the addon, and confirm they persist for that character.
 - [ ] Check one manual quest, reload, and confirm the mark persists for that character only.

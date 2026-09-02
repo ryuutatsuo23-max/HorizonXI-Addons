@@ -4,15 +4,27 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PROFILE = ROOT / "horizon_profile.lua"
+PACKAGE = ROOT / "HXIChecklist"
+PROFILE = PACKAGE / "horizon_profile.lua"
 
 
 class HorizonChecklistSourceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.profile = PROFILE.read_text(encoding="utf-8")
-        cls.main = (ROOT / "HorizonChecklist.lua").read_text(encoding="utf-8")
-        cls.catalog = (ROOT / "catalog.lua").read_text(encoding="utf-8")
+        cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
+        cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
+
+    def test_copy_ready_package_contains_only_runtime_lua(self):
+        self.assertEqual(
+            {path.name for path in PACKAGE.iterdir()},
+            {
+                "HXIChecklist.lua",
+                "catalog.lua",
+                "checklist_ui.lua",
+                "horizon_profile.lua",
+            },
+        )
 
     def test_expected_profile_size(self):
         self.assertEqual(self.profile.count("kind = 'spell'"), 12)
@@ -63,7 +75,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
     def test_no_packet_or_input_automation_surface(self):
         combined = "\n".join(
             path.read_text(encoding="utf-8")
-            for path in ROOT.glob("*.lua")
+            for path in PACKAGE.glob("*.lua")
         ).lower()
         forbidden = (
             "packet_in",
@@ -84,7 +96,9 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("manager:GetString('keyitems.names'", self.catalog)
 
     def test_commands_are_addon_local(self):
-        self.assertIn("'/horizonchecklist', '/hcheck', '/hc'", self.main)
+        self.assertIn("addon.name = 'HXIChecklist'", self.main)
+        for command in ("/hxichecklist", "/horizonchecklist", "/hcheck", "/hc"):
+            self.assertIn(f"'{command}'", self.main)
         self.assertNotIn("ashita.events.register('packet", self.main)
 
 

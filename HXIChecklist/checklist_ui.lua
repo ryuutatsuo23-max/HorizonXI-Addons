@@ -170,7 +170,7 @@ function checklist_ui.render(profile, snapshot, settings, ui_state, actions, img
     local was_open = ui_state.window_open[1];
     imgui.SetNextWindowSize({ 760, 560 }, ImGuiCond_FirstUseEver);
 
-    if imgui.Begin('HorizonChecklist##main', ui_state.window_open, ImGuiWindowFlags_None) then
+    if imgui.Begin('HXIChecklist##main', ui_state.window_open, ImGuiWindowFlags_None) then
         if imgui.SetWindowFontScale then
             imgui.SetWindowFontScale(settings.scale_percent / 100);
         end
@@ -195,7 +195,7 @@ function checklist_ui.render(profile, snapshot, settings, ui_state, actions, img
         render_filters(settings, ui_state, actions, imgui);
         imgui.Separator();
 
-        if imgui.BeginTabBar('##HorizonChecklistTabs', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
+        if imgui.BeginTabBar('##HXIChecklistTabs', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
             for _, category in ipairs(snapshot.categories) do
                 if imgui.BeginTabItem(category.name, nil) then
                     render_category(category, settings, ui_state, actions, imgui);

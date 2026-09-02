@@ -1,5 +1,5 @@
-addon.name = 'HorizonChecklist';
-addon.author = 'HorizonChecklist contributors';
+addon.name = 'HXIChecklist';
+addon.author = 'HXIChecklist contributors';
 addon.version = '0.1.0';
 addon.desc = 'Read-only, source-backed checklist foundation for Ashita v4 and HorizonXI.';
 addon.link = 'https://github.com/HiPotionQ8/XIchecklist';
@@ -123,20 +123,21 @@ function actions.refresh()
     refresh(true);
 end
 
-settings.register('settings', 'HorizonChecklist_SettingsUpdate', function(updated)
+settings.register('settings', 'HXIChecklist_SettingsUpdate', function(updated)
     state.settings = normalize_settings(updated);
     state.ui.window_open[1] = state.settings.visible ~= false;
     request_refresh();
 end);
 
-ashita.events.register('load', 'HorizonChecklist_Load', function()
+ashita.events.register('load', 'HXIChecklist_Load', function()
     actions.refresh();
     header_message('Loaded source-only foundation. Reads character state; sends no packets or gameplay input.');
 end);
 
-ashita.events.register('command', 'HorizonChecklist_Command', function(e)
+ashita.events.register('command', 'HXIChecklist_Command', function(e)
     local args = e.command:args();
-    if #args == 0 or not args[1]:any('/horizonchecklist', '/hcheck', '/hc') then
+    if #args == 0
+        or not args[1]:any('/hxichecklist', '/horizonchecklist', '/hcheck', '/hc') then
         return;
     end
 
@@ -182,7 +183,7 @@ ashita.events.register('command', 'HorizonChecklist_Command', function(e)
     header_message('Commands: /hc, /hc show, /hc hide, /hc refresh, /hc status, /hc scale <75-150>.');
 end);
 
-ashita.events.register('d3d_present', 'HorizonChecklist_Present', function()
+ashita.events.register('d3d_present', 'HXIChecklist_Present', function()
     if not state.settings.visible then
         return;
     end
@@ -191,6 +192,6 @@ ashita.events.register('d3d_present', 'HorizonChecklist_Present', function()
     checklist_ui.render(profile, state.snapshot, state.settings, state.ui, actions, imgui);
 end);
 
-ashita.events.register('unload', 'HorizonChecklist_Unload', function()
+ashita.events.register('unload', 'HXIChecklist_Unload', function()
     settings.save();
 end);
