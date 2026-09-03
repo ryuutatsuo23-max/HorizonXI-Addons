@@ -1,10 +1,10 @@
 # Sources and evidence boundaries
 
-Profile snapshot: `2026-09-03-foundation.12`.
+Profile snapshot: `2026-09-03-foundation.13`.
 
 ## Upstream inspiration
 
-- [HiPotionQ8/XIchecklist](https://github.com/HiPotionQ8/XIchecklist): behavioral inspiration and requested conversion target. No Lua implementation code was copied. Its `maps/story.lua` table at commit [`04baf17b2b0373883407a94ce0b6a72274a31ba6`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/maps/story.lua) supplies the four client-log orderings: Bastok indices 0 through 92, 82 named San d'Oria entries through index 119, 90 named Windurst entries through index 96, and 146 named Jeuno entries through index 186. Commented-out placeholders are not imported, and the upstream leading `+` annotation is removed from displayed Jeuno titles without changing indices.
+- [HiPotionQ8/XIchecklist](https://github.com/HiPotionQ8/XIchecklist): behavioral inspiration and requested conversion target. No Lua implementation code was copied. Its `maps/story.lua` table at commit [`04baf17b2b0373883407a94ce0b6a72274a31ba6`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/maps/story.lua) supplies the five client-log orderings: Bastok indices 0 through 92, 82 named San d'Oria entries through index 119, 90 named Windurst entries through index 96, 146 named Jeuno entries through index 186, and 91 named Other entries through index 209. Commented-out placeholders are not imported, and the upstream leading `+` annotation is removed from displayed Jeuno/Other titles without changing indices.
 - [Windower/Lua packet definitions](https://github.com/Windower/Lua/tree/dev/addons/libs/packets) and Windower's generated key-item resources: protocol and numeric-ID cross-checks for the read-only map implementation. No Windower implementation code is bundled.
 
 ## Ashita v4 behavior
@@ -18,7 +18,7 @@ The live checks use Ashita v4's installed interface annotations and established 
 - read spell job requirements from the already name- and skill-validated `ISpell.LevelRequired` client resource, limited to Horizon's twenty level-75-era jobs and levels 1 through 75;
 - draw the checklist with Ashita's `imgui` library.
 
-Version 0.13.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the four quest-area catalogs. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; San d'Oria current/completed types are `0x0050`/`0x0090`, Bastok types are `0x0058`/`0x0098`, Windurst types are `0x0060`/`0x00A0`, and Jeuno types are `0x0068`/`0x00A8`. Jeuno's pair is corroborated by the pinned XIchecklist [`util/quests.lua`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/util/quests.lua) mapping. It never changes, blocks, injects, or requests a packet.
+Version 0.14.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the five quest-area catalogs. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; San d'Oria current/completed types are `0x0050`/`0x0090`, Bastok types are `0x0058`/`0x0098`, Windurst types are `0x0060`/`0x00A0`, Jeuno types are `0x0068`/`0x00A8`, and Other types are `0x0070`/`0x00B0`. The Jeuno and Other pairs are corroborated by the pinned XIchecklist [`util/quests.lua`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/util/quests.lua) mapping. It never changes, blocks, injects, or requests a packet.
 
 Decoded key-item groups and each nation's paired quest logs are hex-encoded separately into a versioned cache within Ashita's settings library. Ashita v4 stores that settings block under its character-name and server-ID path and invokes the registered callback when the active character changes. Invalid, incomplete, or absent cache data fails closed to `UNKNOWN`; packet data from one character is never intentionally reused for another.
 
@@ -92,7 +92,21 @@ Seventy-nine imported entries have location-table rows: 32 numeric fame requirem
 
 Jeuno is stored under its own `cached_state.jeuno_quests` key, with the same version-1 paired-log encoding. Existing nation/map keys and IDs are unchanged. Missing or invalid Jeuno cache data does not invalidate another area's cache. The existing checklist behavior is retained: an actual current/completed bit can establish a character state, but an unlisted source with neither bit set remains `UNKNOWN`, not `Not Accepted`.
 
-The broader zone audit also refreshed Selbina, Mhaura, Rabao, and Aht Urhgan Whitegate pages. Those rosters are not imported in this increment: they require different client quest-log groups and separate fame evidence. Whitegate's current source explicitly reports its Treasures of Aht Urhgan content unavailable; it is not silently added as active content.
+The v0.13.0 zone audit also refreshed Selbina, Mhaura, Rabao, and Aht Urhgan Whitegate pages. Those zone rosters were not imported in that increment because they require different client quest-log groups and separate fame evidence. Its Whitegate source contained a Treasures of Aht Urhgan unavailable notice; that historical observation is not a blanket claim about current expansion availability.
+
+## Other Areas catalog
+
+Version 0.14.0 adds all 91 named Other-log slots from the same pinned XIchecklist `maps/story.lua`, through index 209. Commented placeholders and the commented Adoulin entries above index 1000 are excluded. The leading upstream `+` marker is removed from display titles without changing their indices. This is one client-log catalog, not independent Selbina/Mhaura packet groups.
+
+The [HorizonXI Other Quests category](https://horizonffxi.wiki/Category:Other_Quests), fetched on 2026-09-03, has 60 location-table rows and 59 completed-list rows; all 60 unique titles map to the imported client slots. The table-only `The Big One` accounts for the difference. Its explicit cross mark is retained as `reported_inactive`. `An Understanding Overlord?`, `An Affable Adamantking?`, and `A Generous General?` show Verification Needed and therefore remain availability `unknown`, despite having source links and starting locations. The remaining 56 table entries are `wiki_listed`, not guaranteed current-server functionality. The 31 unmatched named client entries remain source unknowns. No title or index is invented from the category's displayed total.
+
+The only non-case spelling alias is client `Trial-Size Trial by Lightning` to wiki `Trial Size Trial by Lightning`, at index 28. Actual table URLs, including red links, are retained. Category tables are the authority for imported NPC and location fields; zone-page summaries can differ and are not silently combined with them.
+
+The source supplies 19 numeric fame values, 41 unlisted values, and no fame evidence for the 31 unmatched entries. The `Required Fame` column uses the source's Selbina/Mhaura labels for their 16 numeric requirements. The three Mog House requirements are 3, 5, and 7, but the table does not identify a nation or fame region, so they display `Fame X (see source)` with an explanatory tooltip. No conversion to another nation's fame is inferred. A dash means `Not listed`, not zero or no prerequisite.
+
+Location views mirror the 13 table headings plus All Locations and Unresolved: 11 Selbina rows, 16 Mhaura, six Tavnazian Safehold Main Level, 13 Upper Level, three Mog House, four Oldton Movalpolos, and one each for La Theine Plateau, Altar Room, Monastic Cavern, Qulun Dome, Riverne - Site #A01, Carpenters' Landing, and Uleguerand Range.
+
+`cached_state.other_quests` is a new version-1 paired-log cache; the existing keys and encoding are unchanged. Synthetic tests cover completed-first/partial receipt, index 209, clearing and loading separate character data, malformed caches, existing-area isolation, and the real catalog's unknown/unavailable boundaries. A live current/completed flag continues to establish character state under the existing rules; verification-needed entries with neither flag remain unknown.
 
 ## Maintenance rule
 

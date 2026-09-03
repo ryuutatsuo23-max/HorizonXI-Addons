@@ -223,4 +223,62 @@ local live_jeuno = catalog.build_snapshot(jeuno_profile, {});
 assert(live_jeuno.categories[1].entries[1].state_note:find('incoming Jeuno quest log', 1, true));
 assert(live_jeuno.categories[1].entries[2].state == 'auto_current');
 
+-- The Other log shares a packet shape, but neither its flags nor cache may
+-- be confused with the four existing areas. Completed may arrive first.
+assert(state.get_area('other', 8) == nil);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x00B0, { 8, 19 }) }));
+assert(state.get_area('other', 8) == nil);
+assert(state.export_area_cache('other') == nil);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0070, { 0, 209 }) }));
+assert(state.get_area('other', 209).current == true);
+assert(state.get_area('other', 8).completed == true);
+assert(state.get_area('other', 10).completed == false);
+assert(state.get_bastok(10).completed == true);
+assert(state.get_area('jeuno', 132).completed == true);
+local other_cache = state.export_area_cache('other');
+assert(other_cache.version == 1 and #other_cache.current == 64 and #other_cache.completed == 64);
+assert(state.handle_packet({ id = 0x00A, data = '' }));
+assert(state.get_area('other', 209).source == 'cache');
+assert(state.load_area_cache('other', { version = 1, current = 'invalid', completed = 'invalid' }) == false);
+assert(state.get_area('other', 8) == nil);
+assert(state.get_area('jeuno', 132).completed == true);
+assert(state.get_bastok(10).completed == true);
+assert(state.load_area_cache('other', other_cache));
+assert(state.get_area('other', 209).current == true);
+state.clear();
+assert(state.get_area('other', 8) == nil);
+assert(state.get_area('jeuno', 132) == nil);
+assert(state.load_area_cache('other', other_cache));
+assert(state.get_area('other', 8).completed == true);
+
+local other_data = require('other_quest_data');
+local other_profile = { version = 'synthetic', categories = {
+    { id = 'other_quests', name = 'Other Areas', entries = other_data.entries },
+} };
+-- Refresh the full pair, clearing the synthetic high-index current flag.
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0070, { 0 }) }));
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x00B0, { 8, 19, 70 }) }));
+local other_snapshot = catalog.build_snapshot(other_profile, {});
+local other_rows = {};
+for _, entry in ipairs(other_snapshot.categories[1].entries) do other_rows[entry.quest_index] = entry end;
+assert(other_rows[0].state == 'auto_current');
+assert(other_rows[8].state == 'auto_complete');
+assert(other_rows[1].state == 'auto_not_logged');
+assert(other_rows[70].state == 'unavailable', 'An inactive source stays unavailable even if a bit is set.');
+assert(other_rows[106].state == 'unknown' and other_rows[107].state == 'unknown' and other_rows[109].state == 'unknown');
+assert(other_rows[209].state == 'unknown');
+assert(other_rows[8].state_note:find('incoming Other Areas quest log', 1, true));
+assert(other_rows[8].fame_region == 'Mhaura');
+assert(other_snapshot.summary.known_total == 56 and other_snapshot.summary.complete == 2);
+assert(other_snapshot.summary.unknown == 34 and other_snapshot.summary.unavailable == 1);
+-- A different character's empty pair cannot inherit this character's flags.
+local saved_other = state.export_area_cache('other');
+state.clear();
+local no_cache = catalog.build_snapshot(other_profile, { ['other.quest.008'] = true });
+assert(no_cache.summary.known_total == 0 and no_cache.summary.unknown == 90);
+assert(state.load_area_cache('other', { version = 1, current = string.rep('00', 32), completed = string.rep('00', 32) }));
+assert(state.get_area('other', 8).completed == false);
+assert(state.load_area_cache('other', saved_other));
+assert(state.get_area('other', 8).completed == true);
+
 print('quest_state synthetic fixture passed');

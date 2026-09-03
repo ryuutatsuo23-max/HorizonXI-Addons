@@ -12,6 +12,7 @@ BASTOK_QUEST_DATA = PACKAGE / "bastok_quest_data.lua"
 SANDORIA_QUEST_DATA = PACKAGE / "sandoria_quest_data.lua"
 WINDURST_QUEST_DATA = PACKAGE / "windurst_quest_data.lua"
 JEUNO_QUEST_DATA = PACKAGE / "jeuno_quest_data.lua"
+OTHER_QUEST_DATA = PACKAGE / "other_quest_data.lua"
 SKILL_LEVELS = PACKAGE / "skill_levels.lua"
 
 
@@ -25,6 +26,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         cls.sandoria_quest_data = SANDORIA_QUEST_DATA.read_text(encoding="utf-8")
         cls.windurst_quest_data = WINDURST_QUEST_DATA.read_text(encoding="utf-8")
         cls.jeuno_quest_data = JEUNO_QUEST_DATA.read_text(encoding="utf-8")
+        cls.other_quest_data = OTHER_QUEST_DATA.read_text(encoding="utf-8")
         cls.skill_levels = SKILL_LEVELS.read_text(encoding="utf-8")
         cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
         cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
@@ -50,6 +52,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "key_item_state.lua",
                 "magic_data.lua",
                 "map_data.lua",
+                "other_quest_data.lua",
                 "quest_state.lua",
                 "sandoria_quest_data.lua",
                 "skill_levels.lua",
@@ -58,8 +61,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.13.0'", self.main)
-        self.assertIn("version = '2026-09-03-foundation.12'", self.profile)
+        self.assertIn("addon.version = '0.14.0'", self.main)
+        self.assertIn("version = '2026-09-03-foundation.13'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',\s*(\d+),", self.map_data, re.MULTILINE)
@@ -68,6 +71,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual(self.sandoria_quest_data.count("kind = 'manual'"), 82)
         self.assertEqual(self.windurst_quest_data.count("kind = 'manual'"), 90)
         self.assertEqual(self.jeuno_quest_data.count("kind = 'manual'"), 146)
+        self.assertEqual(self.other_quest_data.count("kind = 'manual'"), 91)
 
     def test_magic_categories_and_counts(self):
         expected = {
@@ -184,16 +188,16 @@ class HorizonChecklistSourceTests(unittest.TestCase):
     def test_entry_ids_are_unique(self):
         quest_entry_ids = re.findall(
             r"\{ id = '([^']+)',(?: reference_id = '[^']+',)? kind = '(?:spell|key_item|manual)'",
-            self.bastok_quest_data + self.sandoria_quest_data + self.windurst_quest_data + self.jeuno_quest_data,
+            self.bastok_quest_data + self.sandoria_quest_data + self.windurst_quest_data + self.jeuno_quest_data + self.other_quest_data,
         )
-        self.assertEqual(len(quest_entry_ids), 411)
+        self.assertEqual(len(quest_entry_ids), 502)
         self.assertEqual(len(quest_entry_ids), len(set(quest_entry_ids)))
 
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         generated_ids = [f"spell.{resource_id}" for resource_id in spell_ids]
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',", self.map_data, re.MULTILINE)
         all_ids = quest_entry_ids + generated_ids + map_ids
-        self.assertEqual(len(all_ids), 799)
+        self.assertEqual(len(all_ids), 890)
         self.assertEqual(len(all_ids), len(set(all_ids)))
 
     def test_all_entries_are_sourced(self):
@@ -203,12 +207,13 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 + self.sandoria_quest_data
                 + self.windurst_quest_data
                 + self.jeuno_quest_data
+                + self.other_quest_data
             ).splitlines()
             if "kind = 'spell'" in line
             or "kind = 'key_item'" in line
             or "kind = 'manual'" in line
         ]
-        self.assertEqual(len(entry_lines), 411)
+        self.assertEqual(len(entry_lines), 502)
         for line in entry_lines:
             self.assertRegex(line, r"source_url = 'https://")
             self.assertRegex(line, r"availability = '(?:reported_active|wiki_listed|unknown|reported_inactive)'")
@@ -388,7 +393,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("nation_name .. ' Fame'", self.ui)
         self.assertIn("('Fame %d'):fmt(item.fame_level)", self.ui)
         self.assertIn("'Not listed'", self.ui)
-        self.assertIn("'Drag the vertical dividers to resize Quest, Source, and %s Fame columns.'", self.ui)
+        self.assertIn("'Drag the vertical dividers to resize Quest, Source, and %s columns.'", self.ui)
         self.assertIn("render_nation_quest_entry(item, nation_name, actions, imgui)", self.ui)
 
     def test_sandoria_quests_cover_named_client_indices_and_sourced_fame(self):
@@ -474,6 +479,28 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertNotIn("name = 'Omni Aketon'", self.jeuno_quest_data)
         self.assertIn("or entry.quest_area == 'jeuno'", self.catalog)
 
+    def test_other_quests_keep_log_indices_availability_and_fame_context(self):
+        indices = [int(index) for index in re.findall(r"quest_index = (\d+)", self.other_quest_data)]
+        self.assertEqual(len(indices), 91)
+        self.assertEqual(len(indices), len(set(indices)))
+        self.assertEqual(indices, sorted(indices))
+        self.assertEqual((indices[0], indices[-1]), (0, 209))
+        self.assertNotIn(12, indices)
+        self.assertNotIn(1039, indices)
+        self.assertEqual(self.other_quest_data.count("fame_level = "), 19)
+        self.assertEqual(self.other_quest_data.count("fame_label = 'Not listed'"), 41)
+        self.assertEqual(self.other_quest_data.count("fame_label = 'Unknown'"), 31)
+        self.assertEqual(self.other_quest_data.count("availability = 'wiki_listed'"), 56)
+        self.assertEqual(self.other_quest_data.count("availability = 'unknown'"), 34)
+        self.assertEqual(self.other_quest_data.count("availability = 'reported_inactive'"), 1)
+        self.assertEqual(self.other_quest_data.count("fame_region = 'Selbina'"), 5)
+        self.assertEqual(self.other_quest_data.count("fame_region = 'Mhaura'"), 11)
+        self.assertNotIn("fame_region = 'Mog House'", self.other_quest_data)
+        self.assertIn("other_quests = 'Other Areas'", self.ui)
+        self.assertIn("and 'Required Fame' or nation_name .. ' Fame'", self.ui)
+        self.assertIn("imgui.TextWrapped(item.fame_note)", self.ui)
+        self.assertIn("or entry.quest_area == 'other'", self.catalog)
+
     def test_map_vendor_prices_are_sourced_and_bounded(self):
         vendor_block = re.search(
             r"(?ms)^local vendor_costs = \{\n(.*?)^\};", self.map_data
@@ -558,6 +585,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("completed_type = 0x00A0", self.quest_state)
         self.assertIn("current_type = 0x0068", self.quest_state)
         self.assertIn("completed_type = 0x00A8", self.quest_state)
+        self.assertIn("current_type = 0x0070", self.quest_state)
+        self.assertIn("completed_type = 0x00B0", self.quest_state)
         self.assertIn("live_logs[area].current ~= nil", self.quest_state)
         self.assertIn("quest_state.load_cache(cache)", self.quest_state)
         self.assertIn("quest_state.export_cache()", self.quest_state)
@@ -587,6 +616,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("sandoria_quests = T{}", self.main)
         self.assertIn("windurst_quests = T{}", self.main)
         self.assertIn("jeuno_quests = T{}", self.main)
+        self.assertIn("other_quests = T{}", self.main)
+        self.assertIn("quest_state.load_area_cache('other', state.settings.cached_state.other_quests)", self.main)
         self.assertIn("quest_state.load_area_cache('jeuno', state.settings.cached_state.jeuno_quests)", self.main)
         self.assertIn("settings.register('settings'", self.main)
         self.assertIn("settings.save()", self.main)

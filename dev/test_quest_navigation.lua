@@ -21,11 +21,19 @@ local categories = {
     category('sandoria_quests', "San d'Oria Quests", "Northern San d'Oria"),
     category('windurst_quests', 'Windurst Quests', 'Windurst Woods'),
     category('jeuno_quests', 'Jeuno Quests', 'Lower Jeuno'),
+    category('other_quests', 'Other Quests', 'Selbina'),
 };
+categories[7].entries[1].fame_region = 'Selbina';
+categories[7].entries[1].fame_note = 'Synthetic Selbina fame note.';
+categories[7].entries[2] = { id = 'other.mhaura', name = 'Mhaura row', state = 'auto_current',
+    quest_location = 'Mhaura', fame_level = 4, fame_region = 'Mhaura', fame_note = 'Synthetic Mhaura fame note.' };
+categories[7].entries[3] = { id = 'other.mog', name = 'Mog House row', state = 'auto_current',
+    quest_location = 'Mog House', fame_level = 3, fame_note = 'Synthetic unspecified fame-region note.' };
 local snapshot = { categories = categories, summary = summary };
-local function frame(area_choice, location_choice, active_tab)
+local function frame(area_choice, location_choice, active_tab, hover_fame)
     local seen = { tabs = {}, combos = {}, texts = {}, tables = {}, columns = {} };
     local current_combo;
+    local current_column;
     local imgui = setmetatable({
         Begin = function() return true end,
         BeginTabBar = function() return true end,
@@ -49,6 +57,9 @@ local function frame(area_choice, location_choice, active_tab)
         TextColored = function(_, value) seen.texts[value] = true end,
         GetWindowWidth = function() return 760 end,
         CalcTextSize = function() return 40 end,
+        GetFontSize = function() return 12 end,
+        TableSetColumnIndex = function(index) current_column = index end,
+        IsItemHovered = function() return hover_fame and current_column == 2 end,
         BeginTable = function(id) seen.tables[id] = true; return true end,
         TableSetupColumn = function(name) seen.columns[name] = true end,
     }, { __index = function() return function() return false end end });
@@ -86,6 +97,17 @@ assert(jeuno.tables['##jeuno_questsRows']);
 assert(state.selected_views.jeuno_quests == 2);
 frame('bastok_quests');
 assert(frame('jeuno_quests').combos['Location##jeuno_quests'] == 'Lower Jeuno');
+local other = frame('other_quests', nil, nil, true);
+assert(other.columns['Required Fame'] and not other.columns['Other Areas Fame']);
+assert(other.tables['##other_questsRows']);
+assert(other.texts['Selbina Fame 2'] and other.texts['Mhaura Fame 4']);
+assert(other.texts['Fame 3 (see source)']);
+assert(other.texts['Synthetic unspecified fame-region note.']);
+local selbina = frame(nil, 'local');
+assert(selbina.texts['Selbina Fame 2'] and not selbina.texts['Mhaura Fame 4']);
+frame('bastok_quests');
+assert(frame('other_quests').combos['Location##other_quests'] == 'Selbina');
+assert(frame('bastok_quests').texts['Fame 2'], 'Existing nation formatting stays unchanged.');
 state.selected_quest_area = 'removed_area';
 frame();
 assert(state.selected_quest_area == 'bastok_quests');

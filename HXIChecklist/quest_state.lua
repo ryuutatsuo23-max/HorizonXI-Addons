@@ -13,6 +13,7 @@ local area_configs = {
     bastok = { label = 'Bastok', current_type = 0x0058, completed_type = 0x0098 },
     windurst = { label = 'Windurst', current_type = 0x0060, completed_type = 0x00A0 },
     jeuno = { label = 'Jeuno', current_type = 0x0068, completed_type = 0x00A8 },
+    other = { label = 'Other Areas', current_type = 0x0070, completed_type = 0x00B0 },
 };
 
 local live_logs = {};

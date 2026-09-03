@@ -1,6 +1,6 @@
 addon.name = 'HXIChecklist';
 addon.author = 'HXIChecklist contributors';
-addon.version = '0.13.0';
+addon.version = '0.14.0';
 addon.desc = 'Read-only, source-backed checklist foundation for Ashita v4 and HorizonXI.';
 addon.link = 'https://github.com/HiPotionQ8/XIchecklist';
 
@@ -31,6 +31,7 @@ local default_settings = T{
         sandoria_quests = T{},
         windurst_quests = T{},
         jeuno_quests = T{},
+        other_quests = T{},
     },
 };
 
@@ -67,6 +68,7 @@ local function normalize_settings(value)
     value.cached_state.sandoria_quests = value.cached_state.sandoria_quests or T{};
     value.cached_state.windurst_quests = value.cached_state.windurst_quests or T{};
     value.cached_state.jeuno_quests = value.cached_state.jeuno_quests or T{};
+    value.cached_state.other_quests = value.cached_state.other_quests or T{};
     value.scale_percent = math.max(75, math.min(150, tonumber(value.scale_percent) or 100));
     return value;
 end
@@ -84,6 +86,7 @@ local function load_cached_state()
     quest_state.load_area_cache('sandoria', state.settings.cached_state.sandoria_quests);
     quest_state.load_area_cache('windurst', state.settings.cached_state.windurst_quests);
     quest_state.load_area_cache('jeuno', state.settings.cached_state.jeuno_quests);
+    quest_state.load_area_cache('other', state.settings.cached_state.other_quests);
 end
 
 local function save_cached_state(key, value)

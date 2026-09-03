@@ -9,8 +9,8 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Toggle with `/hc`; show/hide and window close should remain synchronized.
 - [ ] Change scale and filters, reload the addon, and confirm they persist for that character.
 - [ ] Compare 75%, 100%, and 150% and confirm the addon text visibly changes size at each setting.
-- [ ] On a character with no cache, confirm all four quest-area catalogs show no manual checkboxes and unresolved rows are `UNKNOWN`.
-- [ ] After receiving the logs once, unload/reload the addon without zoning and confirm map and all four quest-area states restore from cache.
+- [ ] On a character with no cache, confirm all five quest-area catalogs show no manual checkboxes and unresolved rows are `UNKNOWN`.
+- [ ] After receiving the logs once, unload/reload the addon without zoning and confirm map and all five quest-area states restore from cache.
 - [ ] Log into another character and confirm it does not inherit the first character's cached state.
 - [ ] Return to the first character and confirm its own cache restores.
 
@@ -47,7 +47,7 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 ## Quest navigation
 
 - [ ] Confirm the top-level tabs are `Magic Skills`, `Maps`, `Quests`, and `Skill Levels`.
-- [ ] Open `Quests` and switch the `Area` dropdown among Bastok, San d'Oria, Windurst, and Jeuno; confirm descriptions, area totals, rows, and Fame labels follow the selected area without changing overall progress.
+- [ ] Open `Quests` and switch the `Area` dropdown among Bastok, San d'Oria, Windurst, Jeuno, and Other Areas; confirm descriptions, area totals, rows, and Fame labels follow the selected area without changing overall progress.
 - [ ] Choose a different `Location` in each area, switch away and back, and confirm each selection is retained during the session.
 - [ ] Confirm Magic Skills and Maps still use their existing `Category` selectors.
 - [ ] Test a narrow window at 75%, 100%, and 150% scale; confirm dropdowns, Source buttons, and draggable dividers remain usable.
@@ -97,6 +97,12 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] After zoning, compare one accepted, one completed, and one neither-current-nor-completed Jeuno quest against the game logs, including a limit-break quest above index 127.
 - [ ] Reload without zoning and confirm Jeuno restores from its own character cache; switch characters and confirm Jeuno data does not leak between characters.
 - [ ] Drag both Jeuno dividers and check Source buttons, fame labels, and location selections in a narrow window.
+- [ ] Select `Other Areas`; confirm Selbina, Mhaura, both Tavnazian Safehold levels, Mog House, the smaller source locations, and Unresolved are available under Location.
+- [ ] With all filters enabled, confirm Other Areas contains 91 rows; Selbina contains 11, Mhaura 16, and the two Tavnazian views contain six and 13 respectively.
+- [ ] Confirm `The Sand Charm` shows `Mhaura Fame 4` and `An Explorer's Footsteps` shows `Selbina Fame 1`. The Mog House quests should show `Fame 3/5/7 (see source)` individually, with a tooltip explaining the unspecified fame region.
+- [ ] Confirm `The Big One` is `UNAVAILABLE`; the three verification-needed headgear quests remain `UNKNOWN` when neither live flag is set.
+- [ ] Confirm existing area/map caches survive the upgrade, while first-time Other state waits for its logs. Zone once, compare accepted/completed/not-accepted quests against the game's Other log, and then reload without zoning to verify cache restoration.
+- [ ] Switch characters and confirm Other state is isolated. Check a narrow window and all three scales; Source alignment, fame wrapping, and draggable dividers should remain usable.
 - [ ] Test immediately after login or zoning; unresolved client data must show `UNKNOWN`, never a false missing state.
 - [ ] Use `/hc refresh` after login and verify unresolved resource names remain explicit.
 

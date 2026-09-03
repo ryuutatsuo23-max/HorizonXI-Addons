@@ -25,6 +25,7 @@ local quest_nation_names = {
     sandoria_quests = "San d'Oria",
     windurst_quests = 'Windurst',
     jeuno_quests = 'Jeuno',
+    other_quests = 'Other Areas',
 };
 
 local availability_labels = {
@@ -211,7 +212,13 @@ local function render_nation_quest_entry(item, nation_name, actions, imgui)
 
     imgui.TableSetColumnIndex(2);
     if type(item.fame_level) == 'number' then
-        imgui.Text(('Fame %d'):fmt(item.fame_level));
+        if item.fame_region then
+            imgui.TextWrapped(('%s Fame %d'):fmt(item.fame_region, item.fame_level));
+        elseif item.fame_note then
+            imgui.TextWrapped(('Fame %d (see source)'):fmt(item.fame_level));
+        else
+            imgui.Text(('Fame %d'):fmt(item.fame_level));
+        end
     elseif item.fame_label == 'Not listed' then
         imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'Not listed');
     else
@@ -220,7 +227,9 @@ local function render_nation_quest_entry(item, nation_name, actions, imgui)
     if imgui.IsItemHovered() then
         imgui.BeginTooltip();
         imgui.PushTextWrapPos(imgui.GetFontSize() * 32);
-        if type(item.fame_level) == 'number' then
+        if item.fame_note then
+            imgui.TextWrapped(item.fame_note);
+        elseif type(item.fame_level) == 'number' then
             imgui.TextWrapped(
                 ('HorizonXI lists %s fame %d as required.'):fmt(
                     nation_name, item.fame_level));
@@ -340,6 +349,8 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
 
     local nation_name = quest_nation_names[category.id];
     if nation_name ~= nil then
+        local fame_heading = category.id == 'other_quests'
+            and 'Required Fame' or nation_name .. ' Fame';
         local scale = settings.scale_percent / 100;
         local quest_width = math.max(
             250 * scale,
@@ -351,8 +362,8 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
             ImGuiTableFlags_SizingStretchProp);
         imgui.TextColored(
             { 0.68, 0.72, 0.78, 1.00 },
-            ('Drag the vertical dividers to resize Quest, Source, and %s Fame columns.')
-                :fmt(nation_name));
+            ('Drag the vertical dividers to resize Quest, Source, and %s columns.')
+                :fmt(fame_heading));
         imgui.PushStyleColor(
             ImGuiCol_TableBorderStrong,
             { 0.78, 0.82, 0.88, 1.00 });
@@ -365,7 +376,7 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
             imgui.TableSetupColumn(
                 'Source', ImGuiTableColumnFlags_WidthFixed, source_width, 0);
             imgui.TableSetupColumn(
-                nation_name .. ' Fame', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
+                fame_heading, ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
             for _, item in ipairs(visible) do
                 render_nation_quest_entry(item, nation_name, actions, imgui);
             end
