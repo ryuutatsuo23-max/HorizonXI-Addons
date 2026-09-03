@@ -68,6 +68,16 @@ assert(state.get_bastok(34) == nil);
 
 assert(state.handle_packet({ id = 0x056, data = make_packet(0x0098, { 10, 38, 89 }) }));
 
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0050, { 59, 119 }) }));
+assert(state.get_sandoria(59) == nil);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0090, { 0, 117 }) }));
+
+local sandoria_current = state.get_sandoria(59);
+assert(sandoria_current.current == true and sandoria_current.completed == false);
+local sandoria_completed = state.get_sandoria(117);
+assert(sandoria_completed.current == false and sandoria_completed.completed == true);
+assert(state.get_sandoria(119).current == true);
+
 local current = state.get_bastok(34);
 assert(current.current == true and current.completed == false);
 
@@ -84,22 +94,31 @@ local high_completed = state.get_bastok(89);
 assert(high_completed.current == false and high_completed.completed == true);
 
 local cache = state.export_cache();
+local sandoria_cache = state.export_area_cache('sandoria');
 assert(cache.version == 1);
 assert(#cache.current == 0x40 and #cache.completed == 0x40);
+assert(sandoria_cache.version == 1);
 
 assert(state.handle_packet({ id = 0x00A, data = '' }));
 local cached = state.get_bastok(34);
 assert(cached.current == true and cached.source == 'cache');
+assert(state.get_sandoria(117).completed == true);
+assert(state.get_sandoria(117).source == 'cache');
 
 state.clear();
 assert(state.get_bastok(34) == nil);
 assert(state.load_cache(cache));
+assert(state.load_area_cache('sandoria', sandoria_cache));
 assert(state.get_bastok(10).completed == true);
 assert(state.get_bastok(10).source == 'cache');
 assert(state.get_bastok(89).completed == true);
 assert(state.get_bastok(92).current == true);
+assert(state.get_sandoria(59).current == true);
+assert(state.get_sandoria(117).completed == true);
+assert(state.get_sandoria(119).current == true);
 assert(state.load_cache({ version = 1, current = 'invalid', completed = 'invalid' }) == false);
 assert(state.get_bastok(34) == nil);
+assert(state.get_sandoria(117).completed == true);
 
 assert(state.handle_packet({ id = 0x056, data = 'short' }) == false);
 assert(state.handle_packet({ id = 0x056, data = make_packet(0x0048, {}) }) == false);

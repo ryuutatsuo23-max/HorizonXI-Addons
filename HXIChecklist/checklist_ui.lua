@@ -184,7 +184,7 @@ local function render_map_entry(item, actions, imgui)
     imgui.PopID();
 end
 
-local function render_bastok_entry(item, actions, imgui)
+local function render_nation_quest_entry(item, nation_name, actions, imgui)
     imgui.PushID(item.id);
     imgui.TableNextRow();
 
@@ -204,7 +204,7 @@ local function render_bastok_entry(item, actions, imgui)
 
     imgui.TableSetColumnIndex(2);
     if type(item.fame_level) == 'number' then
-        imgui.Text(('Level %d'):fmt(item.fame_level));
+        imgui.Text(('Fame %d'):fmt(item.fame_level));
     elseif item.fame_label == 'Not listed' then
         imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'Not listed');
     else
@@ -215,14 +215,16 @@ local function render_bastok_entry(item, actions, imgui)
         imgui.PushTextWrapPos(imgui.GetFontSize() * 32);
         if type(item.fame_level) == 'number' then
             imgui.TextWrapped(
-                ('HorizonXI lists Bastok fame level %d as required.'):fmt(
-                    item.fame_level));
+                ('HorizonXI lists %s fame %d as required.'):fmt(
+                    nation_name, item.fame_level));
         elseif item.fame_label == 'Not listed' then
             imgui.TextWrapped(
-                'The HorizonXI Bastok quest table does not list a fame level for this quest.');
+                ('The HorizonXI %s quest table does not list a fame value for this quest.'):fmt(
+                    nation_name));
         else
             imgui.TextWrapped(
-                'No sourced Bastok fame value was available; this is not a guessed requirement.');
+                ('No sourced %s fame value was available; this is not a guessed requirement.'):fmt(
+                    nation_name));
         end
         imgui.PopTextWrapPos();
         imgui.EndTooltip();
@@ -329,7 +331,10 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
         return;
     end
 
-    if category.id == 'bastok_quests' then
+    if category.id == 'bastok_quests' or category.id == 'sandoria_quests' then
+        local nation_name = category.id == 'sandoria_quests'
+            and "San d'Oria"
+            or 'Bastok';
         local scale = settings.scale_percent / 100;
         local quest_width = math.max(
             250 * scale,
@@ -341,22 +346,23 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
             ImGuiTableFlags_SizingStretchProp);
         imgui.TextColored(
             { 0.68, 0.72, 0.78, 1.00 },
-            'Drag the vertical dividers to resize Quest, Source, and Bastok Fame columns.');
+            ('Drag the vertical dividers to resize Quest, Source, and %s Fame columns.')
+                :fmt(nation_name));
         imgui.PushStyleColor(
             ImGuiCol_TableBorderStrong,
             { 0.78, 0.82, 0.88, 1.00 });
         imgui.PushStyleColor(
             ImGuiCol_TableBorderLight,
             { 0.58, 0.64, 0.72, 1.00 });
-        if imgui.BeginTable('##BastokQuestRows', 3, table_flags) then
+        if imgui.BeginTable(('##%sRows'):fmt(category.id), 3, table_flags) then
             imgui.TableSetupColumn(
                 'Quest', ImGuiTableColumnFlags_WidthFixed, quest_width, 0);
             imgui.TableSetupColumn(
                 'Source', ImGuiTableColumnFlags_WidthFixed, source_width, 0);
             imgui.TableSetupColumn(
-                'Bastok Fame', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
+                nation_name .. ' Fame', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
             for _, item in ipairs(visible) do
-                render_bastok_entry(item, actions, imgui);
+                render_nation_quest_entry(item, nation_name, actions, imgui);
             end
             imgui.EndTable();
         end

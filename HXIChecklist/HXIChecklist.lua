@@ -1,6 +1,6 @@
 addon.name = 'HXIChecklist';
 addon.author = 'HXIChecklist contributors';
-addon.version = '0.10.0';
+addon.version = '0.11.0';
 addon.desc = 'Read-only, source-backed checklist foundation for Ashita v4 and HorizonXI.';
 addon.link = 'https://github.com/HiPotionQ8/XIchecklist';
 
@@ -28,6 +28,7 @@ local default_settings = T{
         version = 1,
         key_items = T{},
         bastok_quests = T{},
+        sandoria_quests = T{},
     },
 };
 
@@ -61,6 +62,7 @@ local function normalize_settings(value)
     value.cached_state.version = value.cached_state.version or 1;
     value.cached_state.key_items = value.cached_state.key_items or T{};
     value.cached_state.bastok_quests = value.cached_state.bastok_quests or T{};
+    value.cached_state.sandoria_quests = value.cached_state.sandoria_quests or T{};
     value.scale_percent = math.max(75, math.min(150, tonumber(value.scale_percent) or 100));
     return value;
 end
@@ -70,11 +72,12 @@ state.settings = normalize_settings(state.settings);
 local function load_cached_state()
     if tonumber(state.settings.cached_state.version) ~= 1 then
         key_item_state.load_cache(nil);
-        quest_state.load_cache(nil);
+        quest_state.clear();
         return;
     end
     key_item_state.load_cache(state.settings.cached_state.key_items);
-    quest_state.load_cache(state.settings.cached_state.bastok_quests);
+    quest_state.load_area_cache('bastok', state.settings.cached_state.bastok_quests);
+    quest_state.load_area_cache('sandoria', state.settings.cached_state.sandoria_quests);
 end
 
 local function save_cached_state(key, value)
@@ -165,13 +168,15 @@ end);
 
 ashita.events.register('packet_in', 'HXIChecklist_PacketIn', function(e)
     local key_items_changed = key_item_state.handle_packet(e);
-    local quests_changed = quest_state.handle_packet(e);
+    local quests_changed, quest_area = quest_state.handle_packet(e);
 
     if key_items_changed and e.id == 0x055 then
         save_cached_state('key_items', key_item_state.export_cache());
     end
-    if quests_changed and e.id == 0x056 then
-        save_cached_state('bastok_quests', quest_state.export_cache());
+    if quests_changed and e.id == 0x056 and quest_area ~= nil then
+        save_cached_state(
+            quest_area .. '_quests',
+            quest_state.export_area_cache(quest_area));
     end
 
     local changed = key_items_changed;

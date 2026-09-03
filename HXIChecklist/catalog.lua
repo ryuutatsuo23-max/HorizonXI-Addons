@@ -233,12 +233,17 @@ local function entry_state(entry, manual_completed)
     end
 
     if entry.kind == 'manual' then
-        if entry.quest_area == 'bastok' and type(entry.quest_index) == 'number' then
-            local automatic, automatic_note = quest_state.get_bastok(entry.quest_index);
+        if (entry.quest_area == 'bastok' or entry.quest_area == 'sandoria')
+            and type(entry.quest_index) == 'number' then
+            local automatic, automatic_note = quest_state.get_area(
+                entry.quest_area, entry.quest_index);
             if automatic ~= nil then
+                local area_label = entry.quest_area == 'sandoria'
+                    and "San d'Oria"
+                    or 'Bastok';
                 local source = automatic.source == 'cache'
                     and 'the saved character cache'
-                    or 'the incoming Bastok quest log';
+                    or string.format('the incoming %s quest log', area_label);
                 if automatic.completed then
                     return 'auto_complete', string.format('Completed bit is set in %s.', source);
                 end

@@ -9,6 +9,7 @@ PROFILE = PACKAGE / "horizon_profile.lua"
 MAGIC_DATA = PACKAGE / "magic_data.lua"
 MAP_DATA = PACKAGE / "map_data.lua"
 BASTOK_QUEST_DATA = PACKAGE / "bastok_quest_data.lua"
+SANDORIA_QUEST_DATA = PACKAGE / "sandoria_quest_data.lua"
 SKILL_LEVELS = PACKAGE / "skill_levels.lua"
 
 
@@ -19,6 +20,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         cls.magic_data = MAGIC_DATA.read_text(encoding="utf-8")
         cls.map_data = MAP_DATA.read_text(encoding="utf-8")
         cls.bastok_quest_data = BASTOK_QUEST_DATA.read_text(encoding="utf-8")
+        cls.sandoria_quest_data = SANDORIA_QUEST_DATA.read_text(encoding="utf-8")
         cls.skill_levels = SKILL_LEVELS.read_text(encoding="utf-8")
         cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
         cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
@@ -44,18 +46,20 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "magic_data.lua",
                 "map_data.lua",
                 "quest_state.lua",
+                "sandoria_quest_data.lua",
                 "skill_levels.lua",
             },
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.10.0'", self.main)
-        self.assertIn("version = '2026-09-03-foundation.9'", self.profile)
+        self.assertIn("addon.version = '0.11.0'", self.main)
+        self.assertIn("version = '2026-09-03-foundation.10'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',\s*(\d+),", self.map_data, re.MULTILINE)
         self.assertEqual(len(map_ids), 72)
         self.assertEqual(self.bastok_quest_data.count("kind = 'manual'"), 93)
+        self.assertEqual(self.sandoria_quest_data.count("kind = 'manual'"), 82)
 
     def test_magic_categories_and_counts(self):
         expected = {
@@ -172,26 +176,26 @@ class HorizonChecklistSourceTests(unittest.TestCase):
     def test_entry_ids_are_unique(self):
         quest_entry_ids = re.findall(
             r"\{ id = '([^']+)',(?: reference_id = '[^']+',)? kind = '(?:spell|key_item|manual)'",
-            self.bastok_quest_data,
+            self.bastok_quest_data + self.sandoria_quest_data,
         )
-        self.assertEqual(len(quest_entry_ids), 93)
+        self.assertEqual(len(quest_entry_ids), 175)
         self.assertEqual(len(quest_entry_ids), len(set(quest_entry_ids)))
 
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         generated_ids = [f"spell.{resource_id}" for resource_id in spell_ids]
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',", self.map_data, re.MULTILINE)
         all_ids = quest_entry_ids + generated_ids + map_ids
-        self.assertEqual(len(all_ids), 481)
+        self.assertEqual(len(all_ids), 563)
         self.assertEqual(len(all_ids), len(set(all_ids)))
 
     def test_all_entries_are_sourced(self):
         entry_lines = [
-            line for line in self.bastok_quest_data.splitlines()
+            line for line in (self.bastok_quest_data + self.sandoria_quest_data).splitlines()
             if "kind = 'spell'" in line
             or "kind = 'key_item'" in line
             or "kind = 'manual'" in line
         ]
-        self.assertEqual(len(entry_lines), 93)
+        self.assertEqual(len(entry_lines), 175)
         for line in entry_lines:
             self.assertRegex(line, r"source_url = 'https://")
             self.assertRegex(line, r"availability = '(?:reported_active|wiki_listed|unknown|reported_inactive)'")
@@ -361,14 +365,41 @@ class HorizonChecklistSourceTests(unittest.TestCase):
 
     def test_bastok_rows_align_source_and_fame_with_resizable_dividers(self):
         self.assertIn("category.id == 'bastok_quests'", self.ui)
-        self.assertIn("imgui.BeginTable('##BastokQuestRows', 3, table_flags)", self.ui)
+        self.assertIn("category.id == 'sandoria_quests'", self.ui)
+        self.assertIn("imgui.BeginTable(('##%sRows'):fmt(category.id), 3, table_flags)", self.ui)
         self.assertIn("ImGuiTableColumnFlags_WidthFixed, quest_width", self.ui)
         self.assertIn("ImGuiTableColumnFlags_WidthFixed, source_width", self.ui)
-        self.assertIn("'Bastok Fame'", self.ui)
-        self.assertIn("('Level %d'):fmt(item.fame_level)", self.ui)
+        self.assertIn("nation_name .. ' Fame'", self.ui)
+        self.assertIn("('Fame %d'):fmt(item.fame_level)", self.ui)
         self.assertIn("'Not listed'", self.ui)
-        self.assertIn("'Drag the vertical dividers to resize Quest, Source, and Bastok Fame columns.'", self.ui)
-        self.assertIn("render_bastok_entry(item, actions, imgui)", self.ui)
+        self.assertIn("'Drag the vertical dividers to resize Quest, Source, and %s Fame columns.'", self.ui)
+        self.assertIn("render_nation_quest_entry(item, nation_name, actions, imgui)", self.ui)
+
+    def test_sandoria_quests_cover_named_client_indices_and_sourced_fame(self):
+        indices = [
+            int(index)
+            for index in re.findall(r"quest_index = (\d+)", self.sandoria_quest_data)
+        ]
+        self.assertEqual(len(indices), 82)
+        self.assertEqual(len(indices), len(set(indices)))
+        self.assertEqual(indices, sorted(indices))
+        self.assertEqual(indices[0], 0)
+        self.assertEqual(indices[-1], 119)
+        self.assertEqual(self.sandoria_quest_data.count("fame_level = "), 60)
+        self.assertEqual(self.sandoria_quest_data.count("fame_label = 'Not listed'"), 19)
+        self.assertEqual(self.sandoria_quest_data.count("fame_label = 'Unknown'"), 3)
+        self.assertEqual(self.sandoria_quest_data.count("availability = 'unknown'"), 2)
+        self.assertIn("name = \"San d'Oria Quests\"", self.profile)
+        for name in (
+            "Northern San d\\'Oria",
+            "Southern San d\\'Oria",
+            "Port San d\\'Oria",
+            "Chateau d\\'Oraguille",
+            "Bostaunieux Oubliette",
+            "West Ronfaure",
+            "Unresolved",
+        ):
+            self.assertIn(f"name = '{name}'", self.sandoria_quest_data)
 
     def test_map_vendor_prices_are_sourced_and_bounded(self):
         vendor_block = re.search(
@@ -441,17 +472,19 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("key_item_state.has_key_item(identifier)", self.catalog)
         self.assertIn("return 'unknown', packet_note", self.catalog)
 
-    def test_quest_log_parser_is_bastok_only_and_fail_closed(self):
+    def test_quest_log_parser_is_nation_scoped_and_fail_closed(self):
         self.assertIn("e.id ~= 0x056", self.quest_state)
         self.assertIn("flags_offset = 0x04", self.quest_state)
         self.assertIn("flags_length = 0x20", self.quest_state)
         self.assertIn("type_offset = 0x24", self.quest_state)
-        self.assertIn("bastok_current_type = 0x0058", self.quest_state)
-        self.assertIn("bastok_completed_type = 0x0098", self.quest_state)
-        self.assertIn("live_logs.current ~= nil and live_logs.completed ~= nil", self.quest_state)
+        self.assertIn("current_type = 0x0058", self.quest_state)
+        self.assertIn("completed_type = 0x0098", self.quest_state)
+        self.assertIn("current_type = 0x0050", self.quest_state)
+        self.assertIn("completed_type = 0x0090", self.quest_state)
+        self.assertIn("live_logs[area].current ~= nil", self.quest_state)
         self.assertIn("quest_state.load_cache(cache)", self.quest_state)
         self.assertIn("quest_state.export_cache()", self.quest_state)
-        self.assertIn("quest_state.get_bastok(entry.quest_index)", self.catalog)
+        self.assertIn("quest_state.get_area(", self.catalog)
         for state in ("auto_complete", "auto_current", "auto_not_logged"):
             self.assertIn(state, self.catalog)
 
@@ -471,9 +504,10 @@ class HorizonChecklistSourceTests(unittest.TestCase):
     def test_packet_state_cache_is_character_scoped_by_ashita_settings(self):
         self.assertIn("cached_state = T{", self.main)
         self.assertIn("key_item_state.load_cache", self.main)
-        self.assertIn("quest_state.load_cache", self.main)
+        self.assertIn("quest_state.load_area_cache", self.main)
         self.assertIn("key_item_state.export_cache", self.main)
-        self.assertIn("quest_state.export_cache", self.main)
+        self.assertIn("quest_state.export_area_cache", self.main)
+        self.assertIn("sandoria_quests = T{}", self.main)
         self.assertIn("settings.register('settings'", self.main)
         self.assertIn("settings.save()", self.main)
         self.assertNotIn("##manual", self.ui)

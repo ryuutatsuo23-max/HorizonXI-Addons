@@ -1,10 +1,10 @@
 # Sources and evidence boundaries
 
-Profile snapshot: `2026-09-03-foundation.9`.
+Profile snapshot: `2026-09-03-foundation.10`.
 
 ## Upstream inspiration
 
-- [HiPotionQ8/XIchecklist](https://github.com/HiPotionQ8/XIchecklist): behavioral inspiration and requested conversion target. No Lua implementation code was copied. Its `maps/story.lua` table at commit [`04baf17b2b0373883407a94ce0b6a72274a31ba6`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/maps/story.lua) supplies the complete Bastok client quest-log ordering for indices 0 through 92.
+- [HiPotionQ8/XIchecklist](https://github.com/HiPotionQ8/XIchecklist): behavioral inspiration and requested conversion target. No Lua implementation code was copied. Its `maps/story.lua` table at commit [`04baf17b2b0373883407a94ce0b6a72274a31ba6`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/maps/story.lua) supplies the Bastok ordering for indices 0 through 92 and 82 named San d'Oria entries through index 119.
 - [Windower/Lua packet definitions](https://github.com/Windower/Lua/tree/dev/addons/libs/packets) and Windower's generated key-item resources: protocol and numeric-ID cross-checks for the read-only map implementation. No Windower implementation code is bundled.
 
 ## Ashita v4 behavior
@@ -18,9 +18,9 @@ The live checks use Ashita v4's installed interface annotations and established 
 - read spell job requirements from the already name- and skill-validated `ISpell.LevelRequired` client resource, limited to Horizon's twenty level-75-era jobs and levels 1 through 75;
 - draw the checklist with Ashita's `imgui` library.
 
-Version 0.10.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok catalog. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; the Bastok current and completed types are `0x0058` and `0x0098`. It never changes, blocks, injects, or requests a packet.
+Version 0.11.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok and San d'Oria catalogs. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; San d'Oria current/completed types are `0x0050`/`0x0090`, and Bastok types are `0x0058`/`0x0098`. It never changes, blocks, injects, or requests a packet.
 
-Decoded key-item groups and the paired Bastok logs are hex-encoded into a versioned cache within Ashita's settings library. Ashita v4 stores that settings block under its character-name and server-ID path and invokes the registered callback when the active character changes. Invalid, incomplete, or absent cache data fails closed to `UNKNOWN`; packet data from one character is never intentionally reused for another.
+Decoded key-item groups and each nation's paired quest logs are hex-encoded separately into a versioned cache within Ashita's settings library. Ashita v4 stores that settings block under its character-name and server-ID path and invokes the registered callback when the active character changes. Invalid, incomplete, or absent cache data fails closed to `UNKNOWN`; packet data from one character is never intentionally reused for another.
 
 ## HorizonXI magic catalog
 
@@ -53,7 +53,7 @@ The `Skill Levels` view reads client combat-skill indices 32 through 42: Divine,
 
 This view is informational and live-only. It is not added to the ownership catalog or progress denominator and is not written to the character cache. If the character is not logged in or a memory read fails, the affected value remains visibly unavailable rather than being inferred.
 
-## HorizonXI maps and Bastok quests
+## HorizonXI maps and nation quests
 
 The Maps catalog contains the 72 rows in the HorizonXI Wiki's [Magical Maps table](https://horizonffxi.wiki/Category:Magical_Maps): 28 Original-area maps, 16 Rise of the Zilart maps, 17 Chains of Promathia maps, and 11 Treasures of Aht Urhgan maps. A `wiki_listed` label means only that the table identifies the map; it is not a claim of current server availability. Rows with an existing individual page link to it; rows whose table link is a red link retain the category table as their evidence source.
 
@@ -75,6 +75,10 @@ Evidence exceptions remain visible:
 - `A Discerning Eye (Bastok)`, `Bait and Switch`, `Fully Mental Alchemist`, and `Trust: Bastok` are category-listed but have `Unknown` fame because no matching location/fame row exists.
 
 There is no manual completion fallback for the mapped Bastok catalog. Until both live logs or a valid cache exist for the current character, rows remain `UNKNOWN`. A private-server result is still not proof of HorizonXI approval or universal server compatibility.
+
+The San d'Oria catalog contains all 82 named entries in XIchecklist's San d'Oria client-log ordering. The [HorizonXI San d'Oria Quests category](https://horizonffxi.wiki/Category:San_d%27Oria_Quests) provides location, type, NPC, and fame evidence for 79 entries: 60 numeric fame values and 19 values not listed. [Port San d'Oria](https://horizonffxi.wiki/Port_San_d%27Oria) separately references `Lure of the Wildcat (San d'Oria)`, but its individual page and fame value are unresolved. `Atelloune's Lament` and `Trust: San d'Oria` have no resolved current Horizon source, so their availability and fame stay `Unknown`. This yields 80 rows with some Horizon evidence, two explicit availability unknowns, and three unknown fame values without inventing missing facts.
+
+San d'Oria state uses its own character-cache key and does not change the established Bastok cache format. There is no manual completion fallback for either nation catalog. Until both live logs or a valid cache exist for the relevant nation and character, its rows remain `UNKNOWN`.
 
 ## Maintenance rule
 
