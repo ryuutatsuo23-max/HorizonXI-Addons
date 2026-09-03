@@ -94,11 +94,7 @@ end
 
 local function resolve_spell_requirements(entry)
     if requirement_cache[entry.id] ~= nil then
-        local cached = requirement_cache[entry.id];
-        if cached == false then
-            return nil, nil;
-        end
-        return cached.full, cached.compact;
+        return requirement_cache[entry.id] or nil;
     end
 
     local manager = resource_manager();
@@ -123,17 +119,8 @@ local function resolve_spell_requirements(entry)
     end
 
     local formatted = job_levels.format(resource.LevelRequired, 75);
-    if formatted == nil then
-        requirement_cache[entry.id] = false;
-        return nil, nil;
-    end
-
-    local result = {
-        full = formatted,
-        compact = job_levels.format(resource.LevelRequired, 75, true),
-    };
-    requirement_cache[entry.id] = result;
-    return result.full, result.compact;
+    requirement_cache[entry.id] = formatted or false;
+    return formatted;
 end
 
 local function resolve_key_item_id(entry)
@@ -333,8 +320,7 @@ function catalog.build_snapshot(profile, manual_completed)
             item.state, item.state_note = entry_state(entry, manual_completed);
             item.state_label = labels[item.state] or item.state;
             if entry.kind == 'spell' then
-                item.job_levels, item.job_levels_compact =
-                    resolve_spell_requirements(entry);
+                item.job_levels = resolve_spell_requirements(entry);
             end
             table.insert(output_category.entries, item);
             add_to_summary(output_category.summary, item);

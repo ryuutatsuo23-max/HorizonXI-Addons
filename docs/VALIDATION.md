@@ -30,8 +30,9 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Confirm every visible Magic row uses aligned columns for the spell, Source button, separator, and job-level requirements.
 - [ ] Confirm `Absorb-ACC` displays `DRK Lv.61`, then compare several single-job and multi-job requirements against the private client's spell information.
 - [ ] Resize and scale the addon; confirm long multi-job requirements wrap without overlapping spell names or Source buttons.
-- [ ] In a narrow window, confirm multi-job requirements use the compact form and show the full `Lv.` form when hovered.
+- [ ] In a narrow window, confirm full `JOB Lv.#` requirements wrap cleanly within the resizable column.
 - [ ] Drag both vertical Magic-table separators and confirm the spell, Source, and job-level columns resize without overlap.
+- [ ] Confirm the resize hint and brighter vertical separators are clearly visible.
 - [ ] Confirm multi-job requirements use commas and no slash separators remain.
 
 ## Skill Levels

@@ -21,9 +21,7 @@ cure[7 + 1] = 5;
 cure[20 + 1] = 5;
 assert(job_levels.format(cure, 75)
     == 'WHM Lv.1, RDM Lv.3, PLD Lv.5, SCH Lv.5');
-assert(job_levels.format(cure, 75, true)
-    == 'WHM 1, RDM 3, PLD 5, SCH 5');
-assert(job_levels.format(absorb_acc, 75, true) == 'DRK Lv.61');
+assert(job_levels.format(absorb_acc, 75) == 'DRK Lv.61');
 
 local filtered = empty_levels();
 filtered[4 + 1] = 76;

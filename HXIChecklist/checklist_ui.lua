@@ -125,18 +125,7 @@ local function render_magic_entry(item, actions, imgui)
 
     imgui.TableSetColumnIndex(2);
     if item.job_levels and item.job_levels ~= '' then
-        local available_width = imgui.GetContentRegionAvail();
-        local full_width = imgui.CalcTextSize(item.job_levels);
-        local use_compact = item.job_levels_compact
-            and full_width > available_width;
-        local requirement_text = use_compact
-            and item.job_levels_compact or item.job_levels;
-        imgui.TextWrapped(requirement_text);
-        if use_compact and imgui.IsItemHovered() then
-            imgui.BeginTooltip();
-            imgui.Text(item.job_levels);
-            imgui.EndTooltip();
-        end
+        imgui.TextWrapped(item.job_levels);
     else
         imgui.TextColored(
             { 0.55, 0.58, 0.62, 1.00 },
@@ -174,6 +163,15 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
             ImGuiTableFlags_Resizable,
             ImGuiTableFlags_BordersInnerV,
             ImGuiTableFlags_SizingStretchProp);
+        imgui.TextColored(
+            { 0.68, 0.72, 0.78, 1.00 },
+            'Drag the vertical dividers to resize columns.');
+        imgui.PushStyleColor(
+            ImGuiCol_TableBorderStrong,
+            { 0.78, 0.82, 0.88, 1.00 });
+        imgui.PushStyleColor(
+            ImGuiCol_TableBorderLight,
+            { 0.58, 0.64, 0.72, 1.00 });
         if imgui.BeginTable('##MagicRows', 3, table_flags) then
             imgui.TableSetupColumn(
                 'Magic', ImGuiTableColumnFlags_WidthFixed, magic_width, 0);
@@ -186,6 +184,7 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
             end
             imgui.EndTable();
         end
+        imgui.PopStyleColor(2);
         return;
     end
 

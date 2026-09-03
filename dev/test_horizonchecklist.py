@@ -43,7 +43,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.6.3'", self.main)
+        self.assertIn("addon.version = '0.6.4'", self.main)
         self.assertIn("version = '2026-09-03-foundation.5'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
@@ -258,7 +258,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             self.assertIn(f"{{ {job_id}, '{abbreviation}' }}", job_levels)
         self.assertIn("resource.LevelRequired", self.catalog)
         self.assertIn("job_levels.format(resource.LevelRequired, 75)", self.catalog)
-        self.assertIn("item.job_levels, item.job_levels_compact", self.catalog)
+        self.assertIn("item.job_levels = resolve_spell_requirements(entry)", self.catalog)
         self.assertIn("category.id == 'magic_skills'", self.ui)
         self.assertIn("imgui.BeginTable('##MagicRows', 3, table_flags)", self.ui)
         self.assertIn("ImGuiTableFlags_Resizable", self.ui)
@@ -267,7 +267,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("ImGuiTableColumnFlags_WidthFixed, magic_width", self.ui)
         self.assertIn("imgui.CalcTextSize('Source') + 24", self.ui)
         self.assertIn("ImGuiTableColumnFlags_WidthFixed, source_width", self.ui)
-        self.assertIn("imgui.TextWrapped(requirement_text)", self.ui)
+        self.assertIn("imgui.TextWrapped(item.job_levels)", self.ui)
         self.assertIn("'Job levels unavailable'", self.ui)
 
     def test_scale_uses_supported_font_stack_fallback(self):
@@ -276,11 +276,12 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("imgui.PushFont(nil, imgui.GetFontSize() * scale)", self.ui)
         self.assertIn("imgui.PopFont()", self.ui)
 
-    def test_narrow_job_levels_use_compact_hoverable_text(self):
-        self.assertIn("imgui.GetContentRegionAvail()", self.ui)
-        self.assertIn("item.job_levels_compact", self.ui)
-        self.assertIn("full_width > available_width", self.ui)
-        self.assertIn("if use_compact and imgui.IsItemHovered()", self.ui)
+    def test_resizable_dividers_are_visible_and_explained(self):
+        self.assertIn("'Drag the vertical dividers to resize columns.'", self.ui)
+        self.assertIn("ImGuiCol_TableBorderStrong", self.ui)
+        self.assertIn("ImGuiCol_TableBorderLight", self.ui)
+        self.assertIn("imgui.PopStyleColor(2)", self.ui)
+        self.assertNotIn("job_levels_compact", self.ui)
 
     def test_skill_levels_are_live_and_separate_from_checklist_state(self):
         expected = {
