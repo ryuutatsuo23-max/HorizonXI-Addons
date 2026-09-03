@@ -135,6 +135,27 @@ local function render_magic_entry(item, actions, imgui)
     imgui.PopID();
 end
 
+local function render_map_entry(item, actions, imgui)
+    imgui.PushID(item.id);
+    imgui.TableNextRow();
+
+    imgui.TableSetColumnIndex(0);
+    local color = state_colors[item.state] or { 1, 1, 1, 1 };
+    imgui.TextColored(color, ('[%s]'):fmt(state_badges[item.state] or item.state));
+    imgui.SameLine();
+    imgui.Text(item.name);
+    render_tooltip(item, imgui);
+
+    imgui.TableSetColumnIndex(1);
+    if item.source_url and item.source_url ~= '' then
+        if imgui.SmallButton('Source') then
+            actions.open_source(item.source_url);
+        end
+    end
+
+    imgui.PopID();
+end
+
 local function matches_view(item, view)
     if view.magic_skill ~= nil and item.magic_skill ~= view.magic_skill then
         return false;
@@ -156,6 +177,38 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
 
     if #visible == 0 then
         imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'No entries match the current filters.');
+        return;
+    end
+
+    if category.id == 'maps' then
+        local scale = settings.scale_percent / 100;
+        local map_width = math.max(
+            240 * scale,
+            math.min(imgui.GetWindowWidth() * 0.45, 360 * scale));
+        local table_flags = bit.bor(
+            ImGuiTableFlags_Resizable,
+            ImGuiTableFlags_BordersInnerV,
+            ImGuiTableFlags_SizingStretchProp);
+        imgui.TextColored(
+            { 0.68, 0.72, 0.78, 1.00 },
+            'Drag the vertical divider to resize columns.');
+        imgui.PushStyleColor(
+            ImGuiCol_TableBorderStrong,
+            { 0.78, 0.82, 0.88, 1.00 });
+        imgui.PushStyleColor(
+            ImGuiCol_TableBorderLight,
+            { 0.58, 0.64, 0.72, 1.00 });
+        if imgui.BeginTable('##MapRows', 2, table_flags) then
+            imgui.TableSetupColumn(
+                'Map', ImGuiTableColumnFlags_WidthFixed, map_width, 0);
+            imgui.TableSetupColumn(
+                'Source', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
+            for _, item in ipairs(visible) do
+                render_map_entry(item, actions, imgui);
+            end
+            imgui.EndTable();
+        end
+        imgui.PopStyleColor(2);
         return;
     end
 

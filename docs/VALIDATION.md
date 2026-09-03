@@ -52,6 +52,7 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Compare at least one owned and one unowned map in each available expansion category against Key Items.
 - [ ] Confirm an Aht Urhgan map resolves after zoning; these IDs exercise key-item group 3 rather than the original-area group 0.
 - [ ] Open several map Source buttons. Existing map pages should open directly; category-only evidence rows should open the HorizonXI Magical Maps table.
+- [ ] Confirm map Source buttons align vertically, then drag the visible divider left and right and confirm both columns resize without overlap.
 - [ ] Before that first zone, confirm unresolved map state is `UNKNOWN`, never falsely `Missing`.
 - [ ] Before that first zone and with no cache, confirm Bastok pilot rows are `UNKNOWN` and have no checkboxes.
 - [ ] After zoning, compare one current, one completed, and one neither-current-nor-completed pilot quest against the in-game Bastok quest logs; expect `Accepted`, `Completed`, and `Not Accepted`.

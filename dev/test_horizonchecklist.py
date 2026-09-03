@@ -46,7 +46,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.7.0'", self.main)
+        self.assertIn("addon.version = '0.7.1'", self.main)
         self.assertIn("version = '2026-09-03-foundation.6'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
@@ -324,6 +324,14 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("ImGuiCol_TableBorderLight", self.ui)
         self.assertIn("imgui.PopStyleColor(2)", self.ui)
         self.assertNotIn("job_levels_compact", self.ui)
+
+    def test_map_rows_align_sources_with_a_resizable_divider(self):
+        self.assertIn("category.id == 'maps'", self.ui)
+        self.assertIn("imgui.BeginTable('##MapRows', 2, table_flags)", self.ui)
+        self.assertIn("ImGuiTableColumnFlags_WidthFixed, map_width", self.ui)
+        self.assertIn("ImGuiTableColumnFlags_WidthStretch, 1.0", self.ui)
+        self.assertIn("'Drag the vertical divider to resize columns.'", self.ui)
+        self.assertIn("render_map_entry(item, actions, imgui)", self.ui)
 
     def test_skill_levels_are_live_and_separate_from_checklist_state(self):
         expected = {
