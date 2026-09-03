@@ -53,13 +53,35 @@ local function resolve_spell_id(entry)
         return nil;
     end
 
+    local expected_name = entry.resource_name or entry.name;
+    if type(entry.resource_id) == 'number' then
+        local resource = nil;
+        local ok = pcall(function()
+            resource = manager:GetSpellById(math.floor(entry.resource_id));
+        end);
+        if not ok or resource == nil then
+            return nil;
+        end
+
+        local resource_name = resource.Name and resource.Name[1] or nil;
+        if type(resource_name) ~= 'string'
+            or resource_name:lower() ~= expected_name:lower() then
+            return nil;
+        end
+        if type(entry.skill_id) == 'number'
+            and resource.Skill ~= math.floor(entry.skill_id) then
+            return nil;
+        end
+        return resource.Index or resource.Id;
+    end
+
     local resource = nil;
     local ok = pcall(function()
-        resource = manager:GetSpellByName(entry.resource_name or entry.name, 0);
+        resource = manager:GetSpellByName(expected_name, 0);
     end);
     if not ok or resource == nil then
         pcall(function()
-            resource = manager:GetSpellByName(entry.resource_name or entry.name, 2);
+            resource = manager:GetSpellByName(expected_name, 2);
         end);
     end
     if resource == nil then
@@ -248,6 +270,7 @@ function catalog.build_snapshot(profile, manual_completed)
             id = category.id,
             name = category.name,
             description = category.description,
+            views = category.views,
             entries = {},
             summary = {
                 entries = 0,

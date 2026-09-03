@@ -13,9 +13,17 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Log into another character and confirm it does not inherit the first character's cached state.
 - [ ] Return to the first character and confirm its own cache restores.
 
-## Live state
+## Magic Skills
 
-- [ ] Compare at least one learned and one unlearned starter spell against the in-game magic list.
+- [ ] Open `Magic Skills` and confirm the inner tabs appear in this order: All Magic, Dark, Divine, Elemental, Enfeebling, Enhancing, Healing.
+- [ ] With completed entries visible, confirm `All Magic` contains 200 rows and the skill tabs contain 15, 8, 60, 19, 76, and 22 rows respectively.
+- [ ] Compare at least one learned and one unlearned spell in each skill tab against the in-game magic list.
+- [ ] Confirm `Sleepga` and `Sleepga II` resolve normally rather than showing `UNKNOWN` from the same-name monster resources.
+- [ ] Search for a spell while switching inner tabs; confirm only matching spells in the selected view are shown.
+- [ ] Open several spell Source buttons, including `Dispel`, and confirm they lead to the expected HorizonXI Wiki pages.
+
+## Maps and quest live state
+
 - [ ] On first use for a character, zone once so the incoming key-item and quest logs are received.
 - [ ] Compare at least one owned and one unowned starter map against Key Items.
 - [ ] Before that first zone, confirm unresolved map state is `UNKNOWN`, never falsely `Missing`.

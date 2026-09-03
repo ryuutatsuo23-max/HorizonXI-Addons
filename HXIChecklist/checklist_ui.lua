@@ -105,6 +105,25 @@ local function render_entry(item, settings, actions, imgui)
     imgui.PopID();
 end
 
+local function matches_view(item, view)
+    return view.magic_skill == nil or item.magic_skill == view.magic_skill;
+end
+
+local function render_entries(category, view, settings, ui_state, actions, imgui)
+    local shown = 0;
+    for _, item in ipairs(category.entries) do
+        if matches_view(item, view)
+            and should_show(item, settings, ui_state.search[1]) then
+            render_entry(item, settings, actions, imgui);
+            shown = shown + 1;
+        end
+    end
+
+    if shown == 0 then
+        imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'No entries match the current filters.');
+    end
+end
+
 local function render_category(category, settings, ui_state, actions, imgui)
     imgui.TextWrapped(category.description or '');
     imgui.TextColored(
@@ -115,17 +134,21 @@ local function render_category(category, settings, ui_state, actions, imgui)
     );
     imgui.Separator();
 
-    local shown = 0;
-    for _, item in ipairs(category.entries) do
-        if should_show(item, settings, ui_state.search[1]) then
-            render_entry(item, settings, actions, imgui);
-            shown = shown + 1;
+    if category.views and #category.views > 0 then
+        local tab_bar_id = ('##HXIChecklistViews_%s'):fmt(category.id);
+        if imgui.BeginTabBar(tab_bar_id, ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
+            for _, view in ipairs(category.views) do
+                if imgui.BeginTabItem(view.name, nil) then
+                    render_entries(category, view, settings, ui_state, actions, imgui);
+                    imgui.EndTabItem();
+                end
+            end
+            imgui.EndTabBar();
         end
+        return;
     end
 
-    if shown == 0 then
-        imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'No entries match the current filters.');
-    end
+    render_entries(category, {}, settings, ui_state, actions, imgui);
 end
 
 local function render_filters(settings, ui_state, actions, imgui)

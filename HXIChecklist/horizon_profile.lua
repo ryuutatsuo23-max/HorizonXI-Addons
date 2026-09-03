@@ -1,27 +1,17 @@
+local magic_data = require('magic_data');
+
 local profile = {
     id = 'horizon-foundation',
-    version = '2026-09-03-foundation.3',
+    version = '2026-09-03-foundation.4',
     incomplete = true,
-    scope_note = 'This starter profile is intentionally incomplete: a small live-state sample plus the sourced Bastok Markets pilot. Its totals are not whole-server completion.',
+    scope_note = 'This profile is intentionally incomplete: six sourced magic-skill catalogs plus the map and Bastok Markets pilots. Its totals are not whole-server completion.',
     categories = {
         {
-            id = 'starter_spells',
-            name = 'Starter Spells',
-            description = 'A small Ashita v4 proof set. Ownership is read live by resolving each English resource name, then calling IPlayer:HasSpell.',
-            entries = {
-                { id = 'spell.cure', kind = 'spell', name = 'Cure', resource_name = 'Cure', availability = 'wiki_listed', description = 'Starter healing spell.', source_url = 'https://horizonffxi.wiki/Cure' },
-                { id = 'spell.cure_ii', kind = 'spell', name = 'Cure II', resource_name = 'Cure II', availability = 'wiki_listed', description = 'Second-tier healing spell.', source_url = 'https://horizonffxi.wiki/Cure_II' },
-                { id = 'spell.protect', kind = 'spell', name = 'Protect', resource_name = 'Protect', availability = 'wiki_listed', description = 'Starter defense-enhancing spell.', source_url = 'https://horizonffxi.wiki/Protect' },
-                { id = 'spell.shell', kind = 'spell', name = 'Shell', resource_name = 'Shell', availability = 'wiki_listed', description = 'Starter magic-defense spell.', source_url = 'https://horizonffxi.wiki/Shell' },
-                { id = 'spell.stone', kind = 'spell', name = 'Stone', resource_name = 'Stone', availability = 'wiki_listed', description = 'Starter earth-elemental spell.', source_url = 'https://horizonffxi.wiki/Stone' },
-                { id = 'spell.water', kind = 'spell', name = 'Water', resource_name = 'Water', availability = 'wiki_listed', description = 'Starter water-elemental spell.', source_url = 'https://horizonffxi.wiki/Water' },
-                { id = 'spell.dia', kind = 'spell', name = 'Dia', resource_name = 'Dia', availability = 'wiki_listed', description = 'Light-based damage-over-time and defense-down spell.', source_url = 'https://horizonffxi.wiki/Dia' },
-                { id = 'spell.poison', kind = 'spell', name = 'Poison', resource_name = 'Poison', availability = 'wiki_listed', description = 'Dark-based damage-over-time spell.', source_url = 'https://horizonffxi.wiki/Poison' },
-                { id = 'spell.sneak', kind = 'spell', name = 'Sneak', resource_name = 'Sneak', availability = 'wiki_listed', description = 'Sound-detection avoidance spell.', source_url = 'https://horizonffxi.wiki/Sneak' },
-                { id = 'spell.invisible', kind = 'spell', name = 'Invisible', resource_name = 'Invisible', availability = 'wiki_listed', description = 'Sight-detection avoidance spell.', source_url = 'https://horizonffxi.wiki/Invisible' },
-                { id = 'spell.warp', kind = 'spell', name = 'Warp', resource_name = 'Warp', availability = 'wiki_listed', description = 'Returns the caster to their home point.', source_url = 'https://horizonffxi.wiki/Warp' },
-                { id = 'spell.raise', kind = 'spell', name = 'Raise', resource_name = 'Raise', availability = 'wiki_listed', description = 'Revives a knocked-out target.', source_url = 'https://horizonffxi.wiki/Raise' },
-            },
+            id = 'magic_skills',
+            name = 'Magic Skills',
+            description = 'Two hundred level-75-cap player spells across six sourced HorizonXI Wiki skill categories. Ownership is read live from Ashita; a wiki listing is not a guarantee of current server availability.',
+            views = magic_data.views,
+            entries = magic_data.entries,
         },
         {
             id = 'starter_maps',

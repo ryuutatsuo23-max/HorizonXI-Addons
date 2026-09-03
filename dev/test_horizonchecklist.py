@@ -6,12 +6,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "HXIChecklist"
 PROFILE = PACKAGE / "horizon_profile.lua"
+MAGIC_DATA = PACKAGE / "magic_data.lua"
 
 
 class HorizonChecklistSourceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.profile = PROFILE.read_text(encoding="utf-8")
+        cls.magic_data = MAGIC_DATA.read_text(encoding="utf-8")
         cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
         cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
         cls.ui = (PACKAGE / "checklist_ui.lua").read_text(encoding="utf-8")
@@ -31,14 +33,71 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "checklist_ui.lua",
                 "horizon_profile.lua",
                 "key_item_state.lua",
+                "magic_data.lua",
                 "quest_state.lua",
             },
         )
 
     def test_expected_profile_size(self):
-        self.assertEqual(self.profile.count("kind = 'spell'"), 12)
+        spell_rows = re.findall(
+            r"^\s*\{\s*(\d+), '([^']+)'(?:, '([^']+)')?\s*\},$",
+            self.magic_data,
+            re.MULTILINE,
+        )
+        self.assertEqual(len(spell_rows), 200)
         self.assertEqual(self.profile.count("kind = 'key_item'"), 8)
         self.assertEqual(self.profile.count("kind = 'manual'"), 19)
+
+    def test_magic_skill_tabs_and_counts(self):
+        expected = {
+            "dark_magic": 15,
+            "divine_magic": 8,
+            "elemental_magic": 60,
+            "enfeebling_magic": 19,
+            "enhancing_magic": 76,
+            "healing_magic": 22,
+        }
+        blocks = re.findall(
+            r"(?ms)^        id = '([^']+)'.*?^        spells = \{\n(.*?)^        \},\n^    \},",
+            self.magic_data,
+        )
+        found = {
+            skill_id: len(re.findall(r"^\s*\{\s*\d+,", rows, re.MULTILINE))
+            for skill_id, rows in blocks
+        }
+        self.assertEqual(found, expected)
+        for name in (
+            "All Magic",
+            "Dark Magic",
+            "Divine Magic",
+            "Elemental Magic",
+            "Enfeebling Magic",
+            "Enhancing Magic",
+            "Healing Magic",
+        ):
+            self.assertIn(f"name = '{name}'", self.magic_data)
+        self.assertIn("name = 'Magic Skills'", self.profile)
+        self.assertNotIn("name = 'Starter Spells'", self.profile)
+
+    def test_magic_rows_use_explicit_unique_client_ids(self):
+        rows = [
+            (int(resource_id), name)
+            for resource_id, name in re.findall(
+                r"^\s*\{\s*(\d+), '([^']+)'(?:, '[^']+')?\s*\},$",
+                self.magic_data,
+                re.MULTILINE,
+            )
+        ]
+        ids = [resource_id for resource_id, _ in rows]
+        names = [name for _, name in rows]
+        self.assertEqual(len(ids), 200)
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual(len(names), len(set(names)))
+        self.assertIn((273, "Sleepga"), rows)
+        self.assertIn((274, "Sleepga II"), rows)
+        self.assertIn((260, "Dispel"), rows)
+        for excluded in ("Bindga", "Diaga II", "Slowga", "Enlight"):
+            self.assertNotIn(excluded, names)
 
     def test_map_ids_are_explicit_and_stable(self):
         expected = {
@@ -66,8 +125,18 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             r"\{ id = '([^']+)',(?: reference_id = '[^']+',)? kind = '(?:spell|key_item|manual)'",
             self.profile,
         )
-        self.assertEqual(len(entry_ids), 39)
+        self.assertEqual(len(entry_ids), 27)
         self.assertEqual(len(entry_ids), len(set(entry_ids)))
+
+        spell_ids = re.findall(
+            r"^\s*\{\s*(\d+), '[^']+'(?:, '[^']+')?\s*\},$",
+            self.magic_data,
+            re.MULTILINE,
+        )
+        generated_ids = [f"spell.{resource_id}" for resource_id in spell_ids]
+        all_ids = entry_ids + generated_ids
+        self.assertEqual(len(all_ids), 227)
+        self.assertEqual(len(all_ids), len(set(all_ids)))
 
     def test_all_entries_are_sourced(self):
         entry_lines = [
@@ -76,10 +145,17 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             or "kind = 'key_item'" in line
             or "kind = 'manual'" in line
         ]
-        self.assertEqual(len(entry_lines), 39)
+        self.assertEqual(len(entry_lines), 27)
         for line in entry_lines:
             self.assertRegex(line, r"source_url = 'https://")
             self.assertRegex(line, r"availability = '(?:reported_active|wiki_listed|unknown|reported_inactive)'")
+        category_sources = re.findall(
+            r"source_url = 'https://horizonffxi\.wiki/[A-Za-z]+_Magic'",
+            self.magic_data,
+        )
+        self.assertEqual(len(category_sources), 6)
+        self.assertIn("source_url = 'https://horizonffxi.wiki/' .. wiki_slug", self.magic_data)
+        self.assertIn("availability = 'wiki_listed'", self.magic_data)
 
     def test_manual_ids_preserve_pilot_range(self):
         ids = re.findall(r"reference_id = '(HXQ-\d{4})'", self.profile)
@@ -148,7 +224,16 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("player:HasSpell(identifier)", self.catalog)
         self.assertIn("player:HasKeyItem(identifier)", self.catalog)
         self.assertIn("manager:GetSpellByName", self.catalog)
+        self.assertIn("manager:GetSpellById", self.catalog)
+        self.assertIn("resource.Name and resource.Name[1]", self.catalog)
+        self.assertIn("resource.Skill ~= math.floor(entry.skill_id)", self.catalog)
         self.assertIn("manager:GetString('keyitems.names'", self.catalog)
+
+    def test_magic_subtabs_filter_the_shared_snapshot(self):
+        self.assertIn("views = category.views", self.catalog)
+        self.assertIn("category.views and #category.views > 0", self.ui)
+        self.assertIn("imgui.BeginTabBar(tab_bar_id", self.ui)
+        self.assertIn("item.magic_skill == view.magic_skill", self.ui)
 
     def test_key_item_log_parser_is_read_only_and_fail_closed(self):
         self.assertIn("e.id ~= 0x055", self.key_item_state)

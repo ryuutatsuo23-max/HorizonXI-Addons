@@ -1,12 +1,14 @@
 # HorizonChecklist repository / HXIChecklist addon
 
-HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately small HorizonXI-oriented starter profile.
+HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately bounded HorizonXI-oriented profile.
 
-Version 0.3.0 is not a complete HorizonXI checklist. It proves three narrow pieces:
+Version 0.4.0 is not a complete HorizonXI checklist. It includes three bounded pieces:
 
-- live, read-only spell ownership through `IPlayer:HasSpell`;
+- live, read-only ownership for 200 level-75-cap player spells in six sourced magic-skill categories;
 - live, read-only map key-item ownership from the incoming `0x055` key-item log;
 - passive current/completed state for the 19-entry Bastok quest pilot, with no manual completion fallback.
+
+The `Magic Skills` tab has `All Magic`, `Dark Magic`, `Divine Magic`, `Elemental Magic`, `Enfeebling Magic`, `Enhancing Magic`, and `Healing Magic` inner tabs. These are sourced catalog views, not skill-level meters.
 
 It passively reads the incoming `0x055` key-item and `0x056` quest logs and registers no outgoing packet handler. It injects, modifies, blocks, or requests no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
 
@@ -28,9 +30,10 @@ The copy-ready folder contains exactly the required runtime files:
 - `checklist_ui.lua`
 - `horizon_profile.lua`
 - `key_item_state.lua`
+- `magic_data.lua`
 - `quest_state.lua`
 
-Copy the whole `HXIChecklist` folder so these six files stay together.
+Copy the whole `HXIChecklist` folder so these seven files stay together.
 
 ## Commands
 
@@ -42,7 +45,7 @@ Copy the whole `HXIChecklist` folder so these six files stay together.
 
 ## State labels
 
-- `Checked` / `Missing`: read from the logged-in character through Ashita.
+- `Checked` / `Missing`: read from the logged-in character through Ashita. Imported spells are resolved by explicit client ID plus English name and magic-skill validation.
 - `Completed` / `Accepted` / `Not Accepted`: decoded from both incoming Bastok quest logs. `Not Accepted` claims only that neither bit is set, not that the quest is currently obtainable.
 - `UNKNOWN`: the client state or source status is unresolved and is excluded from the denominator.
 - `UNAVAILABLE`: the source reports the entry inactive; it is excluded from the denominator.
@@ -51,7 +54,7 @@ Copy the whole `HXIChecklist` folder so these six files stay together.
 
 Map and Bastok quest packet state are cached in Ashita's existing character-specific settings folder, keyed by character name and server ID. Reloading the addon or logging back into the same character can reuse the cache without zoning. A character with no valid cache shows `UNKNOWN` and must zone once so the client sends the incoming logs; the addon never requests them.
 
-Each incoming key-item or complete Bastok quest-log update refreshes that character's cache. The versioned `cached_state` container is the extension point for future packet-derived categories. Direct spell ownership remains live-only because Ashita exposes it immediately.
+Each incoming key-item or complete Bastok quest-log update refreshes that character's cache. The versioned `cached_state` container is the extension point for future packet-derived categories. Direct spell ownership remains live-only because Ashita exposes it immediately; it does not need or write a spell cache.
 
 ## Data compatibility
 
@@ -60,6 +63,7 @@ Existing legacy manual-mark values are left untouched in settings for compatibil
 ## Explicitly deferred
 
 - missions, fame, RoE, objectives, other quest regions, and quests outside the 19-entry Bastok pilot;
+- other magic systems such as songs, ninjutsu, summoning, blue magic, and geomancy unless separately sourced and reviewed;
 - retail-only XIchecklist categories not verified against HorizonXI;
 - automatic imports from upstream or the HorizonXI wiki;
 - live HorizonXI deployment, publishing, or approval submission.

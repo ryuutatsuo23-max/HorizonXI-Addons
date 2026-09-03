@@ -6,4 +6,6 @@ This Ashita v4 foundation is an independently written implementation. No XIcheck
 
 Starter-map IDs and the incoming `0x055` key-item-log and `0x056` quest-log layouts were cross-checked against Windower's generated resources and packet documentation. HXIChecklist's Ashita implementation is independently written; those protocol references are credited as evidence rather than bundled code.
 
+The six-category magic roster is sourced from the linked HorizonXI Wiki category and spell pages. Numeric spell IDs, skill classifications, learnable flags, and level-cap filtering were cross-checked against [Windower/Resources](https://github.com/Windower/Resources); no Windower implementation code is bundled.
+
 HorizonXI-oriented quest facts are adapted from the local HorizonXI Spreadsheet pilot and its linked [HorizonXI Wiki](https://horizonffxi.wiki/) sources. Individual URLs and evidence limitations are recorded in [docs/SOURCES.md](docs/SOURCES.md). HorizonXI and Final Fantasy XI names and game data belong to their respective owners; this project is not affiliated with or endorsed by HorizonXI, Square Enix, or the XIchecklist authors.

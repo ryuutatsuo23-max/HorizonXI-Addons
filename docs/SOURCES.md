@@ -1,6 +1,6 @@
 # Sources and evidence boundaries
 
-Profile snapshot: `2026-09-03-foundation.3`.
+Profile snapshot: `2026-09-03-foundation.4`.
 
 ## Upstream inspiration
 
@@ -11,18 +11,33 @@ Profile snapshot: `2026-09-03-foundation.3`.
 
 The live checks use Ashita v4's installed interface annotations and established addon patterns:
 
-- resolve spells with `IResourceManager:GetSpellByName`, then read `IPlayer:HasSpell`;
+- resolve imported spells with `IResourceManager:GetSpellById`, validate the English name and magic-skill ID, then read `IPlayer:HasSpell`; name lookup remains a fallback for entries without an explicit ID;
 - resolve and validate key-item IDs with `IResourceManager:GetString`, then read the incoming `0x055` ownership bit; a positive `IPlayer:HasKeyItem` remains a pre-log fallback;
 - persist per-character preferences with Ashita's `settings` library;
 - draw the checklist with Ashita's `imgui` library.
 
-Version 0.3.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok pilot. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; the Bastok current and completed types are `0x0058` and `0x0098`. It never changes, blocks, injects, or requests a packet.
+Version 0.4.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok pilot. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; the Bastok current and completed types are `0x0058` and `0x0098`. It never changes, blocks, injects, or requests a packet.
 
 Decoded key-item groups and the paired Bastok logs are hex-encoded into a versioned cache within Ashita's settings library. Ashita v4 stores that settings block under its character-name and server-ID path and invokes the registered callback when the active character changes. Invalid, incomplete, or absent cache data fails closed to `UNKNOWN`; packet data from one character is never intentionally reused for another.
 
-## HorizonXI starter profile
+## HorizonXI magic catalog
 
-The spell and map entries link to their corresponding [HorizonXI Wiki](https://horizonffxi.wiki/) pages. A `wiki_listed` label means only that the page was identified; it is not a claim of current server availability. The eight starter-map client IDs were cross-checked against the generated Windower `key_items.lua` reference bundled in this workspace; runtime code also verifies each numeric ID back against Ashita's English key-item resource name before reading the corresponding `0x055` ownership bit.
+The 2026-09-03 snapshot follows the six user-requested HorizonXI Wiki category pages:
+
+- [Dark Magic](https://horizonffxi.wiki/Dark_Magic): 15 spells.
+- [Divine Magic](https://horizonffxi.wiki/Divine_Magic): 8 spells.
+- [Elemental Magic](https://horizonffxi.wiki/Elemental_Magic): 60 spells.
+- [Enfeebling Magic](https://horizonffxi.wiki/Enfeebling_Magic): 19 spells.
+- [Enhancing Magic](https://horizonffxi.wiki/Enhancing_Magic): 76 spells.
+- [Healing Magic](https://horizonffxi.wiki/Healing_Magic): 22 spells.
+
+The resulting catalog contains 200 unique player spells. A row was included only when it appeared in the relevant HorizonXI Wiki category and matched a learnable client spell resource in that same skill with at least one job level at or below HorizonXI's level-75 cap. Client IDs, skill IDs, learnable flags, and job levels were cross-checked against [Windower/Resources](https://github.com/Windower/Resources) at commit `67948a3ce609ac614e889002268470859be319d5`.
+
+Category and guide pages were not treated as spells. `Enlight` was excluded because its client job level is 85. The monster-only/unlearnable `Bindga`, `Diaga II`, and `Slowga` resources were excluded. `Sleepga` and `Sleepga II` use the learnable client IDs 273 and 274 rather than same-name unlearnable resources. These filters are deliberately conservative; a wiki listing is evidence, not a guarantee that a spell is obtainable on the current server build.
+
+## HorizonXI maps and quest pilot
+
+The map entries link to their corresponding [HorizonXI Wiki](https://horizonffxi.wiki/) pages. A `wiki_listed` label means only that the page was identified; it is not a claim of current server availability. The eight starter-map client IDs were cross-checked against the generated Windower `key_items.lua` reference bundled in this workspace; runtime code also verifies each numeric ID back against Ashita's English key-item resource name before reading the corresponding `0x055` ownership bit.
 
 The nineteen Bastok Markets entries preserve the stable `HXQ-0001` through `HXQ-0019` IDs and requirements from the local `HorizonXI-Spreadsheet/data/reference.json` pilot. Each row retains its individual HorizonXI Wiki URL where one was resolved. The numeric indices were cross-checked against XIchecklist's Bastok quest table and standard client ordering; the implementation reads only those 19 indices.
 
