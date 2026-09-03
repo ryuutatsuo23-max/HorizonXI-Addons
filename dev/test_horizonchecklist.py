@@ -39,14 +39,14 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.5.0'", self.main)
+        self.assertIn("addon.version = '0.5.1'", self.main)
         self.assertIn("version = '2026-09-03-foundation.5'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
         self.assertEqual(self.profile.count("kind = 'key_item'"), 8)
         self.assertEqual(self.profile.count("kind = 'manual'"), 19)
 
-    def test_magic_skill_tabs_and_counts(self):
+    def test_magic_categories_and_counts(self):
         expected = {
             "dark_magic": 15,
             "divine_magic": 8,
@@ -231,11 +231,14 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("resource.Skill ~= math.floor(entry.skill_id)", self.catalog)
         self.assertIn("manager:GetString('keyitems.names'", self.catalog)
 
-    def test_magic_subtabs_filter_the_shared_snapshot(self):
+    def test_magic_category_selector_filters_the_shared_snapshot(self):
         self.assertIn("views = category.views", self.catalog)
         self.assertIn("category.views and #category.views > 0", self.ui)
-        self.assertIn("imgui.BeginTabBar(tab_bar_id", self.ui)
+        self.assertIn("selected_views = {}", self.main)
+        self.assertIn("imgui.BeginCombo(('Category##%s')", self.ui)
+        self.assertIn("imgui.Selectable(", self.ui)
         self.assertIn("item.magic_skill == view.magic_skill", self.ui)
+        self.assertNotIn("##HXIChecklistViews_", self.ui)
 
     def test_key_item_log_parser_is_read_only_and_fail_closed(self):
         self.assertIn("e.id ~= 0x055", self.key_item_state)

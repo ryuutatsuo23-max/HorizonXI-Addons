@@ -135,16 +135,24 @@ local function render_category(category, settings, ui_state, actions, imgui)
     imgui.Separator();
 
     if category.views and #category.views > 0 then
-        local tab_bar_id = ('##HXIChecklistViews_%s'):fmt(category.id);
-        if imgui.BeginTabBar(tab_bar_id, ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
-            for _, view in ipairs(category.views) do
-                if imgui.BeginTabItem(view.name, nil) then
-                    render_entries(category, view, settings, ui_state, actions, imgui);
-                    imgui.EndTabItem();
+        local selected = tonumber(ui_state.selected_views[category.id]) or 1;
+        selected = math.max(1, math.min(#category.views, math.floor(selected)));
+        local view = category.views[selected];
+
+        imgui.SetNextItemWidth(220);
+        if imgui.BeginCombo(('Category##%s'):fmt(category.id), view.name) then
+            for index, candidate in ipairs(category.views) do
+                if imgui.Selectable(
+                    ('%s##%s'):fmt(candidate.name, candidate.id),
+                    index == selected) then
+                    selected = index;
+                    view = candidate;
+                    ui_state.selected_views[category.id] = index;
                 end
             end
-            imgui.EndTabBar();
+            imgui.EndCombo();
         end
+        render_entries(category, view, settings, ui_state, actions, imgui);
         return;
     end
 

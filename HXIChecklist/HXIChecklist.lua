@@ -1,6 +1,6 @@
 addon.name = 'HXIChecklist';
 addon.author = 'HXIChecklist contributors';
-addon.version = '0.5.0';
+addon.version = '0.5.1';
 addon.desc = 'Read-only, source-backed checklist foundation for Ashita v4 and HorizonXI.';
 addon.link = 'https://github.com/HiPotionQ8/XIchecklist';
 
@@ -38,6 +38,7 @@ local state = {
     ui = {
         window_open = { true },
         search = { '' },
+        selected_views = {},
     },
 };
 
