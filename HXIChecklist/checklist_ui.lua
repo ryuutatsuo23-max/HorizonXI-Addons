@@ -153,6 +153,22 @@ local function render_map_entry(item, actions, imgui)
         end
     end
 
+    imgui.TableSetColumnIndex(2);
+    if item.vendor_cost and item.vendor_cost ~= '' then
+        imgui.TextWrapped(item.vendor_cost);
+    else
+        imgui.TextColored({ 0.55, 0.58, 0.62, 1.00 }, '-');
+    end
+    if imgui.IsItemHovered() then
+        imgui.BeginTooltip();
+        imgui.PushTextWrapPos(imgui.GetFontSize() * 32);
+        imgui.TextWrapped(item.vendor_cost ~= nil
+            and 'Vendor price listed in the HorizonXI Map Guide.'
+            or 'No vendor price is listed for this map in the HorizonXI Map Guide.');
+        imgui.PopTextWrapPos();
+        imgui.EndTooltip();
+    end
+
     imgui.PopID();
 end
 
@@ -185,24 +201,27 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
         local map_width = math.max(
             240 * scale,
             math.min(imgui.GetWindowWidth() * 0.45, 360 * scale));
+        local source_width = imgui.CalcTextSize('Source') + 24;
         local table_flags = bit.bor(
             ImGuiTableFlags_Resizable,
             ImGuiTableFlags_BordersInnerV,
             ImGuiTableFlags_SizingStretchProp);
         imgui.TextColored(
             { 0.68, 0.72, 0.78, 1.00 },
-            'Drag the vertical divider to resize columns.');
+            'Drag the vertical dividers to resize Map, Source, and Price columns.');
         imgui.PushStyleColor(
             ImGuiCol_TableBorderStrong,
             { 0.78, 0.82, 0.88, 1.00 });
         imgui.PushStyleColor(
             ImGuiCol_TableBorderLight,
             { 0.58, 0.64, 0.72, 1.00 });
-        if imgui.BeginTable('##MapRows', 2, table_flags) then
+        if imgui.BeginTable('##MapRows', 3, table_flags) then
             imgui.TableSetupColumn(
                 'Map', ImGuiTableColumnFlags_WidthFixed, map_width, 0);
             imgui.TableSetupColumn(
-                'Source', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
+                'Source', ImGuiTableColumnFlags_WidthFixed, source_width, 0);
+            imgui.TableSetupColumn(
+                'Price', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
             for _, item in ipairs(visible) do
                 render_map_entry(item, actions, imgui);
             end

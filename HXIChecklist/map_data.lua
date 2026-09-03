@@ -1,6 +1,43 @@
 local map_data = {};
 
 local category_source_url = 'https://horizonffxi.wiki/Category:Magical_Maps';
+local vendor_source_url = 'https://horizonffxi.wiki/Map_Guide';
+
+-- Vendor prices are a separate sourced data set from the Map Guide's
+-- Purchased tables. An absent key means the guide does not list a vendor sale;
+-- it never means that the map costs zero.
+local vendor_costs = {
+    ['map.san_doria'] = '200 gil',
+    ['map.bastok'] = '200 gil',
+    ['map.windurst'] = '200 gil',
+    ['map.jeuno'] = '600 gil',
+    ['map.qufim_island'] = '3,000 gil',
+    ['map.zeruhn'] = '200 gil',
+    ['map.ordelles_caves'] = '600 gil',
+    ['map.maze_of_shakhrami'] = '600 gil',
+    ['map.eldieme_necropolis'] = '3,000 gil',
+    ['map.garlaige_citadel'] = '3,000 gil',
+    ['map.ghelsba'] = '600 gil',
+    ['map.davoi'] = '3,000 gil',
+    ['map.palborough'] = '600 gil',
+    ['map.beadeaux'] = '3,000 gil',
+    ['map.giddeus'] = '600 gil',
+    ['map.castle_oztroja'] = '3,000 gil',
+    ['map.elshimo_regions'] = '3,000 gil',
+    ['map.kuzotz_region'] = '3,000 gil',
+    ['map.litelor_region'] = '3,000 gil',
+    ['map.korroloka_tunnel'] = '3,000 gil',
+    ['map.vollbow_region'] = '3,000 gil',
+    ['map.carpenters_landing'] = '3,000 gil',
+    ['map.bibiki_bay'] = '3,000 gil',
+    ['map.al_zahbi'] = '600 gil',
+    ['map.nashmau'] = '3,000 gil',
+    ['map.bhaflau_thickets'] = '3,000 gil',
+    ['map.wajaom_woodlands'] = '3,000 gil',
+    ['map.mamook'] = '2,000 Imperial Standing',
+    ['map.arrapago_reef'] = '2,000 Imperial Standing',
+    ['map.halvung'] = '2,000 Imperial Standing',
+};
 
 -- Each row is:
 -- stable addon ID, client key-item ID, display name, client resource name,
@@ -134,6 +171,9 @@ for _, catalog in ipairs(catalogs) do
                 and ('https://horizonffxi.wiki/' .. map[5])
                 or category_source_url,
             category_source_url = category_source_url,
+            vendor_cost = vendor_costs[map[1]],
+            vendor_source_url = vendor_costs[map[1]] ~= nil
+                and vendor_source_url or nil,
         });
     end
 end

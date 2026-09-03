@@ -46,8 +46,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.7.1'", self.main)
-        self.assertIn("version = '2026-09-03-foundation.6'", self.profile)
+        self.assertIn("addon.version = '0.8.0'", self.main)
+        self.assertIn("version = '2026-09-03-foundation.7'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',\s*(\d+),", self.map_data, re.MULTILINE)
@@ -327,11 +327,23 @@ class HorizonChecklistSourceTests(unittest.TestCase):
 
     def test_map_rows_align_sources_with_a_resizable_divider(self):
         self.assertIn("category.id == 'maps'", self.ui)
-        self.assertIn("imgui.BeginTable('##MapRows', 2, table_flags)", self.ui)
+        self.assertIn("imgui.BeginTable('##MapRows', 3, table_flags)", self.ui)
         self.assertIn("ImGuiTableColumnFlags_WidthFixed, map_width", self.ui)
+        self.assertIn("ImGuiTableColumnFlags_WidthFixed, source_width", self.ui)
         self.assertIn("ImGuiTableColumnFlags_WidthStretch, 1.0", self.ui)
-        self.assertIn("'Drag the vertical divider to resize columns.'", self.ui)
+        self.assertIn("'Drag the vertical dividers to resize Map, Source, and Price columns.'", self.ui)
         self.assertIn("render_map_entry(item, actions, imgui)", self.ui)
+        self.assertIn("imgui.TextWrapped(item.vendor_cost)", self.ui)
+        self.assertIn("'No vendor price is listed for this map in the HorizonXI Map Guide.'", self.ui)
+
+    def test_map_vendor_prices_are_sourced_and_bounded(self):
+        prices = re.findall(r"\['map\.[^']+'\] = '[^']+'", self.map_data)
+        self.assertEqual(len(prices), 30)
+        self.assertIn("['map.san_doria'] = '200 gil'", self.map_data)
+        self.assertIn("['map.qufim_island'] = '3,000 gil'", self.map_data)
+        self.assertIn("['map.mamook'] = '2,000 Imperial Standing'", self.map_data)
+        self.assertIn("vendor_source_url = 'https://horizonffxi.wiki/Map_Guide'", self.map_data)
+        self.assertIn("vendor_cost = vendor_costs[map[1]]", self.map_data)
 
     def test_skill_levels_are_live_and_separate_from_checklist_state(self):
         expected = {
