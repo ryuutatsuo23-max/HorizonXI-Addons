@@ -46,8 +46,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.8.0'", self.main)
-        self.assertIn("version = '2026-09-03-foundation.7'", self.profile)
+        self.assertIn("addon.version = '0.9.0'", self.main)
+        self.assertIn("version = '2026-09-03-foundation.8'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',\s*(\d+),", self.map_data, re.MULTILINE)
@@ -331,19 +331,37 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("ImGuiTableColumnFlags_WidthFixed, map_width", self.ui)
         self.assertIn("ImGuiTableColumnFlags_WidthFixed, source_width", self.ui)
         self.assertIn("ImGuiTableColumnFlags_WidthStretch, 1.0", self.ui)
-        self.assertIn("'Drag the vertical dividers to resize Map, Source, and Price columns.'", self.ui)
+        self.assertIn("'Drag the vertical dividers to resize Map, Source, and Obtained columns.'", self.ui)
         self.assertIn("render_map_entry(item, actions, imgui)", self.ui)
         self.assertIn("imgui.TextWrapped(item.vendor_cost)", self.ui)
-        self.assertIn("'No vendor price is listed for this map in the HorizonXI Map Guide.'", self.ui)
+        self.assertIn("imgui.TextWrapped(item.acquisition_method)", self.ui)
+        self.assertIn("'Acquisition method listed in the HorizonXI Magical Maps table.'", self.ui)
 
     def test_map_vendor_prices_are_sourced_and_bounded(self):
-        prices = re.findall(r"\['map\.[^']+'\] = '[^']+'", self.map_data)
+        vendor_block = re.search(
+            r"(?ms)^local vendor_costs = \{\n(.*?)^\};", self.map_data
+        ).group(1)
+        prices = re.findall(r"\['map\.[^']+'\] = '[^']+'", vendor_block)
         self.assertEqual(len(prices), 30)
         self.assertIn("['map.san_doria'] = '200 gil'", self.map_data)
         self.assertIn("['map.qufim_island'] = '3,000 gil'", self.map_data)
         self.assertIn("['map.mamook'] = '2,000 Imperial Standing'", self.map_data)
         self.assertIn("vendor_source_url = 'https://horizonffxi.wiki/Map_Guide'", self.map_data)
         self.assertIn("vendor_cost = vendor_costs[map[1]]", self.map_data)
+
+    def test_non_vendor_maps_have_sourced_acquisition_methods(self):
+        acquisition_block = re.search(
+            r"(?ms)^local acquisition_methods = \{\n(.*?)^\};", self.map_data
+        ).group(1)
+        methods = re.findall(
+            r"\['map\.[^']+'\] = (?:'[^']+'|\"[^\"]+\")",
+            acquisition_block,
+        )
+        self.assertEqual(len(methods), 42)
+        self.assertIn("['map.bostaunieux_oubliette'] = 'Quest: The Sand Charm'", self.map_data)
+        self.assertIn("['map.alzadaal_ruins'] = 'Mission: Undersea Scouting'", self.map_data)
+        self.assertIn("['map.ifrits_cauldron'] = 'Coffer'", self.map_data)
+        self.assertIn("acquisition_method = acquisition_methods[map[1]]", self.map_data)
 
     def test_skill_levels_are_live_and_separate_from_checklist_state(self):
         expected = {

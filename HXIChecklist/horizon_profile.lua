@@ -3,7 +3,7 @@ local map_data = require('map_data');
 
 local profile = {
     id = 'horizon-foundation',
-    version = '2026-09-03-foundation.7',
+    version = '2026-09-03-foundation.8',
     incomplete = true,
     scope_note = 'This profile is intentionally incomplete: nine sourced magic catalogs, the HorizonXI Magical Maps catalog, and the Bastok Markets pilot. Its totals are not whole-server completion.',
     categories = {
@@ -17,7 +17,7 @@ local profile = {
         {
             id = 'maps',
             name = 'Maps',
-            description = 'Seventy-two map key items from the sourced HorizonXI Magical Maps table, with documented vendor prices from the Map Guide. Ownership is read from incoming key-item log 0x055 and cached by Ashita character; a first-time character must zone once.',
+            description = 'Seventy-two map key items with sourced vendor prices or acquisition methods. Ownership is read from incoming key-item log 0x055 and cached by Ashita character; a first-time character must zone once.',
             views = map_data.views,
             entries = map_data.entries,
         },

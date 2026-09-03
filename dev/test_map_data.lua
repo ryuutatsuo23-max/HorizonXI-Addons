@@ -19,6 +19,7 @@ local seen_ids = {};
 local seen_resource_ids = {};
 local observed_counts = {};
 local vendor_count = 0;
+local acquisition_count = 0;
 for index, entry in ipairs(map_data.entries) do
     assert(entry.kind == 'key_item', 'map row is not a key item');
     assert(not seen_ids[entry.id], 'duplicate map id: ' .. entry.id);
@@ -44,9 +45,20 @@ for index, entry in ipairs(map_data.entries) do
         assert(entry.vendor_source_url == nil,
             'unpriced map unexpectedly has a vendor source');
     end
+    if entry.acquisition_method ~= nil then
+        acquisition_count = acquisition_count + 1;
+        assert(entry.acquisition_source_url ~= nil,
+            'acquisition method is missing its source');
+    else
+        assert(entry.acquisition_source_url == nil,
+            'map without an acquisition method has an acquisition source');
+    end
+    assert((entry.vendor_cost ~= nil) ~= (entry.acquisition_method ~= nil),
+        'map must have exactly one displayed acquisition value');
 end
 
 assert(vendor_count == 30, 'expected 30 sourced vendor prices');
+assert(acquisition_count == 42, 'expected 42 sourced non-vendor methods');
 
 for catalog, count in pairs(expected_counts) do
     assert(observed_counts[catalog] == count,
@@ -81,5 +93,12 @@ assert(entries_by_id['map.mamook'].vendor_cost == '2,000 Imperial Standing');
 assert(entries_by_id['map.arrapago_reef'].vendor_cost == '2,000 Imperial Standing');
 assert(entries_by_id['map.halvung'].vendor_cost == '2,000 Imperial Standing');
 assert(entries_by_id['map.dangruf_wadi'].vendor_cost == nil);
+assert(entries_by_id['map.bostaunieux_oubliette'].acquisition_method ==
+    'Quest: The Sand Charm');
+assert(entries_by_id['map.alzadaal_ruins'].acquisition_method ==
+    'Mission: Undersea Scouting');
+assert(entries_by_id['map.ifrits_cauldron'].acquisition_method == 'Coffer');
+assert(entries_by_id['map.oldton_movalpolos'].acquisition_method == 'Chest');
+assert(entries_by_id['map.altaieu'].acquisition_method == 'Mini-quest');
 
 print('map_data fixture: passed');

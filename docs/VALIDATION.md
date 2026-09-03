@@ -53,10 +53,10 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Confirm an Aht Urhgan map resolves after zoning; these IDs exercise key-item group 3 rather than the original-area group 0.
 - [ ] Open several map Source buttons. Existing map pages should open directly; category-only evidence rows should open the HorizonXI Magical Maps table.
 - [ ] Confirm map Source buttons align vertically beside the map names.
-- [ ] Confirm the Price column shows `200 gil` for the three nation-area maps, `600 gil` for the Jeuno Area, and `3,000 gil` for Qufim Island.
+- [ ] Confirm the Obtained column shows `200 gil` for the three nation-area maps, `600 gil` for the Jeuno Area, and `3,000 gil` for Qufim Island.
 - [ ] In Treasures of Aht Urhgan, confirm Al Zahbi shows `600 gil`, Nashmau shows `3,000 gil`, and Mamook, Arrapago Reef, and Halvung show `2,000 Imperial Standing`.
-- [ ] Confirm a quest-, chest-, or coffer-only map shows a neutral dash in Price; hovering it should explain that the Map Guide lists no vendor price.
-- [ ] Drag both Maps dividers and confirm Map, Source, and Price columns resize without overlap, including the long Imperial Standing values.
+- [ ] Confirm Bostaunieux Oubliette shows `Quest: The Sand Charm`; compare several other quest, mission, mini-quest, chest, and coffer rows with their Source pages.
+- [ ] Drag both Maps dividers and confirm Map, Source, and Obtained columns resize without overlap, including long quest titles and Imperial Standing values.
 - [ ] Before that first zone, confirm unresolved map state is `UNKNOWN`, never falsely `Missing`.
 - [ ] Before that first zone and with no cache, confirm Bastok pilot rows are `UNKNOWN` and have no checkboxes.
 - [ ] After zoning, compare one current, one completed, and one neither-current-nor-completed pilot quest against the in-game Bastok quest logs; expect `Accepted`, `Completed`, and `Not Accepted`.

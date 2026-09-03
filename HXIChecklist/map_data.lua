@@ -39,6 +39,54 @@ local vendor_costs = {
     ['map.halvung'] = '2,000 Imperial Standing',
 };
 
+-- These are the 42 non-vendor rows from the Magical Maps table. Quest names
+-- are labeled explicitly; generic chest, coffer, and mini-quest wording is
+-- preserved instead of inventing a more specific acquisition path.
+local acquisition_methods = {
+    ['map.altaieu'] = 'Mini-quest',
+    ['map.alzadaal_ruins'] = 'Mission: Undersea Scouting',
+    ['map.aydeewa_subterrane'] = 'Quest: What Friends are For',
+    ['map.bostaunieux_oubliette'] = 'Quest: The Sand Charm',
+    ['map.caedarva_mire'] = 'Quest: The Prankster',
+    ['map.cape_riverne'] = 'Quest: Go! Go! Gobmuffin!',
+    ['map.castle_zvahl'] = 'Quest: Northward',
+    ['map.delkfutts_tower'] = 'Quest: The Antique Collector',
+    ['map.feiyin'] = "Quest: A Smudge on One's Record",
+    ['map.huxzoi'] = 'Mini-quest',
+    ['map.ifrits_cauldron'] = 'Coffer',
+    ['map.king_ranperres_tomb'] = 'Quest: Exit the Gambler',
+    ['map.mount_zhayolm'] = 'Quest: Rock Bottom',
+    ['map.newton_movalpolos'] = 'Coffer',
+    ['map.norg'] = 'Mission: Zilart Mission 1',
+    ['map.oldton_movalpolos'] = 'Chest',
+    ['map.promyvion_dem'] = 'Mini-quest',
+    ['map.promyvion_holla'] = 'Mini-quest',
+    ['map.promyvion_mea'] = 'Mini-quest',
+    ['map.promyvion_vahzl'] = 'Mini-quest',
+    ['map.psoxja'] = 'Chest (area 2)',
+    ['map.ruhmet'] = 'Mini-quest',
+    ['map.tavnazia'] = 'Quest: Unforgiven',
+    ['map.aqueducts'] = 'Mini-quest',
+    ['map.attohwa_chasm'] = 'Quest: One Good Deed?',
+    ['map.boyahda_tree'] = 'Coffer',
+    ['map.crawlers_nest'] = "Quest: An Explorer's Footsteps",
+    ['map.dangruf_wadi'] = 'Quest: The Bare Bones',
+    ['map.den_of_rancor'] = 'Coffer',
+    ['map.gusgen_mines'] = "Quest: A Foreman's Best Friend",
+    ['map.horutoto_ruins'] = 'Quest: Glyph Hanger',
+    ['map.kuftal_tunnel'] = 'Coffer',
+    ['map.labyrinth_of_onzozo'] = 'Chest',
+    ['map.northlands'] = "Quest: Her Majesty's Garden",
+    ['map.quicksand_caves'] = 'Coffer',
+    ['map.ranguemont_pass'] = 'Quest: The Rescue',
+    ['map.ruaun_gardens'] = 'Coffer',
+    ['map.sacrarium'] = 'Quest: Paradise, Salvation, and Maps',
+    ['map.sea_serpent_grotto'] = 'Coffer',
+    ['map.temple_of_uggalepih'] = 'Coffer',
+    ['map.toraimarai_canal'] = 'Quest: His Name is Valgeir',
+    ['map.velugannon_palace'] = 'Coffer',
+};
+
 -- Each row is:
 -- stable addon ID, client key-item ID, display name, client resource name,
 -- individual HorizonXI Wiki slug when a usable page exists.
@@ -174,6 +222,9 @@ for _, catalog in ipairs(catalogs) do
             vendor_cost = vendor_costs[map[1]],
             vendor_source_url = vendor_costs[map[1]] ~= nil
                 and vendor_source_url or nil,
+            acquisition_method = acquisition_methods[map[1]],
+            acquisition_source_url = acquisition_methods[map[1]] ~= nil
+                and category_source_url or nil,
         });
     end
 end

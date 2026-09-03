@@ -156,15 +156,21 @@ local function render_map_entry(item, actions, imgui)
     imgui.TableSetColumnIndex(2);
     if item.vendor_cost and item.vendor_cost ~= '' then
         imgui.TextWrapped(item.vendor_cost);
+    elseif item.acquisition_method and item.acquisition_method ~= '' then
+        imgui.TextWrapped(item.acquisition_method);
     else
-        imgui.TextColored({ 0.55, 0.58, 0.62, 1.00 }, '-');
+        imgui.TextColored({ 1.00, 0.30, 0.30, 1.00 }, 'Unknown');
     end
     if imgui.IsItemHovered() then
         imgui.BeginTooltip();
         imgui.PushTextWrapPos(imgui.GetFontSize() * 32);
-        imgui.TextWrapped(item.vendor_cost ~= nil
-            and 'Vendor price listed in the HorizonXI Map Guide.'
-            or 'No vendor price is listed for this map in the HorizonXI Map Guide.');
+        if item.vendor_cost ~= nil then
+            imgui.TextWrapped('Vendor price listed in the HorizonXI Map Guide.');
+        elseif item.acquisition_method ~= nil then
+            imgui.TextWrapped('Acquisition method listed in the HorizonXI Magical Maps table.');
+        else
+            imgui.TextWrapped('No sourced acquisition method is available.');
+        end
         imgui.PopTextWrapPos();
         imgui.EndTooltip();
     end
@@ -208,7 +214,7 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
             ImGuiTableFlags_SizingStretchProp);
         imgui.TextColored(
             { 0.68, 0.72, 0.78, 1.00 },
-            'Drag the vertical dividers to resize Map, Source, and Price columns.');
+            'Drag the vertical dividers to resize Map, Source, and Obtained columns.');
         imgui.PushStyleColor(
             ImGuiCol_TableBorderStrong,
             { 0.78, 0.82, 0.88, 1.00 });
@@ -221,7 +227,7 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
             imgui.TableSetupColumn(
                 'Source', ImGuiTableColumnFlags_WidthFixed, source_width, 0);
             imgui.TableSetupColumn(
-                'Price', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
+                'Obtained', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
             for _, item in ipairs(visible) do
                 render_map_entry(item, actions, imgui);
             end
