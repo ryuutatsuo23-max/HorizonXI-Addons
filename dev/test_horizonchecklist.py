@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "HXIChecklist"
 PROFILE = PACKAGE / "horizon_profile.lua"
 MAGIC_DATA = PACKAGE / "magic_data.lua"
+MAP_DATA = PACKAGE / "map_data.lua"
 SKILL_LEVELS = PACKAGE / "skill_levels.lua"
 
 
@@ -15,6 +16,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
     def setUpClass(cls):
         cls.profile = PROFILE.read_text(encoding="utf-8")
         cls.magic_data = MAGIC_DATA.read_text(encoding="utf-8")
+        cls.map_data = MAP_DATA.read_text(encoding="utf-8")
         cls.skill_levels = SKILL_LEVELS.read_text(encoding="utf-8")
         cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
         cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
@@ -37,17 +39,19 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "job_levels.lua",
                 "key_item_state.lua",
                 "magic_data.lua",
+                "map_data.lua",
                 "quest_state.lua",
                 "skill_levels.lua",
             },
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.6.4'", self.main)
-        self.assertIn("version = '2026-09-03-foundation.5'", self.profile)
+        self.assertIn("addon.version = '0.7.0'", self.main)
+        self.assertIn("version = '2026-09-03-foundation.6'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
-        self.assertEqual(self.profile.count("kind = 'key_item'"), 8)
+        map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',\s*(\d+),", self.map_data, re.MULTILINE)
+        self.assertEqual(len(map_ids), 72)
         self.assertEqual(self.profile.count("kind = 'manual'"), 19)
 
     def test_magic_categories_and_counts(self):
@@ -122,25 +126,59 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         found = {
             entry_id: int(resource_id)
             for entry_id, resource_id in re.findall(
-                r"id = '(map\.[^']+)'.*?resource_id = (\d+)", self.profile
+                r"^\s*\{ '(map\.[^']+)',\s*(\d+),", self.map_data, re.MULTILINE
             )
         }
-        self.assertEqual(found, expected)
+        self.assertEqual(len(found), 72)
+        self.assertEqual({key: found[key] for key in expected}, expected)
+        self.assertEqual(len(found.values()), len(set(found.values())))
+        self.assertEqual(found["map.al_zahbi"], 1856)
+        self.assertEqual(found["map.bhaflau_thickets"], 1874)
         self.assertIn("id_matches_name(identifier)", self.catalog)
         self.assertIn("identifier <= 0", self.catalog)
 
+    def test_map_catalog_matches_sourced_horizon_table_scope(self):
+        expected = {
+            "original_areas": 28,
+            "rise_of_the_zilart": 16,
+            "chains_of_promathia": 17,
+            "treasures_of_aht_urhgan": 11,
+        }
+        blocks = re.findall(
+            r"(?ms)^        id = '([^']+)'.*?^        maps = \{\n(.*?)^        \},\n^    \},",
+            self.map_data,
+        )
+        found = {
+            catalog_id: len(re.findall(r"^\s*\{ 'map\.", rows, re.MULTILINE))
+            for catalog_id, rows in blocks
+        }
+        self.assertEqual(found, expected)
+        for name in (
+            "All Maps",
+            "Original Areas",
+            "Rise of the Zilart",
+            "Chains of Promathia",
+            "Treasures of Aht Urhgan",
+        ):
+            self.assertIn(f"name = '{name}'", self.map_data)
+        self.assertIn("name = 'Maps'", self.profile)
+        self.assertNotIn("name = 'Starter Maps'", self.profile)
+        self.assertNotIn("map.uleguerand_range", self.map_data)
+        self.assertNotIn("map.leujaoam_sanctum", self.map_data)
+
     def test_entry_ids_are_unique(self):
-        entry_ids = re.findall(
+        direct_entry_ids = re.findall(
             r"\{ id = '([^']+)',(?: reference_id = '[^']+',)? kind = '(?:spell|key_item|manual)'",
             self.profile,
         )
-        self.assertEqual(len(entry_ids), 27)
-        self.assertEqual(len(entry_ids), len(set(entry_ids)))
+        self.assertEqual(len(direct_entry_ids), 19)
+        self.assertEqual(len(direct_entry_ids), len(set(direct_entry_ids)))
 
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         generated_ids = [f"spell.{resource_id}" for resource_id in spell_ids]
-        all_ids = entry_ids + generated_ids
-        self.assertEqual(len(all_ids), 343)
+        map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',", self.map_data, re.MULTILINE)
+        all_ids = direct_entry_ids + generated_ids + map_ids
+        self.assertEqual(len(all_ids), 407)
         self.assertEqual(len(all_ids), len(set(all_ids)))
 
     def test_all_entries_are_sourced(self):
@@ -150,7 +188,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             or "kind = 'key_item'" in line
             or "kind = 'manual'" in line
         ]
-        self.assertEqual(len(entry_lines), 27)
+        self.assertEqual(len(entry_lines), 19)
         for line in entry_lines:
             self.assertRegex(line, r"source_url = 'https://")
             self.assertRegex(line, r"availability = '(?:reported_active|wiki_listed|unknown|reported_inactive)'")
@@ -162,6 +200,9 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual(len(category_sources), 9)
         self.assertIn("source_url = 'https://horizonffxi.wiki/' .. wiki_slug", self.magic_data)
         self.assertIn("availability = 'wiki_listed'", self.magic_data)
+        self.assertIn("category_source_url = 'https://horizonffxi.wiki/Category:Magical_Maps'", self.map_data)
+        self.assertIn("availability = 'wiki_listed'", self.map_data)
+        self.assertIn("source_url = map[5] ~= nil", self.map_data)
 
     def test_manual_ids_preserve_pilot_range(self):
         ids = re.findall(r"reference_id = '(HXQ-\d{4})'", self.profile)
@@ -241,7 +282,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("selected_views = {}", self.main)
         self.assertIn("imgui.BeginCombo(('Category##%s')", self.ui)
         self.assertIn("imgui.Selectable(", self.ui)
-        self.assertIn("item.magic_skill == view.magic_skill", self.ui)
+        self.assertIn("item.magic_skill ~= view.magic_skill", self.ui)
+        self.assertIn("item.map_catalog ~= view.map_catalog", self.ui)
         self.assertNotIn("##HXIChecklistViews_", self.ui)
         self.assertIn("imgui.EndCombo();\n        end\n        imgui.Separator();", self.ui)
 

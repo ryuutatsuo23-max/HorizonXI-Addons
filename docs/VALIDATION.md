@@ -47,7 +47,11 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 ## Maps and quest live state
 
 - [ ] On first use for a character, zone once so the incoming key-item and quest logs are received.
-- [ ] Compare at least one owned and one unowned starter map against Key Items.
+- [ ] Open `Maps` and confirm its selector contains, in order: All Maps, Original Areas, Rise of the Zilart, Chains of Promathia, Treasures of Aht Urhgan.
+- [ ] With completed entries visible, confirm `All Maps` contains 72 rows and the individual categories contain 28, 16, 17, and 11 rows respectively.
+- [ ] Compare at least one owned and one unowned map in each available expansion category against Key Items.
+- [ ] Confirm an Aht Urhgan map resolves after zoning; these IDs exercise key-item group 3 rather than the original-area group 0.
+- [ ] Open several map Source buttons. Existing map pages should open directly; category-only evidence rows should open the HorizonXI Magical Maps table.
 - [ ] Before that first zone, confirm unresolved map state is `UNKNOWN`, never falsely `Missing`.
 - [ ] Before that first zone and with no cache, confirm Bastok pilot rows are `UNKNOWN` and have no checkboxes.
 - [ ] After zoning, compare one current, one completed, and one neither-current-nor-completed pilot quest against the in-game Bastok quest logs; expect `Accepted`, `Completed`, and `Not Accepted`.

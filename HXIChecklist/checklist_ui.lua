@@ -136,7 +136,13 @@ local function render_magic_entry(item, actions, imgui)
 end
 
 local function matches_view(item, view)
-    return view.magic_skill == nil or item.magic_skill == view.magic_skill;
+    if view.magic_skill ~= nil and item.magic_skill ~= view.magic_skill then
+        return false;
+    end
+    if view.map_catalog ~= nil and item.map_catalog ~= view.map_catalog then
+        return false;
+    end
+    return true;
 end
 
 local function render_entries(category, view, settings, ui_state, actions, imgui)

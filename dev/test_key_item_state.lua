@@ -61,9 +61,15 @@ assert(state.has_key_item(388) == true);
 assert(state.has_key_item(395) == true);
 assert(state.has_key_item(512) == nil);
 
+assert(state.handle_packet({ id = 0x055, data = key_item_packet(3, { 1856, 1874 }) }));
+assert(state.has_key_item(1856) == true);
+assert(state.has_key_item(1857) == false);
+assert(state.has_key_item(1874) == true);
+
 local cache = state.export_cache();
 assert(cache.version == 1);
 assert(#cache.groups[0] == 0x80);
+assert(#cache.groups[3] == 0x80);
 
 assert(state.handle_packet({ id = 0x00A, data = '' }));
 local cached_value, cached_note = state.has_key_item(385);

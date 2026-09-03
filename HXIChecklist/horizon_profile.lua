@@ -1,10 +1,11 @@
 local magic_data = require('magic_data');
+local map_data = require('map_data');
 
 local profile = {
     id = 'horizon-foundation',
-    version = '2026-09-03-foundation.5',
+    version = '2026-09-03-foundation.6',
     incomplete = true,
-    scope_note = 'This profile is intentionally incomplete: nine sourced magic catalogs plus the map and Bastok Markets pilots. Its totals are not whole-server completion.',
+    scope_note = 'This profile is intentionally incomplete: nine sourced magic catalogs, the HorizonXI Magical Maps catalog, and the Bastok Markets pilot. Its totals are not whole-server completion.',
     categories = {
         {
             id = 'magic_skills',
@@ -14,19 +15,11 @@ local profile = {
             entries = magic_data.entries,
         },
         {
-            id = 'starter_maps',
-            name = 'Starter Maps',
-            description = 'A small map key-item proof set. Ownership is read from incoming key-item log 0x055 and cached by Ashita character; a first-time character must zone once.',
-            entries = {
-                { id = 'map.san_doria', kind = 'key_item', name = "Map of the San d'Oria Area", resource_name = "map of the San d'Oria area", resource_id = 385, availability = 'wiki_listed', description = "Map key item for San d'Oria city areas.", source_url = 'https://horizonffxi.wiki/Map_of_the_San_d%27Oria_Area' },
-                { id = 'map.bastok', kind = 'key_item', name = 'Map of the Bastok Area', resource_name = 'map of the Bastok area', resource_id = 386, availability = 'wiki_listed', description = 'Map key item for Bastok city areas.', source_url = 'https://horizonffxi.wiki/Map_of_the_Bastok_Area' },
-                { id = 'map.windurst', kind = 'key_item', name = 'Map of the Windurst Area', resource_name = 'map of the Windurst area', resource_id = 387, availability = 'wiki_listed', description = 'Map key item for Windurst city areas.', source_url = 'https://horizonffxi.wiki/Map_of_the_Windurst_Area' },
-                { id = 'map.jeuno', kind = 'key_item', name = 'Map of the Jeuno Area', resource_name = 'map of the Jeuno area', resource_id = 388, availability = 'wiki_listed', description = 'Map key item for Jeuno city areas.', source_url = 'https://horizonffxi.wiki/Map_of_the_Jeuno_Area' },
-                { id = 'map.zeruhn', kind = 'key_item', name = 'Map of the Zeruhn Mines', resource_name = 'map of the Zeruhn Mines', resource_id = 395, availability = 'wiki_listed', description = 'Map key item for Zeruhn Mines.', source_url = 'https://horizonffxi.wiki/Map_of_the_Zeruhn_Mines' },
-                { id = 'map.palborough', kind = 'key_item', name = 'Map of the Palborough Mines', resource_name = 'map of the Palborough Mines', resource_id = 406, availability = 'wiki_listed', description = 'Map key item for Palborough Mines.', source_url = 'https://horizonffxi.wiki/Map_of_the_Palborough_Mines' },
-                { id = 'map.giddeus', kind = 'key_item', name = 'Map of Giddeus', resource_name = 'map of Giddeus', resource_id = 408, availability = 'wiki_listed', description = 'Map key item for Giddeus.', source_url = 'https://horizonffxi.wiki/Map_of_Giddeus' },
-                { id = 'map.ghelsba', kind = 'key_item', name = 'Map of Ghelsba', resource_name = 'map of Ghelsba', resource_id = 404, availability = 'wiki_listed', description = 'Map key item for Ghelsba areas.', source_url = 'https://horizonffxi.wiki/Map_of_Ghelsba' },
-            },
+            id = 'maps',
+            name = 'Maps',
+            description = 'Seventy-two map key items from the sourced HorizonXI Magical Maps table. Ownership is read from incoming key-item log 0x055 and cached by Ashita character; a first-time character must zone once.',
+            views = map_data.views,
+            entries = map_data.entries,
         },
         {
             id = 'bastok_markets_pilot',

@@ -1,6 +1,6 @@
 # Sources and evidence boundaries
 
-Profile snapshot: `2026-09-03-foundation.5`.
+Profile snapshot: `2026-09-03-foundation.6`.
 
 ## Upstream inspiration
 
@@ -18,7 +18,7 @@ The live checks use Ashita v4's installed interface annotations and established 
 - read spell job requirements from the already name- and skill-validated `ISpell.LevelRequired` client resource, limited to Horizon's twenty level-75-era jobs and levels 1 through 75;
 - draw the checklist with Ashita's `imgui` library.
 
-Version 0.6.4 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok pilot. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; the Bastok current and completed types are `0x0058` and `0x0098`. It never changes, blocks, injects, or requests a packet.
+Version 0.7.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok pilot. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; the Bastok current and completed types are `0x0058` and `0x0098`. It never changes, blocks, injects, or requests a packet.
 
 Decoded key-item groups and the paired Bastok logs are hex-encoded into a versioned cache within Ashita's settings library. Ashita v4 stores that settings block under its character-name and server-ID path and invokes the registered callback when the active character changes. Invalid, incomplete, or absent cache data fails closed to `UNKNOWN`; packet data from one character is never intentionally reused for another.
 
@@ -55,7 +55,9 @@ This view is informational and live-only. It is not added to the ownership catal
 
 ## HorizonXI maps and quest pilot
 
-The map entries link to their corresponding [HorizonXI Wiki](https://horizonffxi.wiki/) pages. A `wiki_listed` label means only that the page was identified; it is not a claim of current server availability. The eight starter-map client IDs were cross-checked against the generated Windower `key_items.lua` reference bundled in this workspace; runtime code also verifies each numeric ID back against Ashita's English key-item resource name before reading the corresponding `0x055` ownership bit.
+The Maps catalog contains the 72 rows in the HorizonXI Wiki's [Magical Maps table](https://horizonffxi.wiki/Category:Magical_Maps): 28 Original-area maps, 16 Rise of the Zilart maps, 17 Chains of Promathia maps, and 11 Treasures of Aht Urhgan maps. A `wiki_listed` label means only that the table identifies the map; it is not a claim of current server availability. Rows with an existing individual page link to it; rows whose table link is a red link retain the category table as their evidence source.
+
+All 72 numeric IDs and English resource names were cross-checked against Windower/Resources `resources_data/key_items.lua` at commit [`67948a3ce609ac614e889002268470859be319d5`](https://github.com/Windower/Resources/blob/67948a3ce609ac614e889002268470859be319d5/resources_data/key_items.lua). Runtime code also verifies each numeric ID back against Ashita's English key-item resource name before reading the corresponding `0x055` ownership bit. The broader client resource contains maps absent from HorizonXI's table; those are excluded. In particular, `Map of the Uleguerand Range` and temporary Assault-area maps are not inferred into this catalog merely because client records exist.
 
 The nineteen Bastok Markets entries preserve the stable `HXQ-0001` through `HXQ-0019` IDs and requirements from the local `HorizonXI-Spreadsheet/data/reference.json` pilot. Each row retains its individual HorizonXI Wiki URL where one was resolved. The numeric indices were cross-checked against XIchecklist's Bastok quest table and standard client ordering; the implementation reads only those 19 indices.
 
