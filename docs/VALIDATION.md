@@ -8,6 +8,7 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Load with `/addon load HXIChecklist` and confirm no Lua error.
 - [ ] Toggle with `/hc`; show/hide and window close should remain synchronized.
 - [ ] Change scale and filters, reload the addon, and confirm they persist for that character.
+- [ ] Compare 75%, 100%, and 150% and confirm the addon text visibly changes size at each setting.
 - [ ] On a character with no cache, confirm the Bastok pilot shows no manual checkboxes and unresolved rows are `UNKNOWN`.
 - [ ] After receiving the logs once, unload/reload the addon without zoning and confirm map and Bastok quest states restore from cache.
 - [ ] Log into another character and confirm it does not inherit the first character's cached state.
@@ -29,6 +30,7 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Confirm every visible Magic row uses aligned columns for the spell, Source button, separator, and job-level requirements.
 - [ ] Confirm `Absorb-ACC` displays `DRK Lv.61`, then compare several single-job and multi-job requirements against the private client's spell information.
 - [ ] Resize and scale the addon; confirm long multi-job requirements wrap without overlapping spell names or Source buttons.
+- [ ] In a narrow window, confirm multi-job requirements use the compact form and show the full `Lv.` form when hovered.
 
 ## Skill Levels
 

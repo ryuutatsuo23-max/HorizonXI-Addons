@@ -2,14 +2,14 @@
 
 HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately bounded HorizonXI-oriented profile.
 
-Version 0.6.1 is not a complete HorizonXI checklist. It includes four bounded pieces:
+Version 0.6.2 is not a complete HorizonXI checklist. It includes four bounded pieces:
 
 - live, read-only ownership for 316 sourced level-75-cap spells, summons, ninjutsu, and songs in nine catalogs;
 - live, read-only map key-item ownership from the incoming `0x055` key-item log;
 - passive current/completed state for the 19-entry Bastok quest pilot, with no manual completion fallback.
 - live numeric values and client-reported cap flags for eleven magic-related skills.
 
-The `Magic Skills` tab has a compact `Category` selector for `All Magic`, `Dark Magic`, `Divine Magic`, `Elemental Magic`, `Enfeebling Magic`, `Enhancing Magic`, `Healing Magic`, `Summoning`, `Ninjutsu`, and `Songs`. These remain learned-ownership catalog views. Magic rows align their Source buttons and show level-75-era job requirements from the validated client spell resource, such as `DRK Lv.61`; multi-job spells list each applicable job. The separate `Skill Levels` tab reads Divine, Healing, Enhancing, Enfeebling, Elemental, Dark, Summoning, Ninjutsu, Singing, String Instrument, and Wind Instrument values directly from Ashita.
+The `Magic Skills` tab has a compact `Category` selector for `All Magic`, `Dark Magic`, `Divine Magic`, `Elemental Magic`, `Enfeebling Magic`, `Enhancing Magic`, `Healing Magic`, `Summoning`, `Ninjutsu`, and `Songs`. These remain learned-ownership catalog views. Magic rows align their Source buttons and show level-75-era job requirements from the validated client spell resource, such as `DRK Lv.61`; multi-job spells list each applicable job. When the requirement column is narrow, multi-job text switches to a shorter form and exposes the full form on hover. The separate `Skill Levels` tab reads Divine, Healing, Enhancing, Enfeebling, Elemental, Dark, Summoning, Ninjutsu, Singing, String Instrument, and Wind Instrument values directly from Ashita.
 
 It passively reads the incoming `0x055` key-item and `0x056` quest logs and registers no outgoing packet handler. It injects, modifies, blocks, or requests no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
 
@@ -45,6 +45,8 @@ Copy the whole `HXIChecklist` folder so these nine files stay together.
 - `/hc refresh`: clear resource-name caches and refresh the snapshot.
 - `/hc status`: print the current profile summary.
 - `/hc scale <75-150>`: adjust window font scale.
+
+The on-screen Scale slider and `/hc scale` command resize the addon's text using Ashita v4's font-stack API when the older per-window scaling call is unavailable.
 
 ## State labels
 

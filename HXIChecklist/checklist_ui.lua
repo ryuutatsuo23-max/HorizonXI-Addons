@@ -127,7 +127,18 @@ local function render_magic_entry(item, actions, imgui)
     imgui.TextColored({ 0.55, 0.58, 0.62, 1.00 }, '|');
     imgui.SameLine();
     if item.job_levels and item.job_levels ~= '' then
-        imgui.TextWrapped(item.job_levels);
+        local available_width = imgui.GetContentRegionAvail();
+        local full_width = imgui.CalcTextSize(item.job_levels);
+        local use_compact = item.job_levels_compact
+            and full_width > math.max(0, available_width - 18);
+        local requirement_text = use_compact
+            and item.job_levels_compact or item.job_levels;
+        imgui.TextWrapped(requirement_text);
+        if use_compact and imgui.IsItemHovered() then
+            imgui.BeginTooltip();
+            imgui.Text(item.job_levels);
+            imgui.EndTooltip();
+        end
     else
         imgui.TextColored(
             { 0.55, 0.58, 0.62, 1.00 },
@@ -275,15 +286,24 @@ local function render_skill_levels(snapshot, imgui)
     end
 end
 
+local function apply_font_scale(settings, imgui)
+    local scale = settings.scale_percent / 100;
+    if imgui.SetWindowFontScale then
+        imgui.SetWindowFontScale(scale);
+        return false;
+    end
+
+    imgui.PushFont(nil, imgui.GetFontSize() * scale);
+    return true;
+end
+
 function checklist_ui.render(
     profile, snapshot, skill_snapshot, settings, ui_state, actions, imgui)
     local was_open = ui_state.window_open[1];
     imgui.SetNextWindowSize({ 760, 560 }, ImGuiCond_FirstUseEver);
 
     if imgui.Begin('HXIChecklist##main', ui_state.window_open, ImGuiWindowFlags_None) then
-        if imgui.SetWindowFontScale then
-            imgui.SetWindowFontScale(settings.scale_percent / 100);
-        end
+        local used_push_font = apply_font_scale(settings, imgui);
 
         imgui.TextColored({ 0.35, 0.72, 1.00, 1.00 },
             ('Horizon profile %s'):fmt(profile.version));
@@ -317,6 +337,9 @@ function checklist_ui.render(
                 imgui.EndTabItem();
             end
             imgui.EndTabBar();
+        end
+        if used_push_font then
+            imgui.PopFont();
         end
     end
     imgui.End();
