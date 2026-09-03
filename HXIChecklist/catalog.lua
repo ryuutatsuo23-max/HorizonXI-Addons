@@ -2,8 +2,10 @@ require('common');
 
 local catalog = {};
 local resource_cache = {};
+local requirement_cache = {};
 local key_item_state = require('key_item_state');
 local quest_state = require('quest_state');
+local job_levels = require('job_levels');
 
 local labels = {
     complete = 'Checked',
@@ -88,6 +90,37 @@ local function resolve_spell_id(entry)
         return nil;
     end
     return resource.Index or resource.Id;
+end
+
+local function resolve_spell_requirements(entry)
+    if requirement_cache[entry.id] ~= nil then
+        return requirement_cache[entry.id] or nil;
+    end
+
+    local manager = resource_manager();
+    if manager == nil or type(entry.resource_id) ~= 'number' then
+        requirement_cache[entry.id] = false;
+        return nil;
+    end
+
+    local resource = nil;
+    local ok = pcall(function()
+        resource = manager:GetSpellById(math.floor(entry.resource_id));
+    end);
+    local expected_name = entry.resource_name or entry.name;
+    local resource_name = ok and resource
+        and resource.Name and resource.Name[1] or nil;
+    if type(resource_name) ~= 'string'
+        or resource_name:lower() ~= expected_name:lower()
+        or (type(entry.skill_id) == 'number'
+            and resource.Skill ~= math.floor(entry.skill_id)) then
+        requirement_cache[entry.id] = false;
+        return nil;
+    end
+
+    local formatted = job_levels.format(resource.LevelRequired, 75);
+    requirement_cache[entry.id] = formatted or false;
+    return formatted;
 end
 
 local function resolve_key_item_id(entry)
@@ -286,6 +319,9 @@ function catalog.build_snapshot(profile, manual_completed)
             local item = clone_entry(entry);
             item.state, item.state_note = entry_state(entry, manual_completed);
             item.state_label = labels[item.state] or item.state;
+            if entry.kind == 'spell' then
+                item.job_levels = resolve_spell_requirements(entry);
+            end
             table.insert(output_category.entries, item);
             add_to_summary(output_category.summary, item);
             add_to_summary(snapshot.summary, item);
@@ -297,6 +333,7 @@ end
 
 function catalog.invalidate()
     resource_cache = {};
+    requirement_cache = {};
 end
 
 return catalog;

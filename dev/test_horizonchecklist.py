@@ -34,6 +34,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "catalog.lua",
                 "checklist_ui.lua",
                 "horizon_profile.lua",
+                "job_levels.lua",
                 "key_item_state.lua",
                 "magic_data.lua",
                 "quest_state.lua",
@@ -42,7 +43,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.6.0'", self.main)
+        self.assertIn("addon.version = '0.6.1'", self.main)
         self.assertIn("version = '2026-09-03-foundation.5'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
@@ -243,6 +244,27 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("item.magic_skill == view.magic_skill", self.ui)
         self.assertNotIn("##HXIChecklistViews_", self.ui)
         self.assertIn("imgui.EndCombo();\n        end\n        imgui.Separator();", self.ui)
+
+    def test_magic_rows_align_sources_and_show_client_job_levels(self):
+        job_levels = (PACKAGE / "job_levels.lua").read_text(encoding="utf-8")
+        for job_id, abbreviation in enumerate(
+            (
+                "WAR", "MNK", "WHM", "BLM", "RDM", "THF", "PLD",
+                "DRK", "BST", "BRD", "RNG", "SAM", "NIN", "DRG",
+                "SMN", "BLU", "COR", "PUP", "DNC", "SCH",
+            ),
+            start=1,
+        ):
+            self.assertIn(f"{{ {job_id}, '{abbreviation}' }}", job_levels)
+        self.assertIn("resource.LevelRequired", self.catalog)
+        self.assertIn("job_levels.format(resource.LevelRequired, 75)", self.catalog)
+        self.assertIn("item.job_levels = resolve_spell_requirements(entry)", self.catalog)
+        self.assertIn("category.id == 'magic_skills'", self.ui)
+        self.assertIn("imgui.BeginTable(table_id, 3", self.ui)
+        self.assertIn("imgui.CalcTextSize('Source') + 24", self.ui)
+        self.assertIn("ImGuiTableColumnFlags_WidthFixed, source_width", self.ui)
+        self.assertIn("imgui.TextWrapped(item.job_levels)", self.ui)
+        self.assertIn("'Job levels unavailable'", self.ui)
 
     def test_skill_levels_are_live_and_separate_from_checklist_state(self):
         expected = {

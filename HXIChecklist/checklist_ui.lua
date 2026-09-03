@@ -105,22 +105,76 @@ local function render_entry(item, settings, actions, imgui)
     imgui.PopID();
 end
 
+local function render_magic_entry(item, actions, imgui)
+    imgui.PushID(item.id);
+    imgui.TableNextRow();
+
+    imgui.TableSetColumnIndex(0);
+    local color = state_colors[item.state] or { 1, 1, 1, 1 };
+    imgui.TextColored(color, ('[%s]'):fmt(state_badges[item.state] or item.state));
+    imgui.SameLine();
+    imgui.Text(item.name);
+    render_tooltip(item, imgui);
+
+    imgui.TableSetColumnIndex(1);
+    if item.source_url and item.source_url ~= '' then
+        if imgui.SmallButton('Source') then
+            actions.open_source(item.source_url);
+        end
+    end
+
+    imgui.TableSetColumnIndex(2);
+    imgui.TextColored({ 0.55, 0.58, 0.62, 1.00 }, '|');
+    imgui.SameLine();
+    if item.job_levels and item.job_levels ~= '' then
+        imgui.TextWrapped(item.job_levels);
+    else
+        imgui.TextColored(
+            { 0.55, 0.58, 0.62, 1.00 },
+            'Job levels unavailable');
+    end
+
+    imgui.PopID();
+end
+
 local function matches_view(item, view)
     return view.magic_skill == nil or item.magic_skill == view.magic_skill;
 end
 
 local function render_entries(category, view, settings, ui_state, actions, imgui)
-    local shown = 0;
+    local visible = {};
     for _, item in ipairs(category.entries) do
         if matches_view(item, view)
             and should_show(item, settings, ui_state.search[1]) then
-            render_entry(item, settings, actions, imgui);
-            shown = shown + 1;
+            visible[#visible + 1] = item;
         end
     end
 
-    if shown == 0 then
+    if #visible == 0 then
         imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'No entries match the current filters.');
+        return;
+    end
+
+    if category.id == 'magic_skills' then
+        local table_id = ('##MagicRows_%s'):fmt(view.id or 'all');
+        local source_width = imgui.CalcTextSize('Source') + 24;
+        if imgui.BeginTable(table_id, 3, ImGuiTableFlags_SizingStretchProp) then
+            imgui.TableSetupColumn(
+                'Magic', ImGuiTableColumnFlags_WidthStretch, 1.15, 0);
+            imgui.TableSetupColumn(
+                'Source', ImGuiTableColumnFlags_WidthFixed, source_width, 0);
+            imgui.TableSetupColumn(
+                'Job levels', ImGuiTableColumnFlags_WidthStretch, 0.85, 0);
+            for _, item in ipairs(visible) do
+                render_magic_entry(item, actions, imgui);
+            end
+            imgui.EndTable();
+        end
+        return;
+    end
+
+    for _, item in ipairs(visible) do
+        render_entry(item, settings, actions, imgui);
     end
 end
 

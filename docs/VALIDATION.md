@@ -26,6 +26,9 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] In `Ninjutsu`, compare one learned and one unlearned spell; confirm ninja tools are absent.
 - [ ] In `Songs`, compare one learned and one unlearned song, and confirm `Lightning Threnody` does not show `UNKNOWN` because of the client's shortened resource name.
 - [ ] Confirm a separator line appears below the `Category` selector before the first ownership row.
+- [ ] Confirm every visible Magic row uses aligned columns for the spell, Source button, separator, and job-level requirements.
+- [ ] Confirm `Absorb-ACC` displays `DRK Lv.61`, then compare several single-job and multi-job requirements against the private client's spell information.
+- [ ] Resize and scale the addon; confirm long multi-job requirements wrap without overlapping spell names or Source buttons.
 
 ## Skill Levels
 
