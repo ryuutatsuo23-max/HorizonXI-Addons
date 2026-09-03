@@ -2,7 +2,7 @@
 
 HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately small HorizonXI-oriented starter profile.
 
-Version 0.2.0 is not a complete HorizonXI checklist. It proves three narrow pieces:
+Version 0.2.1 is not a complete HorizonXI checklist. It proves three narrow pieces:
 
 - live, read-only spell ownership through `IPlayer:HasSpell`;
 - live, read-only map key-item ownership from the incoming `0x055` key-item log;
@@ -42,9 +42,9 @@ Copy the whole `HXIChecklist` folder so these six files stay together.
 
 ## State labels
 
-- `LIVE DONE` / `LIVE MISSING`: read from the logged-in character through Ashita.
+- `Checked` / `Missing`: read from the logged-in character through Ashita.
 - `MANUAL DONE` / `MANUAL`: a per-character user checkbox; no quest flag is claimed.
-- `AUTO DONE` / `AUTO CURRENT` / `AUTO NOT LOGGED`: decoded from both incoming Bastok quest logs. `AUTO NOT LOGGED` claims only that neither bit is set, not that the quest is currently obtainable.
+- `AUTO DONE` / `Accepted` / `Not Accepted`: decoded from both incoming Bastok quest logs. `Not Accepted` claims only that neither bit is set, not that the quest is currently obtainable.
 - `UNKNOWN`: the client state or source status is unresolved and is excluded from the denominator.
 - `UNAVAILABLE`: the source reports the entry inactive; it is excluded from the denominator.
 

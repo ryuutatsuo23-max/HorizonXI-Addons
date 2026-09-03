@@ -14,6 +14,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         cls.profile = PROFILE.read_text(encoding="utf-8")
         cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
         cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
+        cls.ui = (PACKAGE / "checklist_ui.lua").read_text(encoding="utf-8")
         cls.key_item_state = (PACKAGE / "key_item_state.lua").read_text(
             encoding="utf-8"
         )
@@ -175,6 +176,18 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("quest_state.get_bastok(entry.quest_index)", self.catalog)
         for state in ("auto_complete", "auto_current", "auto_not_logged"):
             self.assertIn(state, self.catalog)
+
+    def test_requested_state_badges_and_unknown_color(self):
+        expected_badges = {
+            "complete": "Checked",
+            "missing": "Missing",
+            "auto_current": "Accepted",
+            "auto_not_logged": "Not Accepted",
+        }
+        for state, badge in expected_badges.items():
+            self.assertIn(f"{state} = '{badge}'", self.ui)
+        self.assertIn("unknown = { 1.00, 0.30, 0.30, 1.00 }", self.ui)
+        self.assertIn("auto_complete = 'AUTO DONE'", self.ui)
 
     def test_commands_are_addon_local(self):
         self.assertIn("addon.name = 'HXIChecklist'", self.main)

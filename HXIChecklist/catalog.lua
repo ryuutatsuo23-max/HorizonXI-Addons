@@ -6,13 +6,13 @@ local key_item_state = require('key_item_state');
 local quest_state = require('quest_state');
 
 local labels = {
-    complete = 'Live complete',
-    missing = 'Live missing',
+    complete = 'Checked',
+    missing = 'Missing',
     manual_complete = 'Manual complete',
     manual_open = 'Manual',
     auto_complete = 'Automatic complete',
-    auto_current = 'Automatic current',
-    auto_not_logged = 'Automatic not in log',
+    auto_current = 'Accepted',
+    auto_not_logged = 'Not Accepted',
     unknown = 'Unknown',
     unavailable = 'Unavailable',
 };

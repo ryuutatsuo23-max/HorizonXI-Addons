@@ -16,9 +16,9 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Compare at least one learned and one unlearned starter spell against the in-game magic list.
 - [ ] After loading or reloading HXIChecklist, zone once so the incoming key-item log is received.
 - [ ] Compare at least one owned and one unowned starter map against Key Items.
-- [ ] Before that first zone, confirm unresolved map state is `UNKNOWN`, never falsely `LIVE MISSING`.
+- [ ] Before that first zone, confirm unresolved map state is `UNKNOWN`, never falsely `Missing`.
 - [ ] Before that first zone, confirm Bastok pilot rows use the existing `MANUAL` / `MANUAL DONE` fallback.
-- [ ] After zoning, compare one current, one completed, and one neither-current-nor-completed pilot quest against the in-game Bastok quest logs; expect `AUTO CURRENT`, `AUTO DONE`, and `AUTO NOT LOGGED`.
+- [ ] After zoning, compare one current, one completed, and one neither-current-nor-completed pilot quest against the in-game Bastok quest logs; expect `Accepted`, `AUTO DONE`, and `Not Accepted`.
 - [ ] Confirm a saved manual mark is not erased: automatic state takes display precedence after zoning, while reloading before the logs arrive exposes the same saved fallback again.
 - [ ] Test immediately after login or zoning; unresolved client data must show `UNKNOWN`, never a false missing state.
 - [ ] Use `/hc refresh` after login and verify unresolved resource names remain explicit.
