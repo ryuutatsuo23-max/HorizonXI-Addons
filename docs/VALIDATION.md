@@ -25,7 +25,16 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] In `Summoning`, compare one unlocked and one locked avatar or spirit against the in-game magic list; confirm Blood Pacts are absent.
 - [ ] In `Ninjutsu`, compare one learned and one unlearned spell; confirm ninja tools are absent.
 - [ ] In `Songs`, compare one learned and one unlearned song, and confirm `Lightning Threnody` does not show `UNKNOWN` because of the client's shortened resource name.
-- [ ] Confirm Singing, String Instrument, and Wind Instrument numeric values are not presented as duplicate song checklists.
+- [ ] Confirm a separator line appears below the `Category` selector before the first ownership row.
+
+## Skill Levels
+
+- [ ] Open `Skill Levels` and confirm it lists, in order: Divine, Healing, Enhancing, Enfeebling, Elemental, Dark, Summoning, Ninjutsu, Singing, String Instrument, and Wind Instrument.
+- [ ] Compare several displayed numbers, including Singing and both instrument skills, with the in-game Skills menu.
+- [ ] Compare at least one capped and one uncapped skill; confirm the rows show `Capped` and `Training` consistently with the client.
+- [ ] Confirm opening or refreshing `Skill Levels` does not change the header progress totals or any Magic Skills ownership label.
+- [ ] Reload the addon and switch characters; confirm values are read live for the active character without requiring a zone or reusing cached values.
+- [ ] Check the view before character data is available and confirm it shows `Unavailable` rather than a guessed zero.
 
 ## Maps and quest live state
 

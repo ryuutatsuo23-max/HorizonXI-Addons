@@ -14,9 +14,10 @@ The live checks use Ashita v4's installed interface annotations and established 
 - resolve imported spells with `IResourceManager:GetSpellById`, validate the English name and magic-skill ID, then read `IPlayer:HasSpell`; name lookup remains a fallback for entries without an explicit ID;
 - resolve and validate key-item IDs with `IResourceManager:GetString`, then read the incoming `0x055` ownership bit; a positive `IPlayer:HasKeyItem` remains a pre-log fallback;
 - persist per-character preferences with Ashita's `settings` library;
+- read current numeric magic-related skills with `IPlayer:GetCombatSkill`, `combatskill_t:GetSkill`, and `combatskill_t:IsCapped`;
 - draw the checklist with Ashita's `imgui` library.
 
-Version 0.5.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok pilot. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; the Bastok current and completed types are `0x0058` and `0x0098`. It never changes, blocks, injects, or requests a packet.
+Version 0.6.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok pilot. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; the Bastok current and completed types are `0x0058` and `0x0098`. It never changes, blocks, injects, or requests a packet.
 
 Decoded key-item groups and the paired Bastok logs are hex-encoded into a versioned cache within Ashita's settings library. Ashita v4 stores that settings block under its character-name and server-ID path and invokes the registered callback when the active character changes. Invalid, incomplete, or absent cache data fails closed to `UNKNOWN`; packet data from one character is never intentionally reused for another.
 
@@ -41,7 +42,13 @@ Version 0.5.0 adds 116 ownership rows from the current Horizon job lists:
 - [Ninja Ninjutsu list](https://horizonffxi.wiki/Ninja#Ninjutsu_List): 23 rows. Ninja tools, guides, and client spells absent from the Horizon job list are excluded.
 - [Bard song list](https://horizonffxi.wiki/Bard#Song_List): 76 rows. `Raptor Mazurka` and `Adventurer's Dirge` exist in the client resources but are absent from the current Horizon Bard list and are therefore excluded rather than guessed available.
 
-These additions bring `All Magic` to 316 unique ownership entries. Summoning uses client skill ID 38, Ninjutsu 39, and Songs 40. The displayed `Lightning Threnody` row validates against the client's shortened English resource name `Ltng. Threnody`. Singing, String Instrument, and Wind Instrument are numeric skill values—not additional song ownership lists—and remain deferred to a separate skill-level feature.
+These additions bring `All Magic` to 316 unique ownership entries. Summoning uses client skill ID 38, Ninjutsu 39, and Songs 40. The displayed `Lightning Threnody` row validates against the client's shortened English resource name `Ltng. Threnody`. Singing, String Instrument, and Wind Instrument are numeric skill values—not additional song ownership lists—and appear only in the separate live `Skill Levels` view.
+
+## Numeric skill levels
+
+The `Skill Levels` view reads client combat-skill indices 32 through 42: Divine, Healing, Enhancing, Enfeebling, Elemental, Dark, Summoning, Ninjutsu, Singing, String Instrument, and Wind Instrument. Each row shows the raw integer returned by Ashita plus Ashita's boolean capped flag. It does not calculate caps from jobs, levels, merits, equipment, food, or server rules.
+
+This view is informational and live-only. It is not added to the ownership catalog or progress denominator and is not written to the character cache. If the character is not logged in or a memory read fails, the affected value remains visibly unavailable rather than being inferred.
 
 ## HorizonXI maps and quest pilot
 

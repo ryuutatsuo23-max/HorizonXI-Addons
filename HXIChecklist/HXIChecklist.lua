@@ -1,6 +1,6 @@
 addon.name = 'HXIChecklist';
 addon.author = 'HXIChecklist contributors';
-addon.version = '0.5.1';
+addon.version = '0.6.0';
 addon.desc = 'Read-only, source-backed checklist foundation for Ashita v4 and HorizonXI.';
 addon.link = 'https://github.com/HiPotionQ8/XIchecklist';
 
@@ -15,6 +15,7 @@ local checklist_ui = require('checklist_ui');
 local profile = require('horizon_profile');
 local key_item_state = require('key_item_state');
 local quest_state = require('quest_state');
+local skill_levels = require('skill_levels');
 
 local default_settings = T{
     visible = true,
@@ -33,6 +34,7 @@ local default_settings = T{
 local state = {
     settings = settings.load(default_settings),
     snapshot = catalog.empty_snapshot(profile),
+    skill_snapshot = skill_levels.empty_snapshot(),
     last_refresh_at = 0,
     refresh_requested = true,
     ui = {
@@ -98,6 +100,7 @@ local function refresh(force)
     end
 
     state.snapshot = catalog.build_snapshot(profile, state.settings.manual_completed);
+    state.skill_snapshot = skill_levels.build_snapshot();
     state.last_refresh_at = now;
     state.refresh_requested = false;
 end
@@ -235,7 +238,9 @@ ashita.events.register('d3d_present', 'HXIChecklist_Present', function()
     end
 
     refresh(false);
-    checklist_ui.render(profile, state.snapshot, state.settings, state.ui, actions, imgui);
+    checklist_ui.render(
+        profile, state.snapshot, state.skill_snapshot,
+        state.settings, state.ui, actions, imgui);
 end);
 
 ashita.events.register('unload', 'HXIChecklist_Unload', function()

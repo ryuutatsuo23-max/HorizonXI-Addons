@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "HXIChecklist"
 PROFILE = PACKAGE / "horizon_profile.lua"
 MAGIC_DATA = PACKAGE / "magic_data.lua"
+SKILL_LEVELS = PACKAGE / "skill_levels.lua"
 
 
 class HorizonChecklistSourceTests(unittest.TestCase):
@@ -14,6 +15,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
     def setUpClass(cls):
         cls.profile = PROFILE.read_text(encoding="utf-8")
         cls.magic_data = MAGIC_DATA.read_text(encoding="utf-8")
+        cls.skill_levels = SKILL_LEVELS.read_text(encoding="utf-8")
         cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
         cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
         cls.ui = (PACKAGE / "checklist_ui.lua").read_text(encoding="utf-8")
@@ -35,11 +37,12 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "key_item_state.lua",
                 "magic_data.lua",
                 "quest_state.lua",
+                "skill_levels.lua",
             },
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.5.1'", self.main)
+        self.assertIn("addon.version = '0.6.0'", self.main)
         self.assertIn("version = '2026-09-03-foundation.5'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
@@ -239,6 +242,41 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("imgui.Selectable(", self.ui)
         self.assertIn("item.magic_skill == view.magic_skill", self.ui)
         self.assertNotIn("##HXIChecklistViews_", self.ui)
+        self.assertIn("imgui.EndCombo();\n        end\n        imgui.Separator();", self.ui)
+
+    def test_skill_levels_are_live_and_separate_from_checklist_state(self):
+        expected = {
+            "Divine Magic": 32,
+            "Healing Magic": 33,
+            "Enhancing Magic": 34,
+            "Enfeebling Magic": 35,
+            "Elemental Magic": 36,
+            "Dark Magic": 37,
+            "Summoning Magic": 38,
+            "Ninjutsu": 39,
+            "Singing": 40,
+            "String Instrument": 41,
+            "Wind Instrument": 42,
+        }
+        found = {
+            name: int(skill_id)
+            for name, skill_id in re.findall(
+                r"name = '([^']+)', skill_id = (\d+)", self.skill_levels
+            )
+        }
+        self.assertEqual(found, expected)
+        self.assertIn("player:GetCombatSkill(definition.skill_id)", self.skill_levels)
+        self.assertIn("skill:GetSkill()", self.skill_levels)
+        self.assertIn("skill:IsCapped()", self.skill_levels)
+        self.assertIn("player:GetLoginStatus()", self.skill_levels)
+        self.assertIn("local skill_levels = require('skill_levels')", self.main)
+        self.assertIn("skill_snapshot = skill_levels.empty_snapshot()", self.main)
+        self.assertIn("state.skill_snapshot = skill_levels.build_snapshot()", self.main)
+        self.assertIn("imgui.BeginTabItem('Skill Levels', nil)", self.ui)
+        self.assertIn("excluded from checklist progress", self.ui)
+        self.assertNotIn("skill_levels", self.catalog)
+        self.assertNotIn("settings", self.skill_levels.lower())
+        self.assertNotIn("cache", self.skill_levels.lower())
 
     def test_key_item_log_parser_is_read_only_and_fail_closed(self):
         self.assertIn("e.id ~= 0x055", self.key_item_state)

@@ -2,13 +2,14 @@
 
 HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately bounded HorizonXI-oriented profile.
 
-Version 0.5.1 is not a complete HorizonXI checklist. It includes three bounded pieces:
+Version 0.6.0 is not a complete HorizonXI checklist. It includes four bounded pieces:
 
 - live, read-only ownership for 316 sourced level-75-cap spells, summons, ninjutsu, and songs in nine catalogs;
 - live, read-only map key-item ownership from the incoming `0x055` key-item log;
 - passive current/completed state for the 19-entry Bastok quest pilot, with no manual completion fallback.
+- live numeric values and client-reported cap flags for eleven magic-related skills.
 
-The `Magic Skills` tab has a compact `Category` selector for `All Magic`, `Dark Magic`, `Divine Magic`, `Elemental Magic`, `Enfeebling Magic`, `Enhancing Magic`, `Healing Magic`, `Summoning`, `Ninjutsu`, and `Songs`. These are learned-ownership catalog views, not numeric skill-level meters.
+The `Magic Skills` tab has a compact `Category` selector for `All Magic`, `Dark Magic`, `Divine Magic`, `Elemental Magic`, `Enfeebling Magic`, `Enhancing Magic`, `Healing Magic`, `Summoning`, `Ninjutsu`, and `Songs`. These remain learned-ownership catalog views. The separate `Skill Levels` tab reads Divine, Healing, Enhancing, Enfeebling, Elemental, Dark, Summoning, Ninjutsu, Singing, String Instrument, and Wind Instrument values directly from Ashita.
 
 It passively reads the incoming `0x055` key-item and `0x056` quest logs and registers no outgoing packet handler. It injects, modifies, blocks, or requests no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
 
@@ -32,8 +33,9 @@ The copy-ready folder contains exactly the required runtime files:
 - `key_item_state.lua`
 - `magic_data.lua`
 - `quest_state.lua`
+- `skill_levels.lua`
 
-Copy the whole `HXIChecklist` folder so these seven files stay together.
+Copy the whole `HXIChecklist` folder so these eight files stay together.
 
 ## Commands
 
@@ -56,6 +58,8 @@ Map and Bastok quest packet state are cached in Ashita's existing character-spec
 
 Each incoming key-item or complete Bastok quest-log update refreshes that character's cache. The versioned `cached_state` container is the extension point for future packet-derived categories. Direct spell ownership remains live-only because Ashita exposes it immediately; it does not need or write a spell cache.
 
+Numeric skill levels are also live-only and are deliberately separate from the checklist-state system. They do not change progress totals, ownership labels, filters, or cached packet state. `Capped` and `Training` report only Ashita's current client cap flag; the addon does not calculate a job- or level-specific maximum.
+
 ## Data compatibility
 
 Existing legacy manual-mark values are left untouched in settings for compatibility but are no longer displayed or used by the mapped Bastok pilot. Cached packet state uses Ashita's character-scoped settings; switching characters loads a different cache. Future profile growth should retain existing IDs and extend the versioned cache without silently converting unknown state into missing or complete.
@@ -63,7 +67,7 @@ Existing legacy manual-mark values are left untouched in settings for compatibil
 ## Explicitly deferred
 
 - missions, fame, RoE, objectives, other quest regions, and quests outside the 19-entry Bastok pilot;
-- numeric skill-level tracking, including Singing, String Instrument, and Wind Instrument;
+- calculated skill caps, equipment or food bonuses, and skill-history tracking;
 - other magic systems such as blue magic and geomancy unless separately sourced and reviewed;
 - retail-only XIchecklist categories not verified against HorizonXI;
 - automatic imports from upstream or the HorizonXI wiki;

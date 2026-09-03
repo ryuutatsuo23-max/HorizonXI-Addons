@@ -152,6 +152,7 @@ local function render_category(category, settings, ui_state, actions, imgui)
             end
             imgui.EndCombo();
         end
+        imgui.Separator();
         render_entries(category, view, settings, ui_state, actions, imgui);
         return;
     end
@@ -191,7 +192,37 @@ local function render_filters(settings, ui_state, actions, imgui)
     end
 end
 
-function checklist_ui.render(profile, snapshot, settings, ui_state, actions, imgui)
+local function render_skill_levels(snapshot, imgui)
+    imgui.TextWrapped(
+        'Live numeric character skills read from Ashita. This informational view is excluded from checklist progress, filters, and saved ownership state.');
+    if snapshot.note and snapshot.note ~= '' then
+        imgui.TextColored({ 1.00, 0.72, 0.28, 1.00 }, snapshot.note);
+    end
+    imgui.Separator();
+
+    for _, entry in ipairs(snapshot.entries) do
+        if entry.value == nil then
+            imgui.TextColored({ 0.55, 0.58, 0.62, 1.00 }, '[Unavailable]');
+            imgui.SameLine();
+            imgui.Text(entry.name);
+        else
+            imgui.Text(('%s:'):fmt(entry.name));
+            imgui.SameLine();
+            imgui.TextColored({ 0.35, 0.72, 1.00, 1.00 }, tostring(entry.value));
+            if entry.capped ~= nil then
+                imgui.SameLine();
+                imgui.TextColored(
+                    entry.capped
+                        and { 0.30, 0.90, 0.45, 1.00 }
+                        or { 1.00, 0.72, 0.28, 1.00 },
+                    entry.capped and '[Capped]' or '[Training]');
+            end
+        end
+    end
+end
+
+function checklist_ui.render(
+    profile, snapshot, skill_snapshot, settings, ui_state, actions, imgui)
     local was_open = ui_state.window_open[1];
     imgui.SetNextWindowSize({ 760, 560 }, ImGuiCond_FirstUseEver);
 
@@ -226,6 +257,10 @@ function checklist_ui.render(profile, snapshot, settings, ui_state, actions, img
                     render_category(category, settings, ui_state, actions, imgui);
                     imgui.EndTabItem();
                 end
+            end
+            if imgui.BeginTabItem('Skill Levels', nil) then
+                render_skill_levels(skill_snapshot, imgui);
+                imgui.EndTabItem();
             end
             imgui.EndTabBar();
         end
