@@ -3,12 +3,13 @@ local map_data = require('map_data');
 local bastok_quest_data = require('bastok_quest_data');
 local sandoria_quest_data = require('sandoria_quest_data');
 local windurst_quest_data = require('windurst_quest_data');
+local jeuno_quest_data = require('jeuno_quest_data');
 
 local profile = {
     id = 'horizon-foundation',
-    version = '2026-09-03-foundation.11',
+    version = '2026-09-03-foundation.12',
     incomplete = true,
-    scope_note = "This profile is intentionally incomplete: nine sourced magic catalogs, the HorizonXI Magical Maps catalog, and the San d'Oria, Bastok, and Windurst client quest-log catalogs. Its totals are not whole-server completion.",
+    scope_note = "This profile is intentionally incomplete: nine sourced magic catalogs, the HorizonXI Magical Maps catalog, and the San d'Oria, Bastok, Windurst, and Jeuno client quest-log catalogs. Its totals are not whole-server completion.",
     categories = {
         {
             id = 'magic_skills',
@@ -44,6 +45,13 @@ local profile = {
             description = 'Ninety named Windurst client quest-log entries mapped from XIchecklist. Eighty-nine have current HorizonXI evidence, four are source-reported unavailable, and one remains explicit unknown. Required Windurst fame is shown exactly as numeric, Not listed, or Unknown. Current/completed state is read from incoming quest logs and cached by Ashita character.',
             views = windurst_quest_data.views,
             entries = windurst_quest_data.entries,
+        },
+        {
+            id = 'jeuno_quests',
+            name = 'Jeuno Quests',
+            description = 'One hundred forty-six named Jeuno client quest-log entries mapped from XIchecklist. Eighty-three have current HorizonXI category evidence; sixty-three remain explicit unknown. Required Jeuno fame is shown exactly as numeric, Not listed, or Unknown. Current/completed state is read from incoming quest logs and cached by Ashita character.',
+            views = jeuno_quest_data.views,
+            entries = jeuno_quest_data.entries,
         },
     },
 };

@@ -85,6 +85,15 @@ assert(state.get_windurst(9).current == true);
 assert(state.get_windurst(95).completed == true);
 assert(state.get_windurst(96).current == true);
 
+assert(state.get_area('jeuno', 128) == nil);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0068, { 27, 128, 186 }) }));
+assert(state.get_area('jeuno', 128) == nil, 'A partial log pair must remain unknown.');
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x00A8, { 0, 132 }) }));
+assert(state.get_area('jeuno', 128).current == true);
+assert(state.get_area('jeuno', 132).completed == true);
+assert(state.get_area('jeuno', 186).current == true);
+assert(state.get_area('jeuno', 10).completed == false, 'Bastok flags must not leak into Jeuno.');
+
 local current = state.get_bastok(34);
 assert(current.current == true and current.completed == false);
 
@@ -103,10 +112,12 @@ assert(high_completed.current == false and high_completed.completed == true);
 local cache = state.export_cache();
 local sandoria_cache = state.export_area_cache('sandoria');
 local windurst_cache = state.export_area_cache('windurst');
+local jeuno_cache = state.export_area_cache('jeuno');
 assert(cache.version == 1);
 assert(#cache.current == 0x40 and #cache.completed == 0x40);
 assert(sandoria_cache.version == 1);
 assert(windurst_cache.version == 1);
+assert(jeuno_cache.version == 1 and #jeuno_cache.current == 0x40);
 
 assert(state.handle_packet({ id = 0x00A, data = '' }));
 local cached = state.get_bastok(34);
@@ -115,12 +126,19 @@ assert(state.get_sandoria(117).completed == true);
 assert(state.get_sandoria(117).source == 'cache');
 assert(state.get_windurst(95).completed == true);
 assert(state.get_windurst(95).source == 'cache');
+assert(state.get_area('jeuno', 132).completed == true);
+assert(state.get_area('jeuno', 132).source == 'cache');
 
 state.clear();
 assert(state.get_bastok(34) == nil);
 assert(state.load_cache(cache));
 assert(state.load_area_cache('sandoria', sandoria_cache));
 assert(state.load_area_cache('windurst', windurst_cache));
+assert(state.get_area('jeuno', 128) == nil, 'Character clearing must clear Jeuno too.');
+assert(state.load_area_cache('jeuno', jeuno_cache));
+assert(state.get_area('jeuno', 128).current == true);
+assert(state.get_area('jeuno', 132).completed == true);
+assert(state.get_area('jeuno', 186).source == 'cache');
 assert(state.get_bastok(10).completed == true);
 assert(state.get_bastok(10).source == 'cache');
 assert(state.get_bastok(89).completed == true);
@@ -178,5 +196,31 @@ assert(automatic.categories[1].entries[4].state == 'unknown');
 assert(automatic.categories[1].entries[5].state == 'unavailable');
 assert(automatic.summary.complete == 1);
 assert(automatic.summary.known_total == 3);
+
+local jeuno_profile = { version = 'synthetic', categories = {
+    { id = 'jeuno_quests', name = 'Jeuno', entries = {
+        { id = 'jeuno.done', kind = 'manual', quest_area = 'jeuno', quest_index = 132, availability = 'wiki_listed' },
+        { id = 'jeuno.current', kind = 'manual', quest_area = 'jeuno', quest_index = 128, availability = 'wiki_listed' },
+        { id = 'jeuno.open', kind = 'manual', quest_area = 'jeuno', quest_index = 1, availability = 'wiki_listed' },
+        { id = 'jeuno.unknown', kind = 'manual', quest_area = 'jeuno', quest_index = 185, availability = 'unknown' },
+    } },
+} };
+local jeuno_snapshot = catalog.build_snapshot(jeuno_profile, {});
+assert(jeuno_snapshot.categories[1].entries[1].state == 'auto_complete');
+assert(jeuno_snapshot.categories[1].entries[2].state == 'auto_current');
+assert(jeuno_snapshot.categories[1].entries[3].state == 'auto_not_logged');
+assert(jeuno_snapshot.categories[1].entries[4].state == 'unknown');
+assert(jeuno_snapshot.summary.known_total == 3 and jeuno_snapshot.summary.complete == 1);
+assert(state.load_area_cache('jeuno', { version = 1, current = 'invalid', completed = 'invalid' }) == false);
+assert(state.get_area('jeuno', 132) == nil);
+assert(state.get_sandoria(117).completed == true);
+assert(state.get_windurst(95).completed == true);
+assert(state.get_bastok(10).completed == true);
+assert(catalog.build_snapshot(jeuno_profile, {}).summary.known_total == 0);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0068, { 128 }) }));
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x00A8, { 132 }) }));
+local live_jeuno = catalog.build_snapshot(jeuno_profile, {});
+assert(live_jeuno.categories[1].entries[1].state_note:find('incoming Jeuno quest log', 1, true));
+assert(live_jeuno.categories[1].entries[2].state == 'auto_current');
 
 print('quest_state synthetic fixture passed');

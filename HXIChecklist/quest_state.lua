@@ -12,6 +12,7 @@ local area_configs = {
     sandoria = { label = "San d'Oria", current_type = 0x0050, completed_type = 0x0090 },
     bastok = { label = 'Bastok', current_type = 0x0058, completed_type = 0x0098 },
     windurst = { label = 'Windurst', current_type = 0x0060, completed_type = 0x00A0 },
+    jeuno = { label = 'Jeuno', current_type = 0x0068, completed_type = 0x00A8 },
 };
 
 local live_logs = {};

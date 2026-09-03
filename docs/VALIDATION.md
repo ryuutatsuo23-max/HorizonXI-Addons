@@ -9,8 +9,8 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Toggle with `/hc`; show/hide and window close should remain synchronized.
 - [ ] Change scale and filters, reload the addon, and confirm they persist for that character.
 - [ ] Compare 75%, 100%, and 150% and confirm the addon text visibly changes size at each setting.
-- [ ] On a character with no cache, confirm all three nation quest catalogs show no manual checkboxes and unresolved rows are `UNKNOWN`.
-- [ ] After receiving the logs once, unload/reload the addon without zoning and confirm map and all three nation quest states restore from cache.
+- [ ] On a character with no cache, confirm all four quest-area catalogs show no manual checkboxes and unresolved rows are `UNKNOWN`.
+- [ ] After receiving the logs once, unload/reload the addon without zoning and confirm map and all four quest-area states restore from cache.
 - [ ] Log into another character and confirm it does not inherit the first character's cached state.
 - [ ] Return to the first character and confirm its own cache restores.
 
@@ -47,7 +47,7 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 ## Quest navigation
 
 - [ ] Confirm the top-level tabs are `Magic Skills`, `Maps`, `Quests`, and `Skill Levels`.
-- [ ] Open `Quests` and switch the `Area` dropdown among Bastok, San d'Oria, and Windurst; confirm descriptions, area totals, rows, and Fame labels follow the selected area without changing overall progress.
+- [ ] Open `Quests` and switch the `Area` dropdown among Bastok, San d'Oria, Windurst, and Jeuno; confirm descriptions, area totals, rows, and Fame labels follow the selected area without changing overall progress.
 - [ ] Choose a different `Location` in each area, switch away and back, and confirm each selection is retained during the session.
 - [ ] Confirm Magic Skills and Maps still use their existing `Category` selectors.
 - [ ] Test a narrow window at 75%, 100%, and 150% scale; confirm dropdowns, Source buttons, and draggable dividers remain usable.
@@ -90,6 +90,13 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Confirm `A Chocobo Riding Game (Windurst)` and `Dyer's Woad Quest` are absent because they have no matched XIchecklist client-log indices.
 - [ ] After zoning, compare one accepted, one completed, and one neither-current-nor-completed Windurst quest, including a high-index entry.
 - [ ] Drag both Windurst dividers and confirm Quest, Source, and Windurst Fame columns resize without overlap.
+- [ ] In `Quests`, select Area `Jeuno` and confirm Location contains All Locations, Lower Jeuno, Upper Jeuno, Ru'Lude Gardens, Port Jeuno, and Unresolved.
+- [ ] With all filters enabled, confirm Jeuno has 146 named client rows, including `In Defiant Challenge` at index 128 and `The Flying Machine of Eld` at index 186; confirm `Omni Aketon` is absent because its client-log index is unresolved.
+- [ ] Confirm numeric Jeuno requirements display as `Fame X`, including `Crest of Davoi` at Fame 2 and `The Gobbiebag Part I` at Fame 3. Confirm 47 rows show `Not listed` and 67 show `Unknown` fame.
+- [ ] On first upgrade, confirm the existing nation/map caches still restore while uncached Jeuno remains `UNKNOWN` until its logs arrive.
+- [ ] After zoning, compare one accepted, one completed, and one neither-current-nor-completed Jeuno quest against the game logs, including a limit-break quest above index 127.
+- [ ] Reload without zoning and confirm Jeuno restores from its own character cache; switch characters and confirm Jeuno data does not leak between characters.
+- [ ] Drag both Jeuno dividers and check Source buttons, fame labels, and location selections in a narrow window.
 - [ ] Test immediately after login or zoning; unresolved client data must show `UNKNOWN`, never a false missing state.
 - [ ] Use `/hc refresh` after login and verify unresolved resource names remain explicit.
 

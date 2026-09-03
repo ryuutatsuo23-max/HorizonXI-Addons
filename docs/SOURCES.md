@@ -1,10 +1,10 @@
 # Sources and evidence boundaries
 
-Profile snapshot: `2026-09-03-foundation.11`.
+Profile snapshot: `2026-09-03-foundation.12`.
 
 ## Upstream inspiration
 
-- [HiPotionQ8/XIchecklist](https://github.com/HiPotionQ8/XIchecklist): behavioral inspiration and requested conversion target. No Lua implementation code was copied. Its `maps/story.lua` table at commit [`04baf17b2b0373883407a94ce0b6a72274a31ba6`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/maps/story.lua) supplies the three nation client-log orderings: Bastok indices 0 through 92, 82 named San d'Oria entries through index 119, and 90 named Windurst entries through index 96.
+- [HiPotionQ8/XIchecklist](https://github.com/HiPotionQ8/XIchecklist): behavioral inspiration and requested conversion target. No Lua implementation code was copied. Its `maps/story.lua` table at commit [`04baf17b2b0373883407a94ce0b6a72274a31ba6`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/maps/story.lua) supplies the four client-log orderings: Bastok indices 0 through 92, 82 named San d'Oria entries through index 119, 90 named Windurst entries through index 96, and 146 named Jeuno entries through index 186. Commented-out placeholders are not imported, and the upstream leading `+` annotation is removed from displayed Jeuno titles without changing indices.
 - [Windower/Lua packet definitions](https://github.com/Windower/Lua/tree/dev/addons/libs/packets) and Windower's generated key-item resources: protocol and numeric-ID cross-checks for the read-only map implementation. No Windower implementation code is bundled.
 
 ## Ashita v4 behavior
@@ -18,7 +18,7 @@ The live checks use Ashita v4's installed interface annotations and established 
 - read spell job requirements from the already name- and skill-validated `ISpell.LevelRequired` client resource, limited to Horizon's twenty level-75-era jobs and levels 1 through 75;
 - draw the checklist with Ashita's `imgui` library.
 
-Version 0.12.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the three nation catalogs. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; San d'Oria current/completed types are `0x0050`/`0x0090`, Bastok types are `0x0058`/`0x0098`, and Windurst types are `0x0060`/`0x00A0`. It never changes, blocks, injects, or requests a packet.
+Version 0.13.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the four quest-area catalogs. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; San d'Oria current/completed types are `0x0050`/`0x0090`, Bastok types are `0x0058`/`0x0098`, Windurst types are `0x0060`/`0x00A0`, and Jeuno types are `0x0068`/`0x00A8`. Jeuno's pair is corroborated by the pinned XIchecklist [`util/quests.lua`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/util/quests.lua) mapping. It never changes, blocks, injects, or requests a packet.
 
 Decoded key-item groups and each nation's paired quest logs are hex-encoded separately into a versioned cache within Ashita's settings library. Ashita v4 stores that settings block under its character-name and server-ID path and invokes the registered callback when the active character changes. Invalid, incomplete, or absent cache data fails closed to `UNKNOWN`; packet data from one character is never intentionally reused for another.
 
@@ -83,6 +83,16 @@ San d'Oria state uses its own character-cache key and does not change the establ
 The Windurst catalog contains all 90 named entries in XIchecklist's Windurst client-log ordering. The [HorizonXI Windurst Quests category](https://horizonffxi.wiki/Category:Windurst_Quests) matches 87 client rows and supplies 65 numeric fame values plus 22 values not listed. Four mapped rows—`Let Sleeping Dogs Lie`, `Nothing Matters`, `Escort for Hire (Windurst)`, and `A Discerning Eye (Windurst)`—are explicitly marked unavailable by that table and remain visible as `UNAVAILABLE` when that filter is enabled. Its two additional rows, `A Chocobo Riding Game (Windurst)` and `Dyer's Woad Quest`, have no XIchecklist client-log mapping and are not silently inserted. Current pages for [Tree Saplings](https://horizonffxi.wiki/Tree_Saplings) and [Ibwam](https://horizonffxi.wiki/Ibwam) separately reference `Babban Ny Mheillea` and `Lure of the Wildcat (Windurst)`; both remain `Unknown` fame because their individual quest pages and fame values are unresolved. `Trust: Windurst` has no resolved current Horizon source, so both its availability and fame remain `Unknown`. This produces 89 rows with some current Horizon evidence, four source-reported unavailable rows, one explicit availability unknown, and three unknown fame values.
 
 Windurst uses a separate character-cache key while preserving the established Bastok and San d'Oria cache structures. Until its current and completed logs or a valid character cache exist, its rows remain `UNKNOWN`.
+
+## Jeuno catalog
+
+The [HorizonXI Jeuno Quests category](https://horizonffxi.wiki/Category:Jeuno_Quests), fetched on 2026-09-03, exposes 84 identifiable titles across its completed-log list and location tables. Eighty-three match the pinned XIchecklist Jeuno ordering. The custom `Omni Aketon` row has no matching client-log index and is not assigned an invented bit. The category's displayed total of 145 is not used to synthesize titles or indices: XIchecklist has 146 named client slots, of which 63 have no matching current category evidence and remain source `unknown`.
+
+Seventy-nine imported entries have location-table rows: 32 numeric fame requirements and 47 explicitly unlisted values. Four additional entries appear only in the completed-log list (`Unlisted Qualities`, `Chameleon Capers`, `Regaining Trust`, and `Mixed Signals`), so their location and fame remain unresolved. Together with the 63 unmatched entries, that makes 67 unknown fame values. Case-only differences such as `Scattered Into Shadow`/`Scattered into Shadow` are matched conservatively. Source links retain the actual current category links, including red links; a category listing or expansion styling is not promoted to a claim of current implementation.
+
+Jeuno is stored under its own `cached_state.jeuno_quests` key, with the same version-1 paired-log encoding. Existing nation/map keys and IDs are unchanged. Missing or invalid Jeuno cache data does not invalidate another area's cache. The existing checklist behavior is retained: an actual current/completed bit can establish a character state, but an unlisted source with neither bit set remains `UNKNOWN`, not `Not Accepted`.
+
+The broader zone audit also refreshed Selbina, Mhaura, Rabao, and Aht Urhgan Whitegate pages. Those rosters are not imported in this increment: they require different client quest-log groups and separate fame evidence. Whitegate's current source explicitly reports its Treasures of Aht Urhgan content unavailable; it is not silently added as active content.
 
 ## Maintenance rule
 

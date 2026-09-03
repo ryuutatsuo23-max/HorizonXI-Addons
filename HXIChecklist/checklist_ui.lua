@@ -24,6 +24,7 @@ local quest_nation_names = {
     bastok_quests = 'Bastok',
     sandoria_quests = "San d'Oria",
     windurst_quests = 'Windurst',
+    jeuno_quests = 'Jeuno',
 };
 
 local availability_labels = {

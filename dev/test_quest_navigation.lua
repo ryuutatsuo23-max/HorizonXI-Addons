@@ -20,6 +20,7 @@ local categories = {
     category('bastok_quests', 'Bastok Quests', 'Bastok Markets'),
     category('sandoria_quests', "San d'Oria Quests", "Northern San d'Oria"),
     category('windurst_quests', 'Windurst Quests', 'Windurst Woods'),
+    category('jeuno_quests', 'Jeuno Quests', 'Lower Jeuno'),
 };
 local snapshot = { categories = categories, summary = summary };
 local function frame(area_choice, location_choice, active_tab)
@@ -78,6 +79,13 @@ assert(state.selected_views.windurst_quests == 2);
 local sandoria = frame('sandoria_quests');
 assert(sandoria.combos['Location##sandoria_quests'] == 'All Locations');
 assert(sandoria.columns["San d'Oria Fame"]);
+local jeuno = frame('jeuno_quests', 'local');
+assert(state.selected_quest_area == 'jeuno_quests');
+assert(jeuno.columns['Jeuno Fame']);
+assert(jeuno.tables['##jeuno_questsRows']);
+assert(state.selected_views.jeuno_quests == 2);
+frame('bastok_quests');
+assert(frame('jeuno_quests').combos['Location##jeuno_quests'] == 'Lower Jeuno');
 state.selected_quest_area = 'removed_area';
 frame();
 assert(state.selected_quest_area == 'bastok_quests');

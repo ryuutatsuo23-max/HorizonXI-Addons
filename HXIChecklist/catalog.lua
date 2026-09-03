@@ -235,7 +235,8 @@ local function entry_state(entry, manual_completed)
     if entry.kind == 'manual' then
         if (entry.quest_area == 'bastok'
                 or entry.quest_area == 'sandoria'
-                or entry.quest_area == 'windurst')
+                or entry.quest_area == 'windurst'
+                or entry.quest_area == 'jeuno')
             and type(entry.quest_index) == 'number' then
             local automatic, automatic_note = quest_state.get_area(
                 entry.quest_area, entry.quest_index);
@@ -244,6 +245,7 @@ local function entry_state(entry, manual_completed)
                     bastok = 'Bastok',
                     sandoria = "San d'Oria",
                     windurst = 'Windurst',
+                    jeuno = 'Jeuno',
                 };
                 local area_label = area_labels[entry.quest_area];
                 local source = automatic.source == 'cache'
