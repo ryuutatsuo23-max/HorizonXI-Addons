@@ -1,10 +1,10 @@
 # Sources and evidence boundaries
 
-Profile snapshot: `2026-09-03-foundation.10`.
+Profile snapshot: `2026-09-03-foundation.11`.
 
 ## Upstream inspiration
 
-- [HiPotionQ8/XIchecklist](https://github.com/HiPotionQ8/XIchecklist): behavioral inspiration and requested conversion target. No Lua implementation code was copied. Its `maps/story.lua` table at commit [`04baf17b2b0373883407a94ce0b6a72274a31ba6`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/maps/story.lua) supplies the Bastok ordering for indices 0 through 92 and 82 named San d'Oria entries through index 119.
+- [HiPotionQ8/XIchecklist](https://github.com/HiPotionQ8/XIchecklist): behavioral inspiration and requested conversion target. No Lua implementation code was copied. Its `maps/story.lua` table at commit [`04baf17b2b0373883407a94ce0b6a72274a31ba6`](https://github.com/HiPotionQ8/XIchecklist/blob/04baf17b2b0373883407a94ce0b6a72274a31ba6/maps/story.lua) supplies the three nation client-log orderings: Bastok indices 0 through 92, 82 named San d'Oria entries through index 119, and 90 named Windurst entries through index 96.
 - [Windower/Lua packet definitions](https://github.com/Windower/Lua/tree/dev/addons/libs/packets) and Windower's generated key-item resources: protocol and numeric-ID cross-checks for the read-only map implementation. No Windower implementation code is bundled.
 
 ## Ashita v4 behavior
@@ -18,7 +18,7 @@ The live checks use Ashita v4's installed interface annotations and established 
 - read spell job requirements from the already name- and skill-validated `ISpell.LevelRequired` client resource, limited to Horizon's twenty level-75-era jobs and levels 1 through 75;
 - draw the checklist with Ashita's `imgui` library.
 
-Version 0.11.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok and San d'Oria catalogs. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; San d'Oria current/completed types are `0x0050`/`0x0090`, and Bastok types are `0x0058`/`0x0098`. It never changes, blocks, injects, or requests a packet.
+Version 0.12.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the three nation catalogs. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; San d'Oria current/completed types are `0x0050`/`0x0090`, Bastok types are `0x0058`/`0x0098`, and Windurst types are `0x0060`/`0x00A0`. It never changes, blocks, injects, or requests a packet.
 
 Decoded key-item groups and each nation's paired quest logs are hex-encoded separately into a versioned cache within Ashita's settings library. Ashita v4 stores that settings block under its character-name and server-ID path and invokes the registered callback when the active character changes. Invalid, incomplete, or absent cache data fails closed to `UNKNOWN`; packet data from one character is never intentionally reused for another.
 
@@ -78,7 +78,11 @@ There is no manual completion fallback for the mapped Bastok catalog. Until both
 
 The San d'Oria catalog contains all 82 named entries in XIchecklist's San d'Oria client-log ordering. The [HorizonXI San d'Oria Quests category](https://horizonffxi.wiki/Category:San_d%27Oria_Quests) provides location, type, NPC, and fame evidence for 79 entries: 60 numeric fame values and 19 values not listed. [Port San d'Oria](https://horizonffxi.wiki/Port_San_d%27Oria) separately references `Lure of the Wildcat (San d'Oria)`, but its individual page and fame value are unresolved. `Atelloune's Lament` and `Trust: San d'Oria` have no resolved current Horizon source, so their availability and fame stay `Unknown`. This yields 80 rows with some Horizon evidence, two explicit availability unknowns, and three unknown fame values without inventing missing facts.
 
-San d'Oria state uses its own character-cache key and does not change the established Bastok cache format. There is no manual completion fallback for either nation catalog. Until both live logs or a valid cache exist for the relevant nation and character, its rows remain `UNKNOWN`.
+San d'Oria state uses its own character-cache key and does not change the established Bastok cache format. There is no manual completion fallback for any nation catalog. Until both live logs or a valid cache exist for the relevant nation and character, its rows remain `UNKNOWN`.
+
+The Windurst catalog contains all 90 named entries in XIchecklist's Windurst client-log ordering. The [HorizonXI Windurst Quests category](https://horizonffxi.wiki/Category:Windurst_Quests) matches 87 client rows and supplies 65 numeric fame values plus 22 values not listed. Four mapped rows—`Let Sleeping Dogs Lie`, `Nothing Matters`, `Escort for Hire (Windurst)`, and `A Discerning Eye (Windurst)`—are explicitly marked unavailable by that table and remain visible as `UNAVAILABLE` when that filter is enabled. Its two additional rows, `A Chocobo Riding Game (Windurst)` and `Dyer's Woad Quest`, have no XIchecklist client-log mapping and are not silently inserted. Current pages for [Tree Saplings](https://horizonffxi.wiki/Tree_Saplings) and [Ibwam](https://horizonffxi.wiki/Ibwam) separately reference `Babban Ny Mheillea` and `Lure of the Wildcat (Windurst)`; both remain `Unknown` fame because their individual quest pages and fame values are unresolved. `Trust: Windurst` has no resolved current Horizon source, so both its availability and fame remain `Unknown`. This produces 89 rows with some current Horizon evidence, four source-reported unavailable rows, one explicit availability unknown, and three unknown fame values.
+
+Windurst uses a separate character-cache key while preserving the established Bastok and San d'Oria cache structures. Until its current and completed logs or a valid character cache exist, its rows remain `UNKNOWN`.
 
 ## Maintenance rule
 

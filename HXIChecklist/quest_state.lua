@@ -11,6 +11,7 @@ local type_offset = 0x24;
 local area_configs = {
     sandoria = { label = "San d'Oria", current_type = 0x0050, completed_type = 0x0090 },
     bastok = { label = 'Bastok', current_type = 0x0058, completed_type = 0x0098 },
+    windurst = { label = 'Windurst', current_type = 0x0060, completed_type = 0x00A0 },
 };
 
 local live_logs = {};
@@ -139,6 +140,10 @@ end
 
 function quest_state.get_sandoria(index)
     return quest_state.get_area('sandoria', index);
+end
+
+function quest_state.get_windurst(index)
+    return quest_state.get_area('windurst', index);
 end
 
 function quest_state.load_area_cache(area, cache)

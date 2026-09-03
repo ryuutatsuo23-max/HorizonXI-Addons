@@ -2,12 +2,13 @@ local magic_data = require('magic_data');
 local map_data = require('map_data');
 local bastok_quest_data = require('bastok_quest_data');
 local sandoria_quest_data = require('sandoria_quest_data');
+local windurst_quest_data = require('windurst_quest_data');
 
 local profile = {
     id = 'horizon-foundation',
-    version = '2026-09-03-foundation.10',
+    version = '2026-09-03-foundation.11',
     incomplete = true,
-    scope_note = "This profile is intentionally incomplete: nine sourced magic catalogs, the HorizonXI Magical Maps catalog, and the San d'Oria and Bastok client quest-log catalogs. Its totals are not whole-server completion.",
+    scope_note = "This profile is intentionally incomplete: nine sourced magic catalogs, the HorizonXI Magical Maps catalog, and the San d'Oria, Bastok, and Windurst client quest-log catalogs. Its totals are not whole-server completion.",
     categories = {
         {
             id = 'magic_skills',
@@ -36,6 +37,13 @@ local profile = {
             description = "Eighty-two named San d'Oria client quest-log entries mapped from XIchecklist. Eighty have HorizonXI evidence; two remain explicit unknown. Required San d'Oria fame is shown exactly as numeric, Not listed, or Unknown. Current/completed state is read from incoming quest logs and cached by Ashita character.",
             views = sandoria_quest_data.views,
             entries = sandoria_quest_data.entries,
+        },
+        {
+            id = 'windurst_quests',
+            name = 'Windurst Quests',
+            description = 'Ninety named Windurst client quest-log entries mapped from XIchecklist. Eighty-nine have current HorizonXI evidence, four are source-reported unavailable, and one remains explicit unknown. Required Windurst fame is shown exactly as numeric, Not listed, or Unknown. Current/completed state is read from incoming quest logs and cached by Ashita character.',
+            views = windurst_quest_data.views,
+            entries = windurst_quest_data.entries,
         },
     },
 };

@@ -9,8 +9,8 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Toggle with `/hc`; show/hide and window close should remain synchronized.
 - [ ] Change scale and filters, reload the addon, and confirm they persist for that character.
 - [ ] Compare 75%, 100%, and 150% and confirm the addon text visibly changes size at each setting.
-- [ ] On a character with no cache, confirm both nation quest catalogs show no manual checkboxes and unresolved rows are `UNKNOWN`.
-- [ ] After receiving the logs once, unload/reload the addon without zoning and confirm map, Bastok, and San d'Oria quest states restore from cache.
+- [ ] On a character with no cache, confirm all three nation quest catalogs show no manual checkboxes and unresolved rows are `UNKNOWN`.
+- [ ] After receiving the logs once, unload/reload the addon without zoning and confirm map and all three nation quest states restore from cache.
 - [ ] Log into another character and confirm it does not inherit the first character's cached state.
 - [ ] Return to the first character and confirm its own cache restores.
 
@@ -74,6 +74,14 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Confirm `Atelloune's Lament` and `Trust: San d'Oria` remain `UNKNOWN` source states rather than being guessed available.
 - [ ] After zoning, compare one accepted, one completed, and one neither-current-nor-completed San d'Oria quest, including an entry above index 113.
 - [ ] Drag both San d'Oria dividers and confirm Quest, Source, and San d'Oria Fame columns resize without overlap.
+- [ ] Open `Windurst Quests` and confirm its selector contains All Quests, Windurst Woods, Windurst Waters North, Windurst Waters South, Port Windurst, Windurst Walls, Heavens Tower, and Unresolved.
+- [ ] With completed entries visible, confirm `All Quests` contains 90 named rows, including `Trust: Windurst` at index 96.
+- [ ] Confirm numeric Windurst requirements display as `Fame X`; confirm 22 entries show `Not listed` and three show `Unknown`.
+- [ ] Confirm `Trust: Windurst` remains `UNKNOWN` source state rather than being guessed available.
+- [ ] Enable `Show unavailable` and confirm Let Sleeping Dogs Lie, Nothing Matters, Escort for Hire (Windurst), and A Discerning Eye (Windurst) display `UNAVAILABLE`.
+- [ ] Confirm `A Chocobo Riding Game (Windurst)` and `Dyer's Woad Quest` are absent because they have no matched XIchecklist client-log indices.
+- [ ] After zoning, compare one accepted, one completed, and one neither-current-nor-completed Windurst quest, including a high-index entry.
+- [ ] Drag both Windurst dividers and confirm Quest, Source, and Windurst Fame columns resize without overlap.
 - [ ] Test immediately after login or zoning; unresolved client data must show `UNKNOWN`, never a false missing state.
 - [ ] Use `/hc refresh` after login and verify unresolved resource names remain explicit.
 

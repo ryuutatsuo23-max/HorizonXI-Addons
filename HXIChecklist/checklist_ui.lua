@@ -20,6 +20,12 @@ local state_badges = {
     unavailable = 'UNAVAILABLE',
 };
 
+local quest_nation_names = {
+    bastok_quests = 'Bastok',
+    sandoria_quests = "San d'Oria",
+    windurst_quests = 'Windurst',
+};
+
 local availability_labels = {
     reported_active = 'Reported active',
     wiki_listed = 'Wiki-listed',
@@ -331,10 +337,8 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
         return;
     end
 
-    if category.id == 'bastok_quests' or category.id == 'sandoria_quests' then
-        local nation_name = category.id == 'sandoria_quests'
-            and "San d'Oria"
-            or 'Bastok';
+    local nation_name = quest_nation_names[category.id];
+    if nation_name ~= nil then
         local scale = settings.scale_percent / 100;
         local quest_width = math.max(
             250 * scale,

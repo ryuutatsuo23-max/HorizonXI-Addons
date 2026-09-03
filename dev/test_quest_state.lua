@@ -78,6 +78,13 @@ local sandoria_completed = state.get_sandoria(117);
 assert(sandoria_completed.current == false and sandoria_completed.completed == true);
 assert(state.get_sandoria(119).current == true);
 
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0060, { 9, 96 }) }));
+assert(state.get_windurst(9) == nil);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x00A0, { 0, 95 }) }));
+assert(state.get_windurst(9).current == true);
+assert(state.get_windurst(95).completed == true);
+assert(state.get_windurst(96).current == true);
+
 local current = state.get_bastok(34);
 assert(current.current == true and current.completed == false);
 
@@ -95,20 +102,25 @@ assert(high_completed.current == false and high_completed.completed == true);
 
 local cache = state.export_cache();
 local sandoria_cache = state.export_area_cache('sandoria');
+local windurst_cache = state.export_area_cache('windurst');
 assert(cache.version == 1);
 assert(#cache.current == 0x40 and #cache.completed == 0x40);
 assert(sandoria_cache.version == 1);
+assert(windurst_cache.version == 1);
 
 assert(state.handle_packet({ id = 0x00A, data = '' }));
 local cached = state.get_bastok(34);
 assert(cached.current == true and cached.source == 'cache');
 assert(state.get_sandoria(117).completed == true);
 assert(state.get_sandoria(117).source == 'cache');
+assert(state.get_windurst(95).completed == true);
+assert(state.get_windurst(95).source == 'cache');
 
 state.clear();
 assert(state.get_bastok(34) == nil);
 assert(state.load_cache(cache));
 assert(state.load_area_cache('sandoria', sandoria_cache));
+assert(state.load_area_cache('windurst', windurst_cache));
 assert(state.get_bastok(10).completed == true);
 assert(state.get_bastok(10).source == 'cache');
 assert(state.get_bastok(89).completed == true);
@@ -116,9 +128,13 @@ assert(state.get_bastok(92).current == true);
 assert(state.get_sandoria(59).current == true);
 assert(state.get_sandoria(117).completed == true);
 assert(state.get_sandoria(119).current == true);
+assert(state.get_windurst(9).current == true);
+assert(state.get_windurst(95).completed == true);
+assert(state.get_windurst(96).current == true);
 assert(state.load_cache({ version = 1, current = 'invalid', completed = 'invalid' }) == false);
 assert(state.get_bastok(34) == nil);
 assert(state.get_sandoria(117).completed == true);
+assert(state.get_windurst(95).completed == true);
 
 assert(state.handle_packet({ id = 0x056, data = 'short' }) == false);
 assert(state.handle_packet({ id = 0x056, data = make_packet(0x0048, {}) }) == false);
