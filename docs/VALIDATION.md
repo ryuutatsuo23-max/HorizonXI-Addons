@@ -31,6 +31,8 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Confirm `Absorb-ACC` displays `DRK Lv.61`, then compare several single-job and multi-job requirements against the private client's spell information.
 - [ ] Resize and scale the addon; confirm long multi-job requirements wrap without overlapping spell names or Source buttons.
 - [ ] In a narrow window, confirm multi-job requirements use the compact form and show the full `Lv.` form when hovered.
+- [ ] Drag both vertical Magic-table separators and confirm the spell, Source, and job-level columns resize without overlap.
+- [ ] Confirm multi-job requirements use commas and no slash separators remain.
 
 ## Skill Levels
 

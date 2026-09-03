@@ -43,7 +43,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.6.2'", self.main)
+        self.assertIn("addon.version = '0.6.3'", self.main)
         self.assertIn("version = '2026-09-03-foundation.5'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
@@ -260,7 +260,11 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("job_levels.format(resource.LevelRequired, 75)", self.catalog)
         self.assertIn("item.job_levels, item.job_levels_compact", self.catalog)
         self.assertIn("category.id == 'magic_skills'", self.ui)
-        self.assertIn("imgui.BeginTable(table_id, 3", self.ui)
+        self.assertIn("imgui.BeginTable('##MagicRows', 3, table_flags)", self.ui)
+        self.assertIn("ImGuiTableFlags_Resizable", self.ui)
+        self.assertIn("ImGuiTableFlags_BordersInnerV", self.ui)
+        self.assertIn("imgui.GetWindowWidth() * 0.35", self.ui)
+        self.assertIn("ImGuiTableColumnFlags_WidthFixed, magic_width", self.ui)
         self.assertIn("imgui.CalcTextSize('Source') + 24", self.ui)
         self.assertIn("ImGuiTableColumnFlags_WidthFixed, source_width", self.ui)
         self.assertIn("imgui.TextWrapped(requirement_text)", self.ui)
@@ -275,7 +279,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
     def test_narrow_job_levels_use_compact_hoverable_text(self):
         self.assertIn("imgui.GetContentRegionAvail()", self.ui)
         self.assertIn("item.job_levels_compact", self.ui)
-        self.assertIn("full_width > math.max(0, available_width - 18)", self.ui)
+        self.assertIn("full_width > available_width", self.ui)
         self.assertIn("if use_compact and imgui.IsItemHovered()", self.ui)
 
     def test_skill_levels_are_live_and_separate_from_checklist_state(self):

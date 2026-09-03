@@ -56,7 +56,7 @@ function job_levels.format(level_required, level_cap, compact)
             and string.format('%s %d', requirement.abbreviation, requirement.level)
             or string.format('%s Lv.%d', requirement.abbreviation, requirement.level);
     end
-    return table.concat(labels, compact_multiple and ', ' or ' / ');
+    return table.concat(labels, ', ');
 end
 
 return job_levels;

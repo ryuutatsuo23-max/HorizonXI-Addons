@@ -124,13 +124,11 @@ local function render_magic_entry(item, actions, imgui)
     end
 
     imgui.TableSetColumnIndex(2);
-    imgui.TextColored({ 0.55, 0.58, 0.62, 1.00 }, '|');
-    imgui.SameLine();
     if item.job_levels and item.job_levels ~= '' then
         local available_width = imgui.GetContentRegionAvail();
         local full_width = imgui.CalcTextSize(item.job_levels);
         local use_compact = item.job_levels_compact
-            and full_width > math.max(0, available_width - 18);
+            and full_width > available_width;
         local requirement_text = use_compact
             and item.job_levels_compact or item.job_levels;
         imgui.TextWrapped(requirement_text);
@@ -167,15 +165,22 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
     end
 
     if category.id == 'magic_skills' then
-        local table_id = ('##MagicRows_%s'):fmt(view.id or 'all');
+        local scale = settings.scale_percent / 100;
+        local magic_width = math.max(
+            220 * scale,
+            math.min(imgui.GetWindowWidth() * 0.35, 320 * scale));
         local source_width = imgui.CalcTextSize('Source') + 24;
-        if imgui.BeginTable(table_id, 3, ImGuiTableFlags_SizingStretchProp) then
+        local table_flags = bit.bor(
+            ImGuiTableFlags_Resizable,
+            ImGuiTableFlags_BordersInnerV,
+            ImGuiTableFlags_SizingStretchProp);
+        if imgui.BeginTable('##MagicRows', 3, table_flags) then
             imgui.TableSetupColumn(
-                'Magic', ImGuiTableColumnFlags_WidthStretch, 1.15, 0);
+                'Magic', ImGuiTableColumnFlags_WidthFixed, magic_width, 0);
             imgui.TableSetupColumn(
                 'Source', ImGuiTableColumnFlags_WidthFixed, source_width, 0);
             imgui.TableSetupColumn(
-                'Job levels', ImGuiTableColumnFlags_WidthStretch, 0.85, 0);
+                'Job levels', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
             for _, item in ipairs(visible) do
                 render_magic_entry(item, actions, imgui);
             end
