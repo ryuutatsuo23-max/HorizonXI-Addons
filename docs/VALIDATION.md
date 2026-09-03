@@ -9,7 +9,7 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Toggle with `/hc`; show/hide and window close should remain synchronized.
 - [ ] Change scale and filters, reload the addon, and confirm they persist for that character.
 - [ ] Compare 75%, 100%, and 150% and confirm the addon text visibly changes size at each setting.
-- [ ] On a character with no cache, confirm the Bastok pilot shows no manual checkboxes and unresolved rows are `UNKNOWN`.
+- [ ] On a character with no cache, confirm the Bastok quest catalog shows no manual checkboxes and unresolved rows are `UNKNOWN`.
 - [ ] After receiving the logs once, unload/reload the addon without zoning and confirm map and Bastok quest states restore from cache.
 - [ ] Log into another character and confirm it does not inherit the first character's cached state.
 - [ ] Return to the first character and confirm its own cache restores.
@@ -58,15 +58,23 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Confirm Bostaunieux Oubliette shows `Quest: The Sand Charm`; compare several other quest, mission, mini-quest, chest, and coffer rows with their Source pages.
 - [ ] Drag both Maps dividers and confirm Map, Source, and Obtained columns resize without overlap, including long quest titles and Imperial Standing values.
 - [ ] Before that first zone, confirm unresolved map state is `UNKNOWN`, never falsely `Missing`.
-- [ ] Before that first zone and with no cache, confirm Bastok pilot rows are `UNKNOWN` and have no checkboxes.
-- [ ] After zoning, compare one current, one completed, and one neither-current-nor-completed pilot quest against the in-game Bastok quest logs; expect `Accepted`, `Completed`, and `Not Accepted`.
+- [ ] Open `Bastok Quests` and confirm its selector contains All Quests, Bastok Markets, Bastok Mines, Metalworks, Port Bastok, Lower Jeuno, Beadeaux, and Unresolved.
+- [ ] With completed entries visible, confirm `All Quests` contains 93 rows and includes both early entries such as `The Siren's Tear` and high-index entries such as `Trust: Bastok`.
+- [ ] Confirm Quest and Source columns align vertically and Bastok Fame appears in the third column.
+- [ ] Drag both Bastok dividers and confirm Quest, Source, and Bastok Fame columns resize without overlap.
+- [ ] Compare several numeric fame rows against their Source pages, including `The Bare Bones` at Level 1, `The Return of the Adventurer` at Level 3, and `Wish Upon a Star` at Level 5.
+- [ ] Confirm job/weapon-skill rows whose Horizon table shows no fame display `Not listed`, not a guessed level.
+- [ ] Confirm the five rows without a sourced fame table value display `Unknown`.
+- [ ] Before that first zone and with no cache, confirm Bastok quest rows are `UNKNOWN` and have no checkboxes.
+- [ ] After zoning, compare one current, one completed, and one neither-current-nor-completed quest against the in-game Bastok quest logs; expect `Accepted`, `Completed`, and `Not Accepted`.
+- [ ] Include at least one quest above index 85 in the comparison to exercise the expanded packet-bit range.
 - [ ] Test immediately after login or zoning; unresolved client data must show `UNKNOWN`, never a false missing state.
 - [ ] Use `/hc refresh` after login and verify unresolved resource names remain explicit.
 
 ## Evidence and totals
 
-- [ ] Confirm `HXQ-0003` displays `UNKNOWN` and is excluded from the denominator.
-- [ ] Enable `Show unavailable`; confirm `HXQ-0012` displays `UNAVAILABLE` and is excluded.
+- [ ] Confirm `A Proper Burial` displays `UNKNOWN` and is excluded from the denominator.
+- [ ] Enable `Show unavailable`; confirm `All by Myself` displays `UNAVAILABLE` and is excluded.
 - [ ] Open several Source buttons and confirm they lead to the expected HorizonXI Wiki pages.
 - [ ] Confirm the header clearly says the profile is intentionally incomplete.
 

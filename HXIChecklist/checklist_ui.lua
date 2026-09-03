@@ -70,6 +70,12 @@ local function render_tooltip(item, imgui)
     if item.npc and item.npc ~= '' then
         imgui.Text(('NPC: %s'):fmt(item.npc));
     end
+    if item.quest_location and item.quest_location ~= '' then
+        imgui.Text(('Starts in: %s'):fmt(item.quest_location));
+    end
+    if item.quest_type and item.quest_type ~= '' then
+        imgui.Text(('Quest type: %s'):fmt(item.quest_type));
+    end
     if item.description and item.description ~= '' then
         imgui.Separator();
         imgui.TextWrapped(item.description);
@@ -178,11 +184,62 @@ local function render_map_entry(item, actions, imgui)
     imgui.PopID();
 end
 
+local function render_bastok_entry(item, actions, imgui)
+    imgui.PushID(item.id);
+    imgui.TableNextRow();
+
+    imgui.TableSetColumnIndex(0);
+    local color = state_colors[item.state] or { 1, 1, 1, 1 };
+    imgui.TextColored(color, ('[%s]'):fmt(state_badges[item.state] or item.state));
+    imgui.SameLine();
+    imgui.Text(item.name);
+    render_tooltip(item, imgui);
+
+    imgui.TableSetColumnIndex(1);
+    if item.source_url and item.source_url ~= '' then
+        if imgui.SmallButton('Source') then
+            actions.open_source(item.source_url);
+        end
+    end
+
+    imgui.TableSetColumnIndex(2);
+    if type(item.fame_level) == 'number' then
+        imgui.Text(('Level %d'):fmt(item.fame_level));
+    elseif item.fame_label == 'Not listed' then
+        imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'Not listed');
+    else
+        imgui.TextColored({ 1.00, 0.30, 0.30, 1.00 }, 'Unknown');
+    end
+    if imgui.IsItemHovered() then
+        imgui.BeginTooltip();
+        imgui.PushTextWrapPos(imgui.GetFontSize() * 32);
+        if type(item.fame_level) == 'number' then
+            imgui.TextWrapped(
+                ('HorizonXI lists Bastok fame level %d as required.'):fmt(
+                    item.fame_level));
+        elseif item.fame_label == 'Not listed' then
+            imgui.TextWrapped(
+                'The HorizonXI Bastok quest table does not list a fame level for this quest.');
+        else
+            imgui.TextWrapped(
+                'No sourced Bastok fame value was available; this is not a guessed requirement.');
+        end
+        imgui.PopTextWrapPos();
+        imgui.EndTooltip();
+    end
+
+    imgui.PopID();
+end
+
 local function matches_view(item, view)
     if view.magic_skill ~= nil and item.magic_skill ~= view.magic_skill then
         return false;
     end
     if view.map_catalog ~= nil and item.map_catalog ~= view.map_catalog then
+        return false;
+    end
+    if view.quest_location ~= nil
+        and item.quest_location ~= view.quest_location then
         return false;
     end
     return true;
@@ -265,6 +322,41 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
                 'Job levels', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
             for _, item in ipairs(visible) do
                 render_magic_entry(item, actions, imgui);
+            end
+            imgui.EndTable();
+        end
+        imgui.PopStyleColor(2);
+        return;
+    end
+
+    if category.id == 'bastok_quests' then
+        local scale = settings.scale_percent / 100;
+        local quest_width = math.max(
+            250 * scale,
+            math.min(imgui.GetWindowWidth() * 0.45, 360 * scale));
+        local source_width = imgui.CalcTextSize('Source') + 24;
+        local table_flags = bit.bor(
+            ImGuiTableFlags_Resizable,
+            ImGuiTableFlags_BordersInnerV,
+            ImGuiTableFlags_SizingStretchProp);
+        imgui.TextColored(
+            { 0.68, 0.72, 0.78, 1.00 },
+            'Drag the vertical dividers to resize Quest, Source, and Bastok Fame columns.');
+        imgui.PushStyleColor(
+            ImGuiCol_TableBorderStrong,
+            { 0.78, 0.82, 0.88, 1.00 });
+        imgui.PushStyleColor(
+            ImGuiCol_TableBorderLight,
+            { 0.58, 0.64, 0.72, 1.00 });
+        if imgui.BeginTable('##BastokQuestRows', 3, table_flags) then
+            imgui.TableSetupColumn(
+                'Quest', ImGuiTableColumnFlags_WidthFixed, quest_width, 0);
+            imgui.TableSetupColumn(
+                'Source', ImGuiTableColumnFlags_WidthFixed, source_width, 0);
+            imgui.TableSetupColumn(
+                'Bastok Fame', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
+            for _, item in ipairs(visible) do
+                render_bastok_entry(item, actions, imgui);
             end
             imgui.EndTable();
         end

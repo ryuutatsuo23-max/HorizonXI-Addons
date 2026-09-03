@@ -8,6 +8,7 @@ PACKAGE = ROOT / "HXIChecklist"
 PROFILE = PACKAGE / "horizon_profile.lua"
 MAGIC_DATA = PACKAGE / "magic_data.lua"
 MAP_DATA = PACKAGE / "map_data.lua"
+BASTOK_QUEST_DATA = PACKAGE / "bastok_quest_data.lua"
 SKILL_LEVELS = PACKAGE / "skill_levels.lua"
 
 
@@ -17,6 +18,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         cls.profile = PROFILE.read_text(encoding="utf-8")
         cls.magic_data = MAGIC_DATA.read_text(encoding="utf-8")
         cls.map_data = MAP_DATA.read_text(encoding="utf-8")
+        cls.bastok_quest_data = BASTOK_QUEST_DATA.read_text(encoding="utf-8")
         cls.skill_levels = SKILL_LEVELS.read_text(encoding="utf-8")
         cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
         cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
@@ -33,6 +35,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             {path.name for path in PACKAGE.iterdir()},
             {
                 "HXIChecklist.lua",
+                "bastok_quest_data.lua",
                 "catalog.lua",
                 "checklist_ui.lua",
                 "horizon_profile.lua",
@@ -46,13 +49,13 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.9.0'", self.main)
-        self.assertIn("version = '2026-09-03-foundation.8'", self.profile)
+        self.assertIn("addon.version = '0.10.0'", self.main)
+        self.assertIn("version = '2026-09-03-foundation.9'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',\s*(\d+),", self.map_data, re.MULTILINE)
         self.assertEqual(len(map_ids), 72)
-        self.assertEqual(self.profile.count("kind = 'manual'"), 19)
+        self.assertEqual(self.bastok_quest_data.count("kind = 'manual'"), 93)
 
     def test_magic_categories_and_counts(self):
         expected = {
@@ -167,28 +170,28 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertNotIn("map.leujaoam_sanctum", self.map_data)
 
     def test_entry_ids_are_unique(self):
-        direct_entry_ids = re.findall(
+        quest_entry_ids = re.findall(
             r"\{ id = '([^']+)',(?: reference_id = '[^']+',)? kind = '(?:spell|key_item|manual)'",
-            self.profile,
+            self.bastok_quest_data,
         )
-        self.assertEqual(len(direct_entry_ids), 19)
-        self.assertEqual(len(direct_entry_ids), len(set(direct_entry_ids)))
+        self.assertEqual(len(quest_entry_ids), 93)
+        self.assertEqual(len(quest_entry_ids), len(set(quest_entry_ids)))
 
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         generated_ids = [f"spell.{resource_id}" for resource_id in spell_ids]
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',", self.map_data, re.MULTILINE)
-        all_ids = direct_entry_ids + generated_ids + map_ids
-        self.assertEqual(len(all_ids), 407)
+        all_ids = quest_entry_ids + generated_ids + map_ids
+        self.assertEqual(len(all_ids), 481)
         self.assertEqual(len(all_ids), len(set(all_ids)))
 
     def test_all_entries_are_sourced(self):
         entry_lines = [
-            line for line in self.profile.splitlines()
+            line for line in self.bastok_quest_data.splitlines()
             if "kind = 'spell'" in line
             or "kind = 'key_item'" in line
             or "kind = 'manual'" in line
         ]
-        self.assertEqual(len(entry_lines), 19)
+        self.assertEqual(len(entry_lines), 93)
         for line in entry_lines:
             self.assertRegex(line, r"source_url = 'https://")
             self.assertRegex(line, r"availability = '(?:reported_active|wiki_listed|unknown|reported_inactive)'")
@@ -205,9 +208,9 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("source_url = map[5] ~= nil", self.map_data)
 
     def test_manual_ids_preserve_pilot_range(self):
-        ids = re.findall(r"reference_id = '(HXQ-\d{4})'", self.profile)
+        ids = re.findall(r"reference_id = '(HXQ-\d{4})'", self.bastok_quest_data)
         expected = [f"HXQ-{number:04d}" for number in range(1, 20)]
-        self.assertEqual(ids, expected)
+        self.assertEqual(sorted(ids), expected)
 
     def test_bastok_pilot_indices_are_explicit_and_stable(self):
         expected = {
@@ -235,16 +238,16 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             entry_id: int(quest_index)
             for entry_id, quest_index in re.findall(
                 r"id = '(HXQ-\d{4})'.*?quest_area = 'bastok'.*?quest_index = (\d+)",
-                self.profile,
+                self.bastok_quest_data,
             )
         }
         self.assertEqual(found, expected)
 
     def test_unknown_and_inactive_are_explicit(self):
-        self.assertIn("id = 'HXQ-0003'", self.profile)
-        self.assertIn("availability = 'unknown'", self.profile)
-        self.assertIn("id = 'HXQ-0012'", self.profile)
-        self.assertIn("availability = 'reported_inactive'", self.profile)
+        self.assertIn("id = 'HXQ-0003'", self.bastok_quest_data)
+        self.assertIn("availability = 'unknown'", self.bastok_quest_data)
+        self.assertIn("id = 'HXQ-0012'", self.bastok_quest_data)
+        self.assertIn("availability = 'reported_inactive'", self.bastok_quest_data)
         self.assertIn("if entry.availability == 'reported_inactive'", self.catalog)
         self.assertIn("return 'unknown'", self.catalog)
 
@@ -284,6 +287,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("imgui.Selectable(", self.ui)
         self.assertIn("item.magic_skill ~= view.magic_skill", self.ui)
         self.assertIn("item.map_catalog ~= view.map_catalog", self.ui)
+        self.assertIn("item.quest_location ~= view.quest_location", self.ui)
         self.assertNotIn("##HXIChecklistViews_", self.ui)
         self.assertIn("imgui.EndCombo();\n        end\n        imgui.Separator();", self.ui)
 
@@ -336,6 +340,35 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("imgui.TextWrapped(item.vendor_cost)", self.ui)
         self.assertIn("imgui.TextWrapped(item.acquisition_method)", self.ui)
         self.assertIn("'Acquisition method listed in the HorizonXI Magical Maps table.'", self.ui)
+
+    def test_bastok_quests_cover_client_indices_and_sourced_fame(self):
+        pairs = [
+            (int(index), name)
+            for index, name in re.findall(
+                r"quest_index = (\d+), name = '((?:\\'|[^'])+)'",
+                self.bastok_quest_data,
+            )
+        ]
+        self.assertEqual([index for index, _ in pairs], list(range(93)))
+        self.assertEqual(len({name for _, name in pairs}), 93)
+        self.assertEqual(self.bastok_quest_data.count("fame_level = "), 67)
+        self.assertEqual(self.bastok_quest_data.count("fame_label = 'Not listed'"), 21)
+        self.assertEqual(self.bastok_quest_data.count("fame_label = 'Unknown'"), 5)
+        self.assertIn("name = 'Bastok Quests'", self.profile)
+        self.assertNotIn("Bastok Markets Pilot", self.profile)
+        self.assertIn("name = 'All Quests'", self.bastok_quest_data)
+        self.assertIn("name = 'Unresolved'", self.bastok_quest_data)
+
+    def test_bastok_rows_align_source_and_fame_with_resizable_dividers(self):
+        self.assertIn("category.id == 'bastok_quests'", self.ui)
+        self.assertIn("imgui.BeginTable('##BastokQuestRows', 3, table_flags)", self.ui)
+        self.assertIn("ImGuiTableColumnFlags_WidthFixed, quest_width", self.ui)
+        self.assertIn("ImGuiTableColumnFlags_WidthFixed, source_width", self.ui)
+        self.assertIn("'Bastok Fame'", self.ui)
+        self.assertIn("('Level %d'):fmt(item.fame_level)", self.ui)
+        self.assertIn("'Not listed'", self.ui)
+        self.assertIn("'Drag the vertical dividers to resize Quest, Source, and Bastok Fame columns.'", self.ui)
+        self.assertIn("render_bastok_entry(item, actions, imgui)", self.ui)
 
     def test_map_vendor_prices_are_sourced_and_bounded(self):
         vendor_block = re.search(

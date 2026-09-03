@@ -2,16 +2,18 @@
 
 HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately bounded HorizonXI-oriented profile.
 
-Version 0.9.0 is not a complete HorizonXI checklist. It includes four bounded pieces:
+Version 0.10.0 is not a complete HorizonXI checklist. It includes four bounded pieces:
 
 - live, read-only ownership for 316 sourced level-75-cap spells, summons, ninjutsu, and songs in nine catalogs;
 - live, read-only ownership for 72 map key items listed in HorizonXI's Magical Maps table, from the incoming `0x055` key-item log;
-- passive current/completed state for the 19-entry Bastok quest pilot, with no manual completion fallback.
+- passive current/completed state for all 93 indexed slots in the Bastok client quest log, with sourced fame labels and no manual completion fallback;
 - live numeric values and client-reported cap flags for eleven magic-related skills.
 
 The `Magic Skills` tab has a compact `Category` selector for `All Magic`, `Dark Magic`, `Divine Magic`, `Elemental Magic`, `Enfeebling Magic`, `Enhancing Magic`, `Healing Magic`, `Summoning`, `Ninjutsu`, and `Songs`. These remain learned-ownership catalog views. Magic rows align their Source buttons and always show comma-separated level-75-era job requirements from the validated client spell resource, such as `BLM Lv.12, RDM Lv.16`; multi-job spells list each applicable job. The brighter visible column separators can be dragged horizontally, and the initial spell column keeps Source buttons closer to the names. The separate `Skill Levels` tab reads Divine, Healing, Enhancing, Enfeebling, Elemental, Dark, Summoning, Ninjutsu, Singing, String Instrument, and Wind Instrument values directly from Ashita.
 
 The `Maps` tab has its own compact selector for `All Maps`, `Original Areas`, `Rise of the Zilart`, `Chains of Promathia`, and `Treasures of Aht Urhgan`. Its Map, Source, and Obtained columns are aligned and separated by visible draggable dividers. Thirty maps show a sourced vendor price; the other 42 show their sourced quest, mission, mini-quest, chest, or coffer method. The list is intentionally limited to the 72 rows in the sourced HorizonXI table; additional retail client map records and map pages outside that table are not silently imported.
+
+The `Bastok Quests` tab covers the client log indices 0 through 92 and has location views for Bastok Markets, Bastok Mines, Metalworks, Port Bastok, Lower Jeuno, Beadeaux, and unresolved source rows. Quest, Source, and Bastok Fame columns are aligned and separated by visible draggable dividers. Fame is shown only as the HorizonXI table states it: a numeric `Level`, `Not listed`, or `Unknown`; the addon does not infer missing fame requirements.
 
 It passively reads the incoming `0x055` key-item and `0x056` quest logs and registers no outgoing packet handler. It injects, modifies, blocks, or requests no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
 
@@ -29,6 +31,7 @@ This repository is for local private-server evaluation. It has not been submitte
 The copy-ready folder contains exactly the required runtime files:
 
 - `HXIChecklist.lua`
+- `bastok_quest_data.lua`
 - `catalog.lua`
 - `checklist_ui.lua`
 - `horizon_profile.lua`
@@ -39,7 +42,7 @@ The copy-ready folder contains exactly the required runtime files:
 - `quest_state.lua`
 - `skill_levels.lua`
 
-Copy the whole `HXIChecklist` folder so these ten files stay together.
+Copy the whole `HXIChecklist` folder so these eleven files stay together.
 
 ## Commands
 
@@ -68,15 +71,15 @@ Numeric skill levels are also live-only and are deliberately separate from the c
 
 ## Data compatibility
 
-Existing legacy manual-mark values are left untouched in settings for compatibility but are no longer displayed or used by the mapped Bastok pilot. Cached packet state uses Ashita's character-scoped settings; switching characters loads a different cache. Future profile growth should retain existing IDs and extend the versioned cache without silently converting unknown state into missing or complete.
+Existing legacy manual-mark values are left untouched in settings for compatibility but are no longer displayed or used by the mapped Bastok quests. The original `HXQ-0001` through `HXQ-0019` IDs remain stable, and the same character-scoped quest-bit cache now covers all imported indices without a format migration. Cached packet state uses Ashita's character-scoped settings; switching characters loads a different cache. Future profile growth should retain existing IDs and extend the versioned cache without silently converting unknown state into missing or complete.
 
 ## Explicitly deferred
 
-- missions, fame, RoE, objectives, other quest regions, and quests outside the 19-entry Bastok pilot;
+- missions, live fame-point reading, RoE, objectives, and quest regions outside the Bastok client log;
 - calculated skill caps, equipment or food bonuses, and skill-history tracking;
 - other magic systems such as blue magic and geomancy unless separately sourced and reviewed;
 - retail-only XIchecklist categories not verified against HorizonXI;
 - automatic imports from upstream or the HorizonXI wiki;
 - live HorizonXI deployment, publishing, or approval submission.
 
-The quest pilot should be validated independently on the local private server before its packet mapping or profile scope is expanded.
+The expanded Bastok catalog should be validated independently on the local private server before its packet mapping or profile scope is expanded.

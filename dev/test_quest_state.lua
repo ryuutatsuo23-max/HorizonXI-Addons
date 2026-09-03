@@ -63,10 +63,10 @@ local state = dofile('HXIChecklist/quest_state.lua');
 local before, before_note = state.get_bastok(34);
 assert(before == nil and before_note:find('No saved Bastok quest state', 1, true));
 
-assert(state.handle_packet({ id = 0x056, data = make_packet(0x0058, { 18, 34 }) }));
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0058, { 18, 34, 92 }) }));
 assert(state.get_bastok(34) == nil);
 
-assert(state.handle_packet({ id = 0x056, data = make_packet(0x0098, { 10, 38 }) }));
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0098, { 10, 38, 89 }) }));
 
 local current = state.get_bastok(34);
 assert(current.current == true and current.completed == false);
@@ -76,6 +76,12 @@ assert(completed.current == false and completed.completed == true);
 
 local open = state.get_bastok(14);
 assert(open.current == false and open.completed == false);
+
+local high_current = state.get_bastok(92);
+assert(high_current.current == true and high_current.completed == false);
+
+local high_completed = state.get_bastok(89);
+assert(high_completed.current == false and high_completed.completed == true);
 
 local cache = state.export_cache();
 assert(cache.version == 1);
@@ -90,6 +96,8 @@ assert(state.get_bastok(34) == nil);
 assert(state.load_cache(cache));
 assert(state.get_bastok(10).completed == true);
 assert(state.get_bastok(10).source == 'cache');
+assert(state.get_bastok(89).completed == true);
+assert(state.get_bastok(92).current == true);
 assert(state.load_cache({ version = 1, current = 'invalid', completed = 'invalid' }) == false);
 assert(state.get_bastok(34) == nil);
 
