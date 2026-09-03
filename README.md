@@ -2,7 +2,7 @@
 
 HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately bounded HorizonXI-oriented profile.
 
-Version 0.12.0 is not a complete HorizonXI checklist. It includes four bounded pieces:
+Version 0.12.1 is not a complete HorizonXI checklist. It includes four bounded pieces:
 
 - live, read-only ownership for 316 sourced level-75-cap spells, summons, ninjutsu, and songs in nine catalogs;
 - live, read-only ownership for 72 map key items listed in HorizonXI's Magical Maps table, from the incoming `0x055` key-item log;
@@ -13,7 +13,7 @@ The `Magic Skills` tab has a compact `Category` selector for `All Magic`, `Dark 
 
 The `Maps` tab has its own compact selector for `All Maps`, `Original Areas`, `Rise of the Zilart`, `Chains of Promathia`, and `Treasures of Aht Urhgan`. Its Map, Source, and Obtained columns are aligned and separated by visible draggable dividers. Thirty maps show a sourced vendor price; the other 42 show their sourced quest, mission, mini-quest, chest, or coffer method. The list is intentionally limited to the 72 rows in the sourced HorizonXI table; additional retail client map records and map pages outside that table are not silently imported.
 
-The `Bastok Quests` tab covers client log indices 0 through 92. The `San d'Oria Quests` tab covers all 82 named XIchecklist entries through index 119, and `Windurst Quests` covers its 90 named entries through index 96. All three have sourced location views and aligned Quest, Source, and nation Fame columns separated by visible draggable dividers. Fame is shown only as the HorizonXI source states it: numeric `Fame X`, `Not listed`, or `Unknown`; the addon does not infer missing requirements.
+The single `Quests` tab has an `Area` dropdown for Bastok, San d'Oria, and Windurst, plus a `Location` dropdown for `All Locations` or a sourced location within that area. Each area's location selection is retained during the session. Bastok covers client log indices 0 through 92, San d'Oria covers all 82 named XIchecklist entries through index 119, and Windurst covers its 90 named entries through index 96. All three retain aligned Quest, Source, and nation Fame columns separated by visible draggable dividers. Fame is shown only as the HorizonXI source states it: numeric `Fame X`, `Not listed`, or `Unknown`; the addon does not infer missing requirements. Navigation does not change quest IDs, character caches, or progress calculations.
 
 It passively reads the incoming `0x055` key-item and `0x056` quest logs and registers no outgoing packet handler. It injects, modifies, blocks, or requests no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
 

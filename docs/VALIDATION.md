@@ -44,6 +44,14 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Reload the addon and switch characters; confirm values are read live for the active character without requiring a zone or reusing cached values.
 - [ ] Check the view before character data is available and confirm it shows `Unavailable` rather than a guessed zero.
 
+## Quest navigation
+
+- [ ] Confirm the top-level tabs are `Magic Skills`, `Maps`, `Quests`, and `Skill Levels`.
+- [ ] Open `Quests` and switch the `Area` dropdown among Bastok, San d'Oria, and Windurst; confirm descriptions, area totals, rows, and Fame labels follow the selected area without changing overall progress.
+- [ ] Choose a different `Location` in each area, switch away and back, and confirm each selection is retained during the session.
+- [ ] Confirm Magic Skills and Maps still use their existing `Category` selectors.
+- [ ] Test a narrow window at 75%, 100%, and 150% scale; confirm dropdowns, Source buttons, and draggable dividers remain usable.
+
 ## Maps and quest live state
 
 - [ ] On first use for a character, zone once so the incoming key-item and quest logs are received.
@@ -58,8 +66,8 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Confirm Bostaunieux Oubliette shows `Quest: The Sand Charm`; compare several other quest, mission, mini-quest, chest, and coffer rows with their Source pages.
 - [ ] Drag both Maps dividers and confirm Map, Source, and Obtained columns resize without overlap, including long quest titles and Imperial Standing values.
 - [ ] Before that first zone, confirm unresolved map state is `UNKNOWN`, never falsely `Missing`.
-- [ ] Open `Bastok Quests` and confirm its selector contains All Quests, Bastok Markets, Bastok Mines, Metalworks, Port Bastok, Lower Jeuno, Beadeaux, and Unresolved.
-- [ ] With completed entries visible, confirm `All Quests` contains 93 rows and includes both early entries such as `The Siren's Tear` and high-index entries such as `Trust: Bastok`.
+- [ ] In `Quests`, select Area `Bastok` and confirm its Location selector contains All Locations, Bastok Markets, Bastok Mines, Metalworks, Port Bastok, Lower Jeuno, Beadeaux, and Unresolved.
+- [ ] With completed entries visible, confirm `All Locations` contains 93 rows and includes both early entries such as `The Siren's Tear` and high-index entries such as `Trust: Bastok`.
 - [ ] Confirm Quest and Source columns align vertically and Bastok Fame appears in the third column.
 - [ ] Drag both Bastok dividers and confirm Quest, Source, and Bastok Fame columns resize without overlap.
 - [ ] Compare several numeric fame rows against their Source pages, including `The Bare Bones` at Fame 1, `The Return of the Adventurer` at Fame 3, and `Wish Upon a Star` at Fame 5.
@@ -68,14 +76,14 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Before that first zone and with no cache, confirm Bastok quest rows are `UNKNOWN` and have no checkboxes.
 - [ ] After zoning, compare one current, one completed, and one neither-current-nor-completed quest against the in-game Bastok quest logs; expect `Accepted`, `Completed`, and `Not Accepted`.
 - [ ] Include at least one quest above index 85 in the comparison to exercise the expanded packet-bit range.
-- [ ] Open `San d'Oria Quests` and confirm its selector contains All Quests, Northern San d'Oria, Southern San d'Oria, Port San d'Oria, Chateau d'Oraguille, Bostaunieux Oubliette, West Ronfaure, and Unresolved.
-- [ ] With completed entries visible, confirm `All Quests` contains 82 named rows, ending with high-index entries including `Trust: San d'Oria` at index 119.
+- [ ] In `Quests`, select Area `San d'Oria` and confirm its Location selector contains All Locations, Northern San d'Oria, Southern San d'Oria, Port San d'Oria, Chateau d'Oraguille, Bostaunieux Oubliette, West Ronfaure, and Unresolved.
+- [ ] With completed entries visible, confirm `All Locations` contains 82 named rows, ending with high-index entries including `Trust: San d'Oria` at index 119.
 - [ ] Confirm numeric San d'Oria requirements display as `Fame X`; confirm 19 entries show `Not listed` and three show `Unknown`.
 - [ ] Confirm `Atelloune's Lament` and `Trust: San d'Oria` remain `UNKNOWN` source states rather than being guessed available.
 - [ ] After zoning, compare one accepted, one completed, and one neither-current-nor-completed San d'Oria quest, including an entry above index 113.
 - [ ] Drag both San d'Oria dividers and confirm Quest, Source, and San d'Oria Fame columns resize without overlap.
-- [ ] Open `Windurst Quests` and confirm its selector contains All Quests, Windurst Woods, Windurst Waters North, Windurst Waters South, Port Windurst, Windurst Walls, Heavens Tower, and Unresolved.
-- [ ] With completed entries visible, confirm `All Quests` contains 90 named rows, including `Trust: Windurst` at index 96.
+- [ ] In `Quests`, select Area `Windurst` and confirm its Location selector contains All Locations, Windurst Woods, Windurst Waters North, Windurst Waters South, Port Windurst, Windurst Walls, Heavens Tower, and Unresolved.
+- [ ] With completed entries visible, confirm `All Locations` contains 90 named rows, including `Trust: Windurst` at index 96.
 - [ ] Confirm numeric Windurst requirements display as `Fame X`; confirm 22 entries show `Not listed` and three show `Unknown`.
 - [ ] Confirm `Trust: Windurst` remains `UNKNOWN` source state rather than being guessed available.
 - [ ] Enable `Show unavailable` and confirm Let Sleeping Dogs Lie, Nothing Matters, Escort for Hire (Windurst), and A Discerning Eye (Windurst) display `UNAVAILABLE`.

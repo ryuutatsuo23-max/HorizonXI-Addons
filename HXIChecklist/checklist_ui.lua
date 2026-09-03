@@ -379,7 +379,7 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
     end
 end
 
-local function render_category(category, settings, ui_state, actions, imgui)
+local function render_category(category, settings, ui_state, actions, imgui, selector_label)
     imgui.TextWrapped(category.description or '');
     imgui.TextColored(
         { 0.68, 0.72, 0.78, 1.00 },
@@ -393,12 +393,18 @@ local function render_category(category, settings, ui_state, actions, imgui)
         local selected = tonumber(ui_state.selected_views[category.id]) or 1;
         selected = math.max(1, math.min(#category.views, math.floor(selected)));
         local view = category.views[selected];
+        local function view_name(candidate)
+            if selector_label == 'Location' and candidate.id == 'all' then
+                return 'All Locations';
+            end
+            return candidate.name;
+        end
 
         imgui.SetNextItemWidth(220);
-        if imgui.BeginCombo(('Category##%s'):fmt(category.id), view.name) then
+        if imgui.BeginCombo(('%s##%s'):fmt(selector_label or 'Category', category.id), view_name(view)) then
             for index, candidate in ipairs(category.views) do
                 if imgui.Selectable(
-                    ('%s##%s'):fmt(candidate.name, candidate.id),
+                    ('%s##%s'):fmt(view_name(candidate), candidate.id),
                     index == selected) then
                     selected = index;
                     view = candidate;
@@ -413,6 +419,40 @@ local function render_category(category, settings, ui_state, actions, imgui)
     end
 
     render_entries(category, {}, settings, ui_state, actions, imgui);
+end
+
+local function render_quests(categories, settings, ui_state, actions, imgui)
+    local areas = {};
+    local selected = nil;
+    for _, category in ipairs(categories) do
+        if quest_nation_names[category.id] ~= nil then
+            areas[#areas + 1] = category;
+            if category.id == ui_state.selected_quest_area then
+                selected = category;
+            end
+        end
+    end
+    selected = selected or areas[1];
+    if selected == nil then
+        imgui.Text('No quest areas are available.');
+        return;
+    end
+    ui_state.selected_quest_area = selected.id;
+
+    imgui.SetNextItemWidth(220);
+    if imgui.BeginCombo('Area##QuestArea', quest_nation_names[selected.id]) then
+        for _, category in ipairs(areas) do
+            if imgui.Selectable(
+                ('%s##%s'):fmt(quest_nation_names[category.id], category.id),
+                selected.id == category.id) then
+                selected = category;
+                ui_state.selected_quest_area = category.id;
+            end
+        end
+        imgui.EndCombo();
+    end
+    imgui.Separator();
+    render_category(selected, settings, ui_state, actions, imgui, 'Location');
 end
 
 local function render_filters(settings, ui_state, actions, imgui)
@@ -517,10 +557,15 @@ function checklist_ui.render(
 
         if imgui.BeginTabBar('##HXIChecklistTabs', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
             for _, category in ipairs(snapshot.categories) do
-                if imgui.BeginTabItem(category.name, nil) then
+                if quest_nation_names[category.id] == nil
+                    and imgui.BeginTabItem(category.name, nil) then
                     render_category(category, settings, ui_state, actions, imgui);
                     imgui.EndTabItem();
                 end
+            end
+            if imgui.BeginTabItem('Quests', nil) then
+                render_quests(snapshot.categories, settings, ui_state, actions, imgui);
+                imgui.EndTabItem();
             end
             if imgui.BeginTabItem('Skill Levels', nil) then
                 render_skill_levels(skill_snapshot, imgui);

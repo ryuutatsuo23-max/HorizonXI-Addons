@@ -55,7 +55,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.12.0'", self.main)
+        self.assertIn("addon.version = '0.12.1'", self.main)
         self.assertIn("version = '2026-09-03-foundation.11'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
@@ -295,7 +295,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("views = category.views", self.catalog)
         self.assertIn("category.views and #category.views > 0", self.ui)
         self.assertIn("selected_views = {}", self.main)
-        self.assertIn("imgui.BeginCombo(('Category##%s')", self.ui)
+        self.assertIn("selector_label or 'Category'", self.ui)
         self.assertIn("imgui.Selectable(", self.ui)
         self.assertIn("item.magic_skill ~= view.magic_skill", self.ui)
         self.assertIn("item.map_catalog ~= view.map_catalog", self.ui)
