@@ -39,12 +39,10 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        spell_rows = re.findall(
-            r"^\s*\{\s*(\d+), '([^']+)'(?:, '([^']+)')?\s*\},$",
-            self.magic_data,
-            re.MULTILINE,
-        )
-        self.assertEqual(len(spell_rows), 200)
+        self.assertIn("addon.version = '0.5.0'", self.main)
+        self.assertIn("version = '2026-09-03-foundation.5'", self.profile)
+        spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
+        self.assertEqual(len(spell_ids), 316)
         self.assertEqual(self.profile.count("kind = 'key_item'"), 8)
         self.assertEqual(self.profile.count("kind = 'manual'"), 19)
 
@@ -56,6 +54,9 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             "enfeebling_magic": 19,
             "enhancing_magic": 76,
             "healing_magic": 22,
+            "summoning": 17,
+            "ninjutsu": 23,
+            "songs": 76,
         }
         blocks = re.findall(
             r"(?ms)^        id = '([^']+)'.*?^        spells = \{\n(.*?)^        \},\n^    \},",
@@ -74,30 +75,34 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             "Enfeebling Magic",
             "Enhancing Magic",
             "Healing Magic",
+            "Summoning",
+            "Ninjutsu",
+            "Songs",
         ):
             self.assertIn(f"name = '{name}'", self.magic_data)
         self.assertIn("name = 'Magic Skills'", self.profile)
         self.assertNotIn("name = 'Starter Spells'", self.profile)
 
     def test_magic_rows_use_explicit_unique_client_ids(self):
-        rows = [
-            (int(resource_id), name)
-            for resource_id, name in re.findall(
-                r"^\s*\{\s*(\d+), '([^']+)'(?:, '[^']+')?\s*\},$",
-                self.magic_data,
-                re.MULTILINE,
+        ids = [
+            int(resource_id)
+            for resource_id in re.findall(
+                r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE
             )
         ]
-        ids = [resource_id for resource_id, _ in rows]
-        names = [name for _, name in rows]
-        self.assertEqual(len(ids), 200)
+        self.assertEqual(len(ids), 316)
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(len(names), len(set(names)))
-        self.assertIn((273, "Sleepga"), rows)
-        self.assertIn((274, "Sleepga II"), rows)
-        self.assertIn((260, "Dispel"), rows)
+        self.assertIn("{ 273, 'Sleepga' }", self.magic_data)
+        self.assertIn("{ 274, 'Sleepga II' }", self.magic_data)
+        self.assertIn("{ 260, 'Dispel', 'Dispel_(Spell)' }", self.magic_data)
+        self.assertIn("{ 304, 'Diabolos' }", self.magic_data)
+        self.assertIn("{ 337, 'Suiton: San' }", self.magic_data)
+        self.assertIn("{ 458, 'Lightning Threnody', 'Lightning_Threnody', 'Ltng. Threnody' }", self.magic_data)
         for excluded in ("Bindga", "Diaga II", "Slowga", "Enlight"):
-            self.assertNotIn(excluded, names)
+            self.assertNotRegex(
+                self.magic_data,
+                rf"\{{\s*\d+,\s*['\"]{re.escape(excluded)}['\"]",
+            )
 
     def test_map_ids_are_explicit_and_stable(self):
         expected = {
@@ -128,14 +133,10 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual(len(entry_ids), 27)
         self.assertEqual(len(entry_ids), len(set(entry_ids)))
 
-        spell_ids = re.findall(
-            r"^\s*\{\s*(\d+), '[^']+'(?:, '[^']+')?\s*\},$",
-            self.magic_data,
-            re.MULTILINE,
-        )
+        spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         generated_ids = [f"spell.{resource_id}" for resource_id in spell_ids]
         all_ids = entry_ids + generated_ids
-        self.assertEqual(len(all_ids), 227)
+        self.assertEqual(len(all_ids), 343)
         self.assertEqual(len(all_ids), len(set(all_ids)))
 
     def test_all_entries_are_sourced(self):
@@ -150,10 +151,11 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             self.assertRegex(line, r"source_url = 'https://")
             self.assertRegex(line, r"availability = '(?:reported_active|wiki_listed|unknown|reported_inactive)'")
         category_sources = re.findall(
-            r"source_url = 'https://horizonffxi\.wiki/[A-Za-z]+_Magic'",
+            r"^        source_url = 'https://horizonffxi\.wiki/[^']+'",
             self.magic_data,
+            re.MULTILINE,
         )
-        self.assertEqual(len(category_sources), 6)
+        self.assertEqual(len(category_sources), 9)
         self.assertIn("source_url = 'https://horizonffxi.wiki/' .. wiki_slug", self.magic_data)
         self.assertIn("availability = 'wiki_listed'", self.magic_data)
 

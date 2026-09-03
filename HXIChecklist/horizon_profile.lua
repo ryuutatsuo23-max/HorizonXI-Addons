@@ -2,14 +2,14 @@ local magic_data = require('magic_data');
 
 local profile = {
     id = 'horizon-foundation',
-    version = '2026-09-03-foundation.4',
+    version = '2026-09-03-foundation.5',
     incomplete = true,
-    scope_note = 'This profile is intentionally incomplete: six sourced magic-skill catalogs plus the map and Bastok Markets pilots. Its totals are not whole-server completion.',
+    scope_note = 'This profile is intentionally incomplete: nine sourced magic catalogs plus the map and Bastok Markets pilots. Its totals are not whole-server completion.',
     categories = {
         {
             id = 'magic_skills',
             name = 'Magic Skills',
-            description = 'Two hundred level-75-cap player spells across six sourced HorizonXI Wiki skill categories. Ownership is read live from Ashita; a wiki listing is not a guarantee of current server availability.',
+            description = 'Three hundred sixteen sourced level-75-cap spells, summons, ninjutsu, and songs across nine Horizon catalogs. Ownership is read live from Ashita; a wiki listing is not a guarantee of current server availability.',
             views = magic_data.views,
             entries = magic_data.entries,
         },

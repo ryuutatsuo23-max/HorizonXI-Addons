@@ -15,12 +15,16 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 
 ## Magic Skills
 
-- [ ] Open `Magic Skills` and confirm the inner tabs appear in this order: All Magic, Dark, Divine, Elemental, Enfeebling, Enhancing, Healing.
-- [ ] With completed entries visible, confirm `All Magic` contains 200 rows and the skill tabs contain 15, 8, 60, 19, 76, and 22 rows respectively.
+- [ ] Open `Magic Skills` and confirm the inner tabs appear in this order: All Magic, Dark, Divine, Elemental, Enfeebling, Enhancing, Healing, Summoning, Ninjutsu, Songs.
+- [ ] With completed entries visible, confirm `All Magic` contains 316 rows and the skill tabs contain 15, 8, 60, 19, 76, 22, 17, 23, and 76 rows respectively.
 - [ ] Compare at least one learned and one unlearned spell in each skill tab against the in-game magic list.
 - [ ] Confirm `Sleepga` and `Sleepga II` resolve normally rather than showing `UNKNOWN` from the same-name monster resources.
 - [ ] Search for a spell while switching inner tabs; confirm only matching spells in the selected view are shown.
 - [ ] Open several spell Source buttons, including `Dispel`, and confirm they lead to the expected HorizonXI Wiki pages.
+- [ ] In `Summoning`, compare one unlocked and one locked avatar or spirit against the in-game magic list; confirm Blood Pacts are absent.
+- [ ] In `Ninjutsu`, compare one learned and one unlearned spell; confirm ninja tools are absent.
+- [ ] In `Songs`, compare one learned and one unlearned song, and confirm `Lightning Threnody` does not show `UNKNOWN` because of the client's shortened resource name.
+- [ ] Confirm Singing, String Instrument, and Wind Instrument numeric values are not presented as duplicate song checklists.
 
 ## Maps and quest live state
 

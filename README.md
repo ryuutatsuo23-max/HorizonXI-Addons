@@ -2,13 +2,13 @@
 
 HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately bounded HorizonXI-oriented profile.
 
-Version 0.4.0 is not a complete HorizonXI checklist. It includes three bounded pieces:
+Version 0.5.0 is not a complete HorizonXI checklist. It includes three bounded pieces:
 
-- live, read-only ownership for 200 level-75-cap player spells in six sourced magic-skill categories;
+- live, read-only ownership for 316 sourced level-75-cap spells, summons, ninjutsu, and songs in nine catalogs;
 - live, read-only map key-item ownership from the incoming `0x055` key-item log;
 - passive current/completed state for the 19-entry Bastok quest pilot, with no manual completion fallback.
 
-The `Magic Skills` tab has `All Magic`, `Dark Magic`, `Divine Magic`, `Elemental Magic`, `Enfeebling Magic`, `Enhancing Magic`, and `Healing Magic` inner tabs. These are sourced catalog views, not skill-level meters.
+The `Magic Skills` tab has `All Magic`, `Dark Magic`, `Divine Magic`, `Elemental Magic`, `Enfeebling Magic`, `Enhancing Magic`, `Healing Magic`, `Summoning`, `Ninjutsu`, and `Songs` inner tabs. These are learned-ownership catalog views, not numeric skill-level meters.
 
 It passively reads the incoming `0x055` key-item and `0x056` quest logs and registers no outgoing packet handler. It injects, modifies, blocks, or requests no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
 
@@ -63,7 +63,8 @@ Existing legacy manual-mark values are left untouched in settings for compatibil
 ## Explicitly deferred
 
 - missions, fame, RoE, objectives, other quest regions, and quests outside the 19-entry Bastok pilot;
-- other magic systems such as songs, ninjutsu, summoning, blue magic, and geomancy unless separately sourced and reviewed;
+- numeric skill-level tracking, including Singing, String Instrument, and Wind Instrument;
+- other magic systems such as blue magic and geomancy unless separately sourced and reviewed;
 - retail-only XIchecklist categories not verified against HorizonXI;
 - automatic imports from upstream or the HorizonXI wiki;
 - live HorizonXI deployment, publishing, or approval submission.
