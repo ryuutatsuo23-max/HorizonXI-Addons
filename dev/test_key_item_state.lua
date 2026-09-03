@@ -61,7 +61,20 @@ assert(state.has_key_item(388) == true);
 assert(state.has_key_item(395) == true);
 assert(state.has_key_item(512) == nil);
 
+local cache = state.export_cache();
+assert(cache.version == 1);
+assert(#cache.groups[0] == 0x80);
+
 assert(state.handle_packet({ id = 0x00A, data = '' }));
+local cached_value, cached_note = state.has_key_item(385);
+assert(cached_value == true);
+assert(cached_note:find('saved key-item state', 1, true));
+
+state.clear();
+assert(state.has_key_item(385) == nil);
+assert(state.load_cache(cache));
+assert(state.has_key_item(386) == false);
+assert(state.load_cache({ version = 1, groups = { [0] = 'invalid' } }) == false);
 assert(state.has_key_item(385) == nil);
 
 print('key-item packet fixture: passed');

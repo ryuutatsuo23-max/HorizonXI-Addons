@@ -2,11 +2,11 @@
 
 HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately small HorizonXI-oriented starter profile.
 
-Version 0.2.1 is not a complete HorizonXI checklist. It proves three narrow pieces:
+Version 0.3.0 is not a complete HorizonXI checklist. It proves three narrow pieces:
 
 - live, read-only spell ownership through `IPlayer:HasSpell`;
 - live, read-only map key-item ownership from the incoming `0x055` key-item log;
-- passive current/completed state for the 19-entry Bastok quest pilot, with saved per-character manual marks as a pre-log fallback.
+- passive current/completed state for the 19-entry Bastok quest pilot, with no manual completion fallback.
 
 It passively reads the incoming `0x055` key-item and `0x056` quest logs and registers no outgoing packet handler. It injects, modifies, blocks, or requests no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
 
@@ -43,20 +43,19 @@ Copy the whole `HXIChecklist` folder so these six files stay together.
 ## State labels
 
 - `Checked` / `Missing`: read from the logged-in character through Ashita.
-- `MANUAL DONE` / `MANUAL`: a per-character user checkbox; no quest flag is claimed.
-- `AUTO DONE` / `Accepted` / `Not Accepted`: decoded from both incoming Bastok quest logs. `Not Accepted` claims only that neither bit is set, not that the quest is currently obtainable.
+- `Completed` / `Accepted` / `Not Accepted`: decoded from both incoming Bastok quest logs. `Not Accepted` claims only that neither bit is set, not that the quest is currently obtainable.
 - `UNKNOWN`: the client state or source status is unresolved and is excluded from the denominator.
 - `UNAVAILABLE`: the source reports the entry inactive; it is excluded from the denominator.
 
 `Wiki-listed` is evidence that a wiki page exists, not proof that the content is currently active or matches every server detail. See [docs/SOURCES.md](docs/SOURCES.md) for provenance and [docs/VALIDATION.md](docs/VALIDATION.md) for the private-server checklist.
 
-Map state remains `UNKNOWN` until the client receives its key-item log. Zone once after loading or reloading HXIChecklist; the incoming log is then decoded without sending a request.
+Map and Bastok quest packet state are cached in Ashita's existing character-specific settings folder, keyed by character name and server ID. Reloading the addon or logging back into the same character can reuse the cache without zoning. A character with no valid cache shows `UNKNOWN` and must zone once so the client sends the incoming logs; the addon never requests them.
 
-The Bastok quest pilot keeps showing the saved manual fallback until both current and completed quest logs arrive. After zoning, automatic state takes display precedence without deleting or rewriting the saved manual marks.
+Each incoming key-item or complete Bastok quest-log update refreshes that character's cache. The versioned `cached_state` container is the extension point for future packet-derived categories. Direct spell ownership remains live-only because Ashita exposes it immediately.
 
 ## Data compatibility
 
-Manual marks are keyed by stable profile IDs and saved using Ashita's character-scoped settings. Future profile growth should retain existing IDs. Unknown or inactive entries are preserved rather than silently discarded or treated as complete.
+Existing legacy manual-mark values are left untouched in settings for compatibility but are no longer displayed or used by the mapped Bastok pilot. Cached packet state uses Ashita's character-scoped settings; switching characters loads a different cache. Future profile growth should retain existing IDs and extend the versioned cache without silently converting unknown state into missing or complete.
 
 ## Explicitly deferred
 

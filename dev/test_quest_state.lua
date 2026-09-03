@@ -61,7 +61,7 @@ end
 local state = dofile('HXIChecklist/quest_state.lua');
 
 local before, before_note = state.get_bastok(34);
-assert(before == nil and before_note:find('Waiting for both Bastok quest logs', 1, true));
+assert(before == nil and before_note:find('No saved Bastok quest state', 1, true));
 
 assert(state.handle_packet({ id = 0x056, data = make_packet(0x0058, { 18, 34 }) }));
 assert(state.get_bastok(34) == nil);
@@ -77,7 +77,20 @@ assert(completed.current == false and completed.completed == true);
 local open = state.get_bastok(14);
 assert(open.current == false and open.completed == false);
 
+local cache = state.export_cache();
+assert(cache.version == 1);
+assert(#cache.current == 0x40 and #cache.completed == 0x40);
+
 assert(state.handle_packet({ id = 0x00A, data = '' }));
+local cached = state.get_bastok(34);
+assert(cached.current == true and cached.source == 'cache');
+
+state.clear();
+assert(state.get_bastok(34) == nil);
+assert(state.load_cache(cache));
+assert(state.get_bastok(10).completed == true);
+assert(state.get_bastok(10).source == 'cache');
+assert(state.load_cache({ version = 1, current = 'invalid', completed = 'invalid' }) == false);
 assert(state.get_bastok(34) == nil);
 
 assert(state.handle_packet({ id = 0x056, data = 'short' }) == false);
@@ -106,13 +119,13 @@ local profile = {
 };
 
 local fallback = catalog.build_snapshot(profile, { current = true });
-assert(fallback.categories[1].entries[1].state == 'manual_open');
-assert(fallback.categories[1].entries[2].state == 'manual_complete');
+assert(fallback.categories[1].entries[1].state == 'unknown');
+assert(fallback.categories[1].entries[2].state == 'unknown');
 assert(fallback.categories[1].entries[4].state == 'unknown');
 assert(fallback.categories[1].entries[5].state == 'unavailable');
+assert(fallback.summary.known_total == 0);
 
-assert(state.handle_packet({ id = 0x056, data = make_packet(0x0058, { 34 }) }));
-assert(state.handle_packet({ id = 0x056, data = make_packet(0x0098, { 10 }) }));
+assert(state.load_cache(cache));
 
 local automatic = catalog.build_snapshot(profile, { current = true });
 assert(automatic.categories[1].entries[1].state == 'auto_complete');

@@ -3,8 +3,6 @@ local checklist_ui = {};
 local state_colors = {
     complete = { 0.30, 0.90, 0.45, 1.00 },
     missing = { 1.00, 0.72, 0.28, 1.00 },
-    manual_complete = { 0.30, 0.90, 0.45, 1.00 },
-    manual_open = { 0.35, 0.72, 1.00, 1.00 },
     auto_complete = { 0.30, 0.90, 0.45, 1.00 },
     auto_current = { 0.35, 0.72, 1.00, 1.00 },
     auto_not_logged = { 1.00, 0.72, 0.28, 1.00 },
@@ -15,9 +13,7 @@ local state_colors = {
 local state_badges = {
     complete = 'Checked',
     missing = 'Missing',
-    manual_complete = 'MANUAL DONE',
-    manual_open = 'MANUAL',
-    auto_complete = 'AUTO DONE',
+    auto_complete = 'Completed',
     auto_current = 'Accepted',
     auto_not_logged = 'Not Accepted',
     unknown = 'UNKNOWN',
@@ -47,7 +43,6 @@ end
 
 local function should_show(item, settings, filter)
     if (item.state == 'complete'
-        or item.state == 'manual_complete'
         or item.state == 'auto_complete')
         and not settings.show_completed then
         return false;
@@ -93,15 +88,6 @@ end
 
 local function render_entry(item, settings, actions, imgui)
     imgui.PushID(item.id);
-
-    if item.kind == 'manual'
-        and (item.state == 'manual_open' or item.state == 'manual_complete') then
-        local completed = { settings.manual_completed[item.id] == true };
-        if imgui.Checkbox('##manual', completed) then
-            actions.set_manual(item.id, completed[1]);
-        end
-        imgui.SameLine();
-    end
 
     local color = state_colors[item.state] or { 1, 1, 1, 1 };
     imgui.TextColored(color, ('[%s]'):fmt(state_badges[item.state] or item.state));

@@ -1,6 +1,6 @@
 local profile = {
     id = 'horizon-foundation',
-    version = '2026-09-03-foundation.2',
+    version = '2026-09-03-foundation.3',
     incomplete = true,
     scope_note = 'This starter profile is intentionally incomplete: a small live-state sample plus the sourced Bastok Markets pilot. Its totals are not whole-server completion.',
     categories = {
@@ -26,7 +26,7 @@ local profile = {
         {
             id = 'starter_maps',
             name = 'Starter Maps',
-            description = 'A small map key-item proof set. Ownership is read from incoming key-item log 0x055; zone once after loading so the client receives it.',
+            description = 'A small map key-item proof set. Ownership is read from incoming key-item log 0x055 and cached by Ashita character; a first-time character must zone once.',
             entries = {
                 { id = 'map.san_doria', kind = 'key_item', name = "Map of the San d'Oria Area", resource_name = "map of the San d'Oria area", resource_id = 385, availability = 'wiki_listed', description = "Map key item for San d'Oria city areas.", source_url = 'https://horizonffxi.wiki/Map_of_the_San_d%27Oria_Area' },
                 { id = 'map.bastok', kind = 'key_item', name = 'Map of the Bastok Area', resource_name = 'map of the Bastok area', resource_id = 386, availability = 'wiki_listed', description = 'Map key item for Bastok city areas.', source_url = 'https://horizonffxi.wiki/Map_of_the_Bastok_Area' },
@@ -41,7 +41,7 @@ local profile = {
         {
             id = 'bastok_markets_pilot',
             name = 'Bastok Markets Pilot',
-            description = 'Nineteen sourced Bastok quest rows. Current/completed state is read from incoming quest logs after zoning; saved manual marks remain the fallback until both logs arrive.',
+            description = 'Nineteen sourced Bastok quest rows. Current/completed state is read from incoming quest logs and cached by Ashita character; no manual completion fallback is shown.',
             entries = {
                 { id = 'HXQ-0001', reference_id = 'HXQ-0001', kind = 'manual', quest_area = 'bastok', quest_index = 38, name = 'The Bare Bones', npc = 'Degenhard', availability = 'wiki_listed', description = 'Trade 1 Bone Chip.', source_url = 'https://horizonffxi.wiki/The_Bare_Bones' },
                 { id = 'HXQ-0002', reference_id = 'HXQ-0002', kind = 'manual', quest_area = 'bastok', quest_index = 14, name = 'A Flash in the Pan', npc = 'Aquillina', availability = 'wiki_listed', description = 'Trade 4 Flint Stones.', source_url = 'https://horizonffxi.wiki/A_Flash_in_the_Pan' },

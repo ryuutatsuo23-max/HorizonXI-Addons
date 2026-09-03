@@ -1,6 +1,6 @@
 # Sources and evidence boundaries
 
-Profile snapshot: `2026-09-03-foundation.2`.
+Profile snapshot: `2026-09-03-foundation.3`.
 
 ## Upstream inspiration
 
@@ -16,7 +16,9 @@ The live checks use Ashita v4's installed interface annotations and established 
 - persist per-character preferences with Ashita's `settings` library;
 - draw the checklist with Ashita's `imgui` library.
 
-Version 0.2.1 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok pilot. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; the Bastok current and completed types are `0x0058` and `0x0098`. It never changes, blocks, injects, or requests a packet.
+Version 0.3.0 passively reads the incoming `0x055` key-item log for map ownership and the incoming `0x056` quest log for the Bastok pilot. The key-item layout has 64 availability bytes from offset `0x04`, 64 examined bytes, and a group value at offset `0x84`; HXIChecklist reads only the availability bytes and group. The quest layout has 32 flag bytes from offset `0x04` and a type value at offset `0x24`; the Bastok current and completed types are `0x0058` and `0x0098`. It never changes, blocks, injects, or requests a packet.
+
+Decoded key-item groups and the paired Bastok logs are hex-encoded into a versioned cache within Ashita's settings library. Ashita v4 stores that settings block under its character-name and server-ID path and invokes the registered callback when the active character changes. Invalid, incomplete, or absent cache data fails closed to `UNKNOWN`; packet data from one character is never intentionally reused for another.
 
 ## HorizonXI starter profile
 
@@ -31,7 +33,7 @@ Evidence exceptions are visible in the profile:
 - `HXQ-0015` is `reported_active`; that report still requires private-server verification.
 - `HXQ-0019` retains its wiki-listed pilot label but links only the category page because an individual page was unresolved.
 
-Until both Bastok logs arrive, a checked box remains a saved user note and does not claim a server quest flag. Once both logs are present, automatic current/completed state takes display precedence without deleting that note. A private-server result is still not proof of HorizonXI approval or universal server compatibility.
+There is no manual completion fallback for the mapped Bastok pilot. Until both live logs or a valid cache exist for the current character, rows remain `UNKNOWN`. A private-server result is still not proof of HorizonXI approval or universal server compatibility.
 
 ## Maintenance rule
 

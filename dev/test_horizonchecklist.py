@@ -125,13 +125,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("if entry.availability == 'reported_inactive'", self.catalog)
         self.assertIn("return 'unknown'", self.catalog)
 
-        unknown_check = "if entry.availability == 'unknown'"
-        manual_check = "if manual_completed[entry.id] == true"
-        manual_branch = self.catalog.index("if entry.kind == 'manual'")
-        self.assertLess(
-            self.catalog.index(unknown_check, manual_branch),
-            self.catalog.index(manual_check, manual_branch),
-        )
+        self.assertIn("return 'unknown', automatic_note", self.catalog)
 
     def test_no_outgoing_packet_or_input_automation_surface(self):
         combined = "\n".join(
@@ -162,6 +156,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("available_length = 0x40", self.key_item_state)
         self.assertIn("type_offset = 0x84", self.key_item_state)
         self.assertIn("key_items_per_group = 0x200", self.key_item_state)
+        self.assertIn("key_item_state.load_cache(cache)", self.key_item_state)
+        self.assertIn("key_item_state.export_cache()", self.key_item_state)
         self.assertIn("key_item_state.has_key_item(identifier)", self.catalog)
         self.assertIn("return 'unknown', packet_note", self.catalog)
 
@@ -172,7 +168,9 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("type_offset = 0x24", self.quest_state)
         self.assertIn("bastok_current_type = 0x0058", self.quest_state)
         self.assertIn("bastok_completed_type = 0x0098", self.quest_state)
-        self.assertIn("logs.current == nil or logs.completed == nil", self.quest_state)
+        self.assertIn("live_logs.current ~= nil and live_logs.completed ~= nil", self.quest_state)
+        self.assertIn("quest_state.load_cache(cache)", self.quest_state)
+        self.assertIn("quest_state.export_cache()", self.quest_state)
         self.assertIn("quest_state.get_bastok(entry.quest_index)", self.catalog)
         for state in ("auto_complete", "auto_current", "auto_not_logged"):
             self.assertIn(state, self.catalog)
@@ -187,7 +185,19 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         for state, badge in expected_badges.items():
             self.assertIn(f"{state} = '{badge}'", self.ui)
         self.assertIn("unknown = { 1.00, 0.30, 0.30, 1.00 }", self.ui)
-        self.assertIn("auto_complete = 'AUTO DONE'", self.ui)
+        self.assertIn("auto_complete = 'Completed'", self.ui)
+        self.assertIn("auto_complete = 'Completed'", self.catalog)
+
+    def test_packet_state_cache_is_character_scoped_by_ashita_settings(self):
+        self.assertIn("cached_state = T{", self.main)
+        self.assertIn("key_item_state.load_cache", self.main)
+        self.assertIn("quest_state.load_cache", self.main)
+        self.assertIn("key_item_state.export_cache", self.main)
+        self.assertIn("quest_state.export_cache", self.main)
+        self.assertIn("settings.register('settings'", self.main)
+        self.assertIn("settings.save()", self.main)
+        self.assertNotIn("##manual", self.ui)
+        self.assertNotIn("actions.set_manual", self.main)
 
     def test_commands_are_addon_local(self):
         self.assertIn("addon.name = 'HXIChecklist'", self.main)

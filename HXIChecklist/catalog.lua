@@ -8,9 +8,7 @@ local quest_state = require('quest_state');
 local labels = {
     complete = 'Checked',
     missing = 'Missing',
-    manual_complete = 'Manual complete',
-    manual_open = 'Manual',
-    auto_complete = 'Automatic complete',
+    auto_complete = 'Completed',
     auto_current = 'Accepted',
     auto_not_logged = 'Not Accepted',
     unknown = 'Unknown',
@@ -153,7 +151,7 @@ local function direct_state(entry)
     if entry.kind == 'key_item' then
         local packet_value, packet_note = key_item_state.has_key_item(identifier);
         if packet_value ~= nil then
-            return packet_value and 'complete' or 'missing', nil;
+            return packet_value and 'complete' or 'missing', packet_note;
         end
 
         local fallback_ok, fallback_value = pcall(function()
@@ -183,34 +181,26 @@ local function entry_state(entry, manual_completed)
         if entry.quest_area == 'bastok' and type(entry.quest_index) == 'number' then
             local automatic, automatic_note = quest_state.get_bastok(entry.quest_index);
             if automatic ~= nil then
+                local source = automatic.source == 'cache'
+                    and 'the saved character cache'
+                    or 'the incoming Bastok quest log';
                 if automatic.completed then
-                    return 'auto_complete', 'Completed bit is set in the incoming Bastok completed-quest log.';
+                    return 'auto_complete', string.format('Completed bit is set in %s.', source);
                 end
                 if automatic.current then
-                    return 'auto_current', 'Current bit is set in the incoming Bastok current-quest log.';
+                    return 'auto_current', string.format('Current bit is set in %s.', source);
                 end
                 if entry.availability == 'unknown' then
                     return 'unknown', entry.availability_note;
                 end
-                return 'auto_not_logged', 'Neither the current nor completed bit is set in the received Bastok quest logs.';
+                return 'auto_not_logged', string.format('Neither the current nor completed bit is set in %s.', source);
             end
 
-            if entry.availability == 'unknown' then
-                return 'unknown', entry.availability_note;
-            end
-            if manual_completed[entry.id] == true then
-                return 'manual_complete', automatic_note;
-            end
-            return 'manual_open', automatic_note;
+            return 'unknown', automatic_note;
         end
 
-        if entry.availability == 'unknown' then
-            return 'unknown', entry.availability_note;
-        end
-        if manual_completed[entry.id] == true then
-            return 'manual_complete', nil;
-        end
-        return 'manual_open', nil;
+        return 'unknown', entry.availability_note
+            or 'No automatic state reader is available for this entry.';
     end
 
     return direct_state(entry);
@@ -219,12 +209,10 @@ end
 local function add_to_summary(summary, item)
     summary.entries = summary.entries + 1;
     if item.state == 'complete'
-        or item.state == 'manual_complete'
         or item.state == 'auto_complete' then
         summary.complete = summary.complete + 1;
         summary.known_total = summary.known_total + 1;
     elseif item.state == 'missing'
-        or item.state == 'manual_open'
         or item.state == 'auto_current'
         or item.state == 'auto_not_logged' then
         summary.open = summary.open + 1;

@@ -1,6 +1,6 @@
 addon.name = 'HXIChecklist';
 addon.author = 'HXIChecklist contributors';
-addon.version = '0.2.1';
+addon.version = '0.3.0';
 addon.desc = 'Read-only, source-backed checklist foundation for Ashita v4 and HorizonXI.';
 addon.link = 'https://github.com/HiPotionQ8/XIchecklist';
 
@@ -23,6 +23,11 @@ local default_settings = T{
     show_unavailable = false,
     scale_percent = 100,
     manual_completed = T{},
+    cached_state = T{
+        version = 1,
+        key_items = T{},
+        bastok_quests = T{},
+    },
 };
 
 local state = {
@@ -49,11 +54,35 @@ end
 
 local function normalize_settings(value)
     value.manual_completed = value.manual_completed or T{};
+    value.cached_state = value.cached_state or T{};
+    value.cached_state.version = value.cached_state.version or 1;
+    value.cached_state.key_items = value.cached_state.key_items or T{};
+    value.cached_state.bastok_quests = value.cached_state.bastok_quests or T{};
     value.scale_percent = math.max(75, math.min(150, tonumber(value.scale_percent) or 100));
     return value;
 end
 
 state.settings = normalize_settings(state.settings);
+
+local function load_cached_state()
+    if tonumber(state.settings.cached_state.version) ~= 1 then
+        key_item_state.load_cache(nil);
+        quest_state.load_cache(nil);
+        return;
+    end
+    key_item_state.load_cache(state.settings.cached_state.key_items);
+    quest_state.load_cache(state.settings.cached_state.bastok_quests);
+end
+
+local function save_cached_state(key, value)
+    if value == nil or tonumber(state.settings.cached_state.version) ~= 1 then
+        return;
+    end
+    state.settings.cached_state[key] = value;
+    settings.save();
+end
+
+load_cached_state();
 
 local function request_refresh()
     state.refresh_requested = true;
@@ -105,13 +134,6 @@ function actions.set_setting(key, value)
     settings.save();
 end
 
-function actions.set_manual(entry_id, value)
-    state.settings.manual_completed[entry_id] = value == true;
-    settings.save();
-    request_refresh();
-    refresh(true);
-end
-
 function actions.open_source(url)
     if type(url) ~= 'string' or not url:match('^https://') then
         return;
@@ -127,6 +149,7 @@ end
 
 settings.register('settings', 'HXIChecklist_SettingsUpdate', function(updated)
     state.settings = normalize_settings(updated);
+    load_cached_state();
     state.ui.window_open[1] = state.settings.visible ~= false;
     request_refresh();
 end);
@@ -137,8 +160,18 @@ ashita.events.register('load', 'HXIChecklist_Load', function()
 end);
 
 ashita.events.register('packet_in', 'HXIChecklist_PacketIn', function(e)
-    local changed = key_item_state.handle_packet(e);
-    if quest_state.handle_packet(e) then
+    local key_items_changed = key_item_state.handle_packet(e);
+    local quests_changed = quest_state.handle_packet(e);
+
+    if key_items_changed and e.id == 0x055 then
+        save_cached_state('key_items', key_item_state.export_cache());
+    end
+    if quests_changed and e.id == 0x056 then
+        save_cached_state('bastok_quests', quest_state.export_cache());
+    end
+
+    local changed = key_items_changed;
+    if quests_changed then
         changed = true;
     end
     if changed then
