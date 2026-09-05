@@ -13,6 +13,9 @@ SANDORIA_QUEST_DATA = PACKAGE / "sandoria_quest_data.lua"
 WINDURST_QUEST_DATA = PACKAGE / "windurst_quest_data.lua"
 JEUNO_QUEST_DATA = PACKAGE / "jeuno_quest_data.lua"
 OTHER_QUEST_DATA = PACKAGE / "other_quest_data.lua"
+OUTLANDS_QUEST_DATA = PACKAGE / "outlands_quest_data.lua"
+AHTURHGAN_QUEST_DATA = PACKAGE / "ahturhgan_quest_data.lua"
+CUSTOM_QUEST_DATA = PACKAGE / "custom_quest_data.lua"
 SKILL_LEVELS = PACKAGE / "skill_levels.lua"
 
 
@@ -27,6 +30,9 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         cls.windurst_quest_data = WINDURST_QUEST_DATA.read_text(encoding="utf-8")
         cls.jeuno_quest_data = JEUNO_QUEST_DATA.read_text(encoding="utf-8")
         cls.other_quest_data = OTHER_QUEST_DATA.read_text(encoding="utf-8")
+        cls.outlands_quest_data = OUTLANDS_QUEST_DATA.read_text(encoding="utf-8")
+        cls.ahturhgan_quest_data = AHTURHGAN_QUEST_DATA.read_text(encoding="utf-8")
+        cls.custom_quest_data = CUSTOM_QUEST_DATA.read_text(encoding="utf-8")
         cls.skill_levels = SKILL_LEVELS.read_text(encoding="utf-8")
         cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
         cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
@@ -43,8 +49,12 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             {path.name for path in PACKAGE.iterdir()},
             {
                 "HXIChecklist.lua",
+                "mission_state.lua",
+                "bastok_mission_data.lua",
+                "ahturhgan_quest_data.lua",
                 "bastok_quest_data.lua",
                 "catalog.lua",
+                "custom_quest_data.lua",
                 "checklist_ui.lua",
                 "horizon_profile.lua",
                 "job_levels.lua",
@@ -53,6 +63,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "magic_data.lua",
                 "map_data.lua",
                 "other_quest_data.lua",
+                "outlands_quest_data.lua",
                 "quest_state.lua",
                 "sandoria_quest_data.lua",
                 "skill_levels.lua",
@@ -61,8 +72,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.14.0'", self.main)
-        self.assertIn("version = '2026-09-03-foundation.13'", self.profile)
+        self.assertIn("addon.version = '0.20.0'", self.main)
+        self.assertIn("version = '2026-09-04-foundation.19'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',\s*(\d+),", self.map_data, re.MULTILINE)
@@ -72,6 +83,9 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual(self.windurst_quest_data.count("kind = 'manual'"), 90)
         self.assertEqual(self.jeuno_quest_data.count("kind = 'manual'"), 146)
         self.assertEqual(self.other_quest_data.count("kind = 'manual'"), 91)
+        self.assertEqual(self.outlands_quest_data.count("kind = 'manual'"), 57)
+        self.assertEqual(self.ahturhgan_quest_data.count("kind = 'manual'"), 72)
+        self.assertEqual(self.custom_quest_data.count("tracking = 'manual'"), 4)
 
     def test_magic_categories_and_counts(self):
         expected = {
@@ -187,17 +201,19 @@ class HorizonChecklistSourceTests(unittest.TestCase):
 
     def test_entry_ids_are_unique(self):
         quest_entry_ids = re.findall(
-            r"\{ id = '([^']+)',(?: reference_id = '[^']+',)? kind = '(?:spell|key_item|manual)'",
-            self.bastok_quest_data + self.sandoria_quest_data + self.windurst_quest_data + self.jeuno_quest_data + self.other_quest_data,
+            r"\{\s*id = '([^']+)',(?:\s*reference_id = '[^']+',)?\s*kind = '(?:spell|key_item|manual)'",
+            self.bastok_quest_data + self.sandoria_quest_data + self.windurst_quest_data + self.jeuno_quest_data + self.other_quest_data + self.outlands_quest_data + self.ahturhgan_quest_data + self.custom_quest_data,
         )
-        self.assertEqual(len(quest_entry_ids), 502)
+        self.assertEqual(len(quest_entry_ids), 635)
         self.assertEqual(len(quest_entry_ids), len(set(quest_entry_ids)))
 
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         generated_ids = [f"spell.{resource_id}" for resource_id in spell_ids]
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',", self.map_data, re.MULTILINE)
-        all_ids = quest_entry_ids + generated_ids + map_ids
-        self.assertEqual(len(all_ids), 890)
+        mission_ids = re.findall(r"\{ id = '([^']+)'", (PACKAGE / 'bastok_mission_data.lua').read_text(encoding='utf-8').split('data.entries = {')[1])
+        self.assertEqual(len(mission_ids), 20)
+        all_ids = quest_entry_ids + generated_ids + map_ids + mission_ids
+        self.assertEqual(len(all_ids), 1043)
         self.assertEqual(len(all_ids), len(set(all_ids)))
 
     def test_all_entries_are_sourced(self):
@@ -208,12 +224,14 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 + self.windurst_quest_data
                 + self.jeuno_quest_data
                 + self.other_quest_data
+                + self.outlands_quest_data
+                + self.ahturhgan_quest_data
             ).splitlines()
             if "kind = 'spell'" in line
             or "kind = 'key_item'" in line
             or "kind = 'manual'" in line
         ]
-        self.assertEqual(len(entry_lines), 502)
+        self.assertEqual(len(entry_lines), 631)
         for line in entry_lines:
             self.assertRegex(line, r"source_url = 'https://")
             self.assertRegex(line, r"availability = '(?:reported_active|wiki_listed|unknown|reported_inactive)'")
@@ -311,7 +329,9 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("item.map_catalog ~= view.map_catalog", self.ui)
         self.assertIn("item.quest_location ~= view.quest_location", self.ui)
         self.assertNotIn("##HXIChecklistViews_", self.ui)
-        self.assertIn("imgui.EndCombo();\n        end\n        imgui.Separator();", self.ui)
+        self.assertIn(
+            "        render_quest_type_filter(category, ui_state, imgui);\n"
+            "        imgui.Separator();", self.ui)
 
     def test_magic_rows_align_sources_and_show_client_job_levels(self):
         job_levels = (PACKAGE / "job_levels.lua").read_text(encoding="utf-8")
@@ -393,8 +413,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("nation_name .. ' Fame'", self.ui)
         self.assertIn("('Fame %d'):fmt(item.fame_level)", self.ui)
         self.assertIn("'Not listed'", self.ui)
-        self.assertIn("'Drag the vertical dividers to resize Quest, Source, and %s columns.'", self.ui)
-        self.assertIn("render_nation_quest_entry(item, nation_name, actions, imgui)", self.ui)
+        self.assertIn("'Click + for details. Drag dividers to resize Quest, Source, and %s columns.'", self.ui)
+        self.assertIn("render_nation_quest_entry(item, nation_name, ui_state, actions, imgui)", self.ui)
 
     def test_sandoria_quests_cover_named_client_indices_and_sourced_fame(self):
         indices = [
@@ -500,6 +520,44 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("and 'Required Fame' or nation_name .. ' Fame'", self.ui)
         self.assertIn("imgui.TextWrapped(item.fame_note)", self.ui)
         self.assertIn("or entry.quest_area == 'other'", self.catalog)
+
+    def test_outlands_quests_keep_indices_sources_and_cache_wiring(self):
+        indices = [int(index) for index in re.findall(r"quest_index = (\d+)", self.outlands_quest_data)]
+        self.assertEqual(len(indices), 57)
+        self.assertEqual(indices, sorted(set(indices)))
+        self.assertEqual((indices[0], indices[-1]), (1, 203))
+        for placeholder in (0, 5, 128, 198, 204):
+            self.assertNotIn(placeholder, indices)
+        self.assertEqual(self.outlands_quest_data.count("fame_level = "), 23)
+        self.assertEqual(self.outlands_quest_data.count("fame_label = 'Not listed'"), 28)
+        self.assertEqual(self.outlands_quest_data.count("availability = 'wiki_listed'"), 51)
+        self.assertEqual(self.outlands_quest_data.count("availability = 'unknown'"), 6)
+        self.assertIn("outlands_quests = 'Outlands'", self.ui)
+        self.assertIn("or category.id == 'outlands_quests'", self.ui)
+        self.assertIn("or entry.quest_area == 'outlands'", self.catalog)
+        self.assertIn("current_type = 0x0078, completed_type = 0x00B8", self.quest_state)
+        self.assertIn("outlands_quests = T{}", self.main)
+        self.assertIn("quest_state.load_area_cache('outlands', state.settings.cached_state.outlands_quests)", self.main)
+        self.assertIn("value.cached_state.outlands_quests = value.cached_state.outlands_quests or T{}", self.main)
+
+    def test_ahturhgan_quests_keep_short_log_and_fame_boundaries(self):
+        indices = [int(index) for index in re.findall(r"quest_index = (\d+)", self.ahturhgan_quest_data)]
+        self.assertEqual(len(indices), 72)
+        self.assertEqual(indices, sorted(set(indices)))
+        self.assertEqual((indices[0], indices[-1]), (0, 103))
+        for placeholder in (11, 33, 42, 89, 100, 128):
+            self.assertNotIn(placeholder, indices)
+        self.assertEqual(self.ahturhgan_quest_data.count("availability = 'wiki_listed'"), 72)
+        self.assertEqual(self.ahturhgan_quest_data.count("fame_label = 'N/A'"), 72)
+        self.assertNotIn("fame_level = ", self.ahturhgan_quest_data)
+        self.assertNotIn("action=edit", self.ahturhgan_quest_data)
+        self.assertIn("ahturhgan_quests = 'Aht Urhgan'", self.ui)
+        self.assertIn("or category.id == 'ahturhgan_quests'", self.ui)
+        self.assertIn("or entry.quest_area == 'ahturhgan'", self.catalog)
+        self.assertIn("current_type = 0x0080, completed_type = 0x00C0, flags_length = 0x10", self.quest_state)
+        self.assertIn("ahturhgan_quests = T{}", self.main)
+        self.assertIn("quest_state.load_area_cache('ahturhgan', state.settings.cached_state.ahturhgan_quests)", self.main)
+        self.assertIn("value.cached_state.ahturhgan_quests = value.cached_state.ahturhgan_quests or T{}", self.main)
 
     def test_map_vendor_prices_are_sourced_and_bounded(self):
         vendor_block = re.search(
@@ -622,7 +680,19 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("settings.register('settings'", self.main)
         self.assertIn("settings.save()", self.main)
         self.assertNotIn("##manual", self.ui)
-        self.assertNotIn("actions.set_manual", self.main)
+        self.assertIn("catalog.set_manual_completed(profile, state.settings.manual_completed, id, completed)", self.main)
+
+    def test_custom_quests_have_explicit_manual_scope_without_packet_ids(self):
+        self.assertEqual(self.custom_quest_data.count("quest_area = 'horizon_custom'"), 4)
+        self.assertNotIn("quest_index =", self.custom_quest_data)
+        self.assertNotIn("horizon_custom", self.quest_state)
+        self.assertEqual(self.custom_quest_data.count("fame_label = 'None'"), 2)
+        self.assertEqual(self.custom_quest_data.count("fame_label = 'Unknown'"), 2)
+        self.assertEqual(self.custom_quest_data.count("source_url = 'https://horizonffxi.wiki/"), 5)
+        self.assertIn("custom_quests = 'Horizon Custom'", self.ui)
+        self.assertIn("and entry.quest_area == 'horizon_custom' and entry.quest_index == nil", self.catalog)
+        self.assertIn("manual_complete = 'Completed (manual)'", self.catalog)
+        self.assertIn("manual_open = 'Not marked (manual)'", self.catalog)
 
     def test_commands_are_addon_local(self):
         self.assertIn("addon.name = 'HXIChecklist'", self.main)

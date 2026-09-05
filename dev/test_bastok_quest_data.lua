@@ -10,7 +10,17 @@ local seen_ids = {};
 local numeric_fame = 0;
 local not_listed_fame = 0;
 local unknown_fame = 0;
+local coordinates, rewards, prerequisites = 0, 0, 0;
 for index, entry in ipairs(data.entries) do
+    if entry.npc_coordinates then coordinates = coordinates + 1 end;
+    if entry.rewards then rewards = rewards + 1 end;
+    if entry.prerequisites then prerequisites = prerequisites + 1 end;
+    if entry.id == 'HXQ-0007' then assert(entry.rewards:find('100 - 350 gil', 1, true)) end;
+    if entry.id == 'bastok.quest.051' then
+        assert(entry.rewards:find('Tekko Kagi', 1, true) and not entry.rewards:find('Beat Cesti', 1, true));
+    end
+    if entry.id == 'bastok.quest.040' then assert(entry.rewards:find('conflicting sources', 1, true)) end;
+    if entry.id == 'HXQ-0013' then assert(entry.prerequisites:find('Fame conflicts', 1, true)) end;
     assert(entry.quest_index == index - 1, 'Bastok quest indices must remain contiguous');
     assert(entry.kind == 'manual' and entry.quest_area == 'bastok',
         'quest row is not mapped to the Bastok client log');
@@ -35,6 +45,8 @@ end
 assert(numeric_fame == 67, 'expected 67 numeric Bastok fame requirements');
 assert(not_listed_fame == 21, 'expected 21 table rows without a listed fame level');
 assert(unknown_fame == 5, 'expected five quests without a sourced fame row');
+assert(coordinates == 88 and rewards == 88 and prerequisites == 81,
+    'detail coverage must remain explicit and must not invent fields for unresolved quests');
 
 assert(seen_ids['HXQ-0001'] and seen_ids['HXQ-0019'],
     'existing pilot IDs must remain stable');

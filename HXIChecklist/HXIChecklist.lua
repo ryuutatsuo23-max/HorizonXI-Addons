@@ -1,6 +1,6 @@
 addon.name = 'HXIChecklist';
 addon.author = 'HXIChecklist contributors';
-addon.version = '0.14.0';
+addon.version = '0.20.0';
 addon.desc = 'Read-only, source-backed checklist foundation for Ashita v4 and HorizonXI.';
 addon.link = 'https://github.com/HiPotionQ8/XIchecklist';
 
@@ -15,6 +15,7 @@ local checklist_ui = require('checklist_ui');
 local profile = require('horizon_profile');
 local key_item_state = require('key_item_state');
 local quest_state = require('quest_state');
+local mission_state = require('mission_state');
 local skill_levels = require('skill_levels');
 
 local default_settings = T{
@@ -32,6 +33,9 @@ local default_settings = T{
         windurst_quests = T{},
         jeuno_quests = T{},
         other_quests = T{},
+        outlands_quests = T{},
+        ahturhgan_quests = T{},
+        bastok_missions = T{},
     },
 };
 
@@ -69,6 +73,9 @@ local function normalize_settings(value)
     value.cached_state.windurst_quests = value.cached_state.windurst_quests or T{};
     value.cached_state.jeuno_quests = value.cached_state.jeuno_quests or T{};
     value.cached_state.other_quests = value.cached_state.other_quests or T{};
+    value.cached_state.outlands_quests = value.cached_state.outlands_quests or T{};
+    value.cached_state.ahturhgan_quests = value.cached_state.ahturhgan_quests or T{};
+    value.cached_state.bastok_missions = value.cached_state.bastok_missions or T{};
     value.scale_percent = math.max(75, math.min(150, tonumber(value.scale_percent) or 100));
     return value;
 end
@@ -79,6 +86,7 @@ local function load_cached_state()
     if tonumber(state.settings.cached_state.version) ~= 1 then
         key_item_state.load_cache(nil);
         quest_state.clear();
+        mission_state.clear();
         return;
     end
     key_item_state.load_cache(state.settings.cached_state.key_items);
@@ -87,6 +95,9 @@ local function load_cached_state()
     quest_state.load_area_cache('windurst', state.settings.cached_state.windurst_quests);
     quest_state.load_area_cache('jeuno', state.settings.cached_state.jeuno_quests);
     quest_state.load_area_cache('other', state.settings.cached_state.other_quests);
+    quest_state.load_area_cache('outlands', state.settings.cached_state.outlands_quests);
+    quest_state.load_area_cache('ahturhgan', state.settings.cached_state.ahturhgan_quests);
+    mission_state.load_cache(state.settings.cached_state.bastok_missions);
 end
 
 local function save_cached_state(key, value)
@@ -157,6 +168,13 @@ function actions.open_source(url)
     ashita.misc.open_url(url);
 end
 
+function actions.set_manual_completed(id, completed)
+    if catalog.set_manual_completed(profile, state.settings.manual_completed, id, completed) then
+        settings.save();
+        request_refresh();
+    end
+end
+
 function actions.refresh()
     catalog.invalidate();
     request_refresh();
@@ -178,6 +196,7 @@ end);
 ashita.events.register('packet_in', 'HXIChecklist_PacketIn', function(e)
     local key_items_changed = key_item_state.handle_packet(e);
     local quests_changed, quest_area = quest_state.handle_packet(e);
+    local missions_changed = mission_state.handle_packet(e);
 
     if key_items_changed and e.id == 0x055 then
         save_cached_state('key_items', key_item_state.export_cache());
@@ -188,7 +207,11 @@ ashita.events.register('packet_in', 'HXIChecklist_PacketIn', function(e)
             quest_state.export_area_cache(quest_area));
     end
 
-    local changed = key_items_changed;
+    if missions_changed and e.id == 0x056 then
+        save_cached_state('bastok_missions', mission_state.export_cache());
+    end
+
+    local changed = key_items_changed or missions_changed;
     if quests_changed then
         changed = true;
     end

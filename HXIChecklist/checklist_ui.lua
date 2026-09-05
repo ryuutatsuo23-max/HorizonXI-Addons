@@ -1,21 +1,31 @@
 local checklist_ui = {};
 
 local state_colors = {
+    manual_complete = { 0.30, 0.90, 0.45, 1.00 },
+    manual_open = { 1.00, 0.72, 0.28, 1.00 },
     complete = { 0.30, 0.90, 0.45, 1.00 },
     missing = { 1.00, 0.72, 0.28, 1.00 },
     auto_complete = { 0.30, 0.90, 0.45, 1.00 },
     auto_current = { 0.35, 0.72, 1.00, 1.00 },
     auto_not_logged = { 1.00, 0.72, 0.28, 1.00 },
+    mission_current = { 0.35, 0.72, 1.00, 1.00 },
+    mission_repeat = { 0.35, 0.72, 1.00, 1.00 },
+    mission_not_current = { 1.00, 0.72, 0.28, 1.00 },
     unknown = { 1.00, 0.30, 0.30, 1.00 },
     unavailable = { 0.55, 0.58, 0.62, 1.00 },
 };
 
 local state_badges = {
+    manual_complete = 'Manual done',
+    manual_open = 'Manual',
     complete = 'Checked',
     missing = 'Missing',
     auto_complete = 'Completed',
     auto_current = 'Accepted',
     auto_not_logged = 'Not Accepted',
+    mission_current = 'Current',
+    mission_repeat = 'Current / Done',
+    mission_not_current = 'Not current',
     unknown = 'UNKNOWN',
     unavailable = 'UNAVAILABLE',
 };
@@ -26,6 +36,9 @@ local quest_nation_names = {
     windurst_quests = 'Windurst',
     jeuno_quests = 'Jeuno',
     other_quests = 'Other Areas',
+    outlands_quests = 'Outlands',
+    ahturhgan_quests = 'Aht Urhgan',
+    custom_quests = 'Horizon Custom',
 };
 
 local availability_labels = {
@@ -51,7 +64,8 @@ end
 
 local function should_show(item, settings, filter)
     if (item.state == 'complete'
-        or item.state == 'auto_complete')
+        or item.state == 'auto_complete'
+        or item.state == 'manual_complete')
         and not settings.show_completed then
         return false;
     end
@@ -77,6 +91,9 @@ local function render_tooltip(item, imgui)
         availability_labels[item.availability] or item.availability));
     if item.npc and item.npc ~= '' then
         imgui.Text(('NPC: %s'):fmt(item.npc));
+    end
+    if item.npc_coordinates and item.npc_coordinates ~= '' then
+        imgui.Text(('Coordinates: %s'):fmt(item.npc_coordinates));
     end
     if item.quest_location and item.quest_location ~= '' then
         imgui.Text(('Starts in: %s'):fmt(item.quest_location));
@@ -192,12 +209,42 @@ local function render_map_entry(item, actions, imgui)
     imgui.PopID();
 end
 
-local function render_nation_quest_entry(item, nation_name, actions, imgui)
+local function render_quest_details(item, imgui)
+    local function detail(label, value)
+        if type(value) ~= 'string' or value == '' then value = 'Not yet verified' end;
+        imgui.TextWrapped(label .. ': ' .. value);
+    end
+    imgui.TableNextRow();
+    imgui.TableSetColumnIndex(0);
+    detail('NPC', item.npc);
+    detail('Location', item.quest_location);
+    detail('Coordinates', item.npc_coordinates);
+    imgui.TableSetColumnIndex(2);
+    detail('Rewards', item.rewards);
+    detail('Prerequisites', item.prerequisites);
+    imgui.TextWrapped('Reference information only; requirements are not checked against your character.');
+end
+
+local function render_nation_quest_entry(item, nation_name, ui_state, actions, imgui)
     imgui.PushID(item.id);
     imgui.TableNextRow();
 
     imgui.TableSetColumnIndex(0);
+    ui_state.expanded_quests = ui_state.expanded_quests or {};
+    local expanded = ui_state.expanded_quests[item.id] == true;
+    if imgui.SmallButton((expanded and '-' or '+') .. '##quest_details') then
+        expanded = not expanded;
+        ui_state.expanded_quests[item.id] = expanded or nil;
+    end
+    imgui.SameLine();
     local color = state_colors[item.state] or { 1, 1, 1, 1 };
+    if item.state == 'manual_open' or item.state == 'manual_complete' then
+        local checked = { item.state == 'manual_complete' };
+        if imgui.Checkbox(('##custom_completion_%s'):fmt(item.id), checked) then
+            actions.set_manual_completed(item.id, checked[1]);
+        end
+        imgui.SameLine();
+    end
     imgui.TextColored(color, ('[%s]'):fmt(state_badges[item.state] or item.state));
     imgui.SameLine();
     imgui.Text(item.name);
@@ -221,6 +268,10 @@ local function render_nation_quest_entry(item, nation_name, actions, imgui)
         end
     elseif item.fame_label == 'Not listed' then
         imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'Not listed');
+    elseif item.fame_label == 'N/A' then
+        imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'N/A');
+    elseif item.fame_label == 'None' then
+        imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'None');
     else
         imgui.TextColored({ 1.00, 0.30, 0.30, 1.00 }, 'Unknown');
     end
@@ -246,10 +297,38 @@ local function render_nation_quest_entry(item, nation_name, actions, imgui)
         imgui.EndTooltip();
     end
 
+    if expanded then render_quest_details(item, imgui) end;
+    imgui.PopID();
+end
+
+local function render_mission_entry(item, ui_state, actions, imgui)
+    imgui.PushID(item.id);
+    imgui.TableNextRow();
+    imgui.TableSetColumnIndex(0);
+    ui_state.expanded_missions = ui_state.expanded_missions or {};
+    local expanded = ui_state.expanded_missions[item.id] == true;
+    if imgui.SmallButton((expanded and '-' or '+') .. '##mission_details') then
+        expanded = not expanded;
+        ui_state.expanded_missions[item.id] = expanded or nil;
+    end
+    imgui.SameLine();
+    imgui.TextColored(state_colors[item.state] or {1, 1, 1, 1},
+        ('[%s]'):fmt(state_badges[item.state] or item.state));
+    imgui.SameLine();
+    imgui.Text(('%s %s'):fmt(item.mission_number, item.name));
+    render_tooltip(item, imgui);
+    imgui.TableSetColumnIndex(1);
+    if item.source_url and imgui.SmallButton('Source') then actions.open_source(item.source_url) end;
+    imgui.TableSetColumnIndex(2);
+    imgui.TextWrapped(('Rank %d / %s'):fmt(item.mission_rank, item.mission_type or 'Not listed'));
+    if expanded then render_quest_details(item, imgui) end;
     imgui.PopID();
 end
 
 local function matches_view(item, view)
+    if view.mission_rank ~= nil and item.mission_rank ~= view.mission_rank then
+        return false;
+    end
     if view.magic_skill ~= nil and item.magic_skill ~= view.magic_skill then
         return false;
     end
@@ -263,10 +342,67 @@ local function matches_view(item, view)
     return true;
 end
 
+local function quest_type_label(item)
+    local value = item.quest_type;
+    if type(value) ~= 'string' or value == '' or value == 'Unknown' then
+        return 'Unknown Type';
+    end
+    if value:match('^%u%u%u AF[123]?$') then return 'Artifact' end;
+    if value:match('^%u%u%u Flag$') then return 'Job Unlock' end;
+    local labels = {
+        WS = 'Weapon Skill', LB = 'Limit Break', SJ = 'Subjob Unlock',
+        RSE = 'Race-specific Equipment',
+        ['Custom quest'] = 'Custom',
+        ['Custom quest (provisional title)'] = 'Custom',
+        ['Custom repeatable quest'] = 'Custom Repeatable',
+    };
+    return labels[value] or value;
+end
+
+local function render_quest_type_filter(category, ui_state, imgui)
+    if quest_nation_names[category.id] == nil then return end;
+    ui_state.selected_quest_types = ui_state.selected_quest_types or {};
+    local present, options = {}, {};
+    for _, item in ipairs(category.entries) do
+        local label = quest_type_label(item);
+        if not present[label] then
+            present[label] = true;
+            options[#options + 1] = label;
+        end
+    end
+    table.sort(options);
+    table.insert(options, 1, 'All Types');
+    local selected = ui_state.selected_quest_types[category.id];
+    if not present[selected] then selected = 'All Types' end;
+    imgui.SetNextItemWidth(220);
+    if imgui.BeginCombo(('Type##%s'):fmt(category.id), selected) then
+        for _, label in ipairs(options) do
+            if imgui.Selectable(label, label == selected) then selected = label end;
+        end
+        imgui.EndCombo();
+    end
+    ui_state.selected_quest_types[category.id] = selected;
+    if imgui.IsItemHovered() then
+        imgui.BeginTooltip();
+        imgui.PushTextWrapPos(imgui.GetFontSize() * 32);
+        imgui.TextWrapped('Uses catalog type tags, not quest status. Unknown Type means no sourced type. Area progress totals stay unchanged.');
+        imgui.PopTextWrapPos();
+        imgui.EndTooltip();
+    end
+end
+
 local function render_entries(category, view, settings, ui_state, actions, imgui)
+    local selected_type = quest_nation_names[category.id]
+        and ui_state.selected_quest_types and ui_state.selected_quest_types[category.id];
     local visible = {};
     for _, item in ipairs(category.entries) do
         if matches_view(item, view)
+            and (not category.mission_area or not ui_state.mission_current_only
+                or item.state == 'mission_current' or item.state == 'mission_repeat')
+            and (not quest_nation_names[category.id] or not ui_state.accepted_only
+                or item.state == 'auto_current')
+            and (not selected_type or selected_type == 'All Types'
+                or quest_type_label(item) == selected_type)
             and should_show(item, settings, ui_state.search[1]) then
             visible[#visible + 1] = item;
         end
@@ -274,6 +410,25 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
 
     if #visible == 0 then
         imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 }, 'No entries match the current filters.');
+        return;
+    end
+
+    if category.mission_area then
+        local scale = settings.scale_percent / 100;
+        local width = math.max(250 * scale, math.min(imgui.GetWindowWidth() * 0.45, 360 * scale));
+        imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 },
+            'Click + for details. Drag dividers to resize Mission, Source, and Rank / Type columns.');
+        imgui.PushStyleColor(ImGuiCol_TableBorderStrong, { 0.78, 0.82, 0.88, 1.00 });
+        imgui.PushStyleColor(ImGuiCol_TableBorderLight, { 0.58, 0.64, 0.72, 1.00 });
+        local flags = bit.bor(ImGuiTableFlags_Resizable, ImGuiTableFlags_BordersInnerV, ImGuiTableFlags_SizingStretchProp);
+        if imgui.BeginTable('##MissionRows_' .. category.id, 3, flags) then
+            imgui.TableSetupColumn('Mission', ImGuiTableColumnFlags_WidthFixed, width, 0);
+            imgui.TableSetupColumn('Source', ImGuiTableColumnFlags_WidthFixed, imgui.CalcTextSize('Source') + 24, 0);
+            imgui.TableSetupColumn('Rank / Type', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
+            for _, item in ipairs(visible) do render_mission_entry(item, ui_state, actions, imgui) end;
+            imgui.EndTable();
+        end
+        imgui.PopStyleColor(2);
         return;
     end
 
@@ -349,7 +504,8 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
 
     local nation_name = quest_nation_names[category.id];
     if nation_name ~= nil then
-        local fame_heading = category.id == 'other_quests'
+        local fame_heading = (category.id == 'other_quests' or category.id == 'outlands_quests'
+            or category.id == 'ahturhgan_quests' or category.id == 'custom_quests')
             and 'Required Fame' or nation_name .. ' Fame';
         local scale = settings.scale_percent / 100;
         local quest_width = math.max(
@@ -362,7 +518,7 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
             ImGuiTableFlags_SizingStretchProp);
         imgui.TextColored(
             { 0.68, 0.72, 0.78, 1.00 },
-            ('Drag the vertical dividers to resize Quest, Source, and %s columns.')
+            ('Click + for details. Drag dividers to resize Quest, Source, and %s columns.')
                 :fmt(fame_heading));
         imgui.PushStyleColor(
             ImGuiCol_TableBorderStrong,
@@ -378,7 +534,7 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
             imgui.TableSetupColumn(
                 fame_heading, ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
             for _, item in ipairs(visible) do
-                render_nation_quest_entry(item, nation_name, actions, imgui);
+                render_nation_quest_entry(item, nation_name, ui_state, actions, imgui);
             end
             imgui.EndTable();
         end
@@ -425,12 +581,48 @@ local function render_category(category, settings, ui_state, actions, imgui, sel
             end
             imgui.EndCombo();
         end
+        -- Allow room for both 220px fields, scaled labels, spacing, and window chrome.
+        if quest_nation_names[category.id] ~= nil
+            and imgui.GetWindowWidth() >= 440
+                + imgui.CalcTextSize('Location') + imgui.CalcTextSize('Type') + 64 then
+            imgui.SameLine();
+        end
+        render_quest_type_filter(category, ui_state, imgui);
         imgui.Separator();
         render_entries(category, view, settings, ui_state, actions, imgui);
         return;
     end
 
+    render_quest_type_filter(category, ui_state, imgui);
     render_entries(category, {}, settings, ui_state, actions, imgui);
+end
+
+local function render_missions(categories, settings, ui_state, actions, imgui)
+    local stories, selected = {}, nil;
+    for _, category in ipairs(categories) do
+        if category.mission_area then
+            stories[#stories + 1] = category;
+            if category.id == ui_state.selected_mission_story then selected = category end;
+        end
+    end
+    selected = selected or stories[1];
+    if not selected then imgui.Text('No mission storylines are available.'); return end;
+    ui_state.selected_mission_story = selected.id;
+    imgui.SetNextItemWidth(220);
+    if imgui.BeginCombo('Storyline##MissionStory', (selected.name:gsub(' Missions$', ''))) then
+        for _, story in ipairs(stories) do
+            if imgui.Selectable(story.name .. '##' .. story.id, story.id == selected.id) then
+                selected = story;
+                ui_state.selected_mission_story = story.id;
+            end
+        end
+        imgui.EndCombo();
+    end
+    if imgui.GetWindowWidth() >= 220 + imgui.CalcTextSize('Storyline Current only') + 88 then imgui.SameLine() end;
+    local current = { ui_state.mission_current_only == true };
+    if imgui.Checkbox('Current only', current) then ui_state.mission_current_only = current[1] end;
+    imgui.Separator();
+    render_category(selected, settings, ui_state, actions, imgui, 'Rank');
 end
 
 local function render_quests(categories, settings, ui_state, actions, imgui)
@@ -462,6 +654,16 @@ local function render_quests(categories, settings, ui_state, actions, imgui)
             end
         end
         imgui.EndCombo();
+    end
+    if imgui.GetWindowWidth() >= 220 + imgui.CalcTextSize('Area Accepted only') + 88 then
+        imgui.SameLine();
+    end
+    local accepted_only = { ui_state.accepted_only == true };
+    if imgui.Checkbox('Accepted only', accepted_only) then
+        ui_state.accepted_only = accepted_only[1];
+    end
+    if ui_state.accepted_only and selected.id == 'custom_quests' then
+        imgui.TextWrapped('Manual custom quests have no confirmed Accepted state. Turn off Accepted only to view them.');
     end
     imgui.Separator();
     render_category(selected, settings, ui_state, actions, imgui, 'Location');
@@ -570,6 +772,7 @@ function checklist_ui.render(
         if imgui.BeginTabBar('##HXIChecklistTabs', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
             for _, category in ipairs(snapshot.categories) do
                 if quest_nation_names[category.id] == nil
+                    and not category.mission_area
                     and imgui.BeginTabItem(category.name, nil) then
                     render_category(category, settings, ui_state, actions, imgui);
                     imgui.EndTabItem();
@@ -577,6 +780,10 @@ function checklist_ui.render(
             end
             if imgui.BeginTabItem('Quests', nil) then
                 render_quests(snapshot.categories, settings, ui_state, actions, imgui);
+                imgui.EndTabItem();
+            end
+            if imgui.BeginTabItem('Missions', nil) then
+                render_missions(snapshot.categories, settings, ui_state, actions, imgui);
                 imgui.EndTabItem();
             end
             if imgui.BeginTabItem('Skill Levels', nil) then

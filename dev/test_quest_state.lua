@@ -281,4 +281,110 @@ assert(state.get_area('other', 8).completed == false);
 assert(state.load_area_cache('other', saved_other));
 assert(state.get_area('other', 8).completed == true);
 
+-- Outlands has a separate pair and must preserve all older cache formats.
+assert(state.get_area('outlands', 136) == nil);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0078, { 129, 203 }) }));
+assert(state.get_area('outlands', 129) == nil);
+assert(state.export_area_cache('outlands') == nil);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x00B8, { 136, 164 }) }));
+assert(state.get_area('outlands', 136).completed == true);
+assert(state.get_area('outlands', 203).current == true);
+assert(state.get_area('other', 8).completed == true);
+assert(state.get_area('other', 136).completed == false);
+local outlands_cache = state.export_area_cache('outlands');
+assert(outlands_cache.version == 1 and #outlands_cache.current == 64 and #outlands_cache.completed == 64);
+assert(state.handle_packet({ id = 0x00A, data = '' }));
+assert(state.get_area('outlands', 164).source == 'cache');
+assert(not state.load_area_cache('outlands', { version = 1, current = 'invalid', completed = 'invalid' }));
+assert(state.get_area('outlands', 136) == nil);
+assert(state.get_area('other', 8).completed == true);
+assert(state.load_area_cache('outlands', outlands_cache));
+local outlands_profile = { version = 'synthetic', categories = {
+    { id = 'outlands_quests', name = 'Outlands', entries = require('outlands_quest_data').entries },
+} };
+local function outlands_rows()
+    local snapshot = catalog.build_snapshot(outlands_profile, {});
+    local rows = {};
+    for _, entry in ipairs(snapshot.categories[1].entries) do rows[entry.quest_index] = entry end;
+    return rows, snapshot.summary;
+end
+local rows, totals = outlands_rows();
+assert(rows[129].state == 'auto_current' and rows[203].state == 'auto_current');
+assert(rows[136].state == 'auto_complete' and rows[164].state == 'auto_complete');
+assert(rows[163].state == 'auto_not_logged', 'Divine Might and Repeat have independent flags.');
+assert(rows[1].state == 'auto_not_logged');
+assert(rows[165].state == 'unknown' and rows[100].state == 'unknown');
+assert(totals.known_total == 51 and totals.unknown == 6 and totals.complete == 2);
+assert(rows[136].state_note:find('saved character cache', 1, true));
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x00B8, { 136, 164 }) }));
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0078, { 129, 100 }) }));
+rows, totals = outlands_rows();
+assert(rows[136].state_note:find('incoming Outlands quest log', 1, true));
+assert(rows[100].state == 'auto_current', 'Actual client flags still resolve source-unknown entries.');
+assert(totals.known_total == 52 and totals.unknown == 5);
+state.clear();
+assert(state.get_area('outlands', 136) == nil);
+assert(catalog.build_snapshot(outlands_profile, { ['outlands.quest.136'] = true }).summary.known_total == 0);
+assert(state.load_area_cache('outlands', { version = 1, current = string.rep('00', 32), completed = string.rep('00', 32) }));
+assert(state.get_area('outlands', 136).completed == false);
+assert(state.load_area_cache('outlands', outlands_cache));
+assert(state.get_area('outlands', 136).completed == true);
+assert(state.get_area('other', 8) == nil, 'Restoring Outlands cannot restore another area.');
+
+-- Aht Urhgan uses ONLY 16 bytes. The second half of these packets deliberately
+-- sets mission/Assault data so it cannot be mistaken for quest state or cached.
+assert(state.get_area('outlands', 136).completed == true);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x00C0, { 2, 99, 127, 128, 255 }) }));
+assert(state.get_area('ahturhgan', 2) == nil);
+assert(state.export_area_cache('ahturhgan') == nil);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0080, { 5, 103, 128, 200 }) }));
+assert(state.get_area('ahturhgan', 2).completed == true);
+assert(state.get_area('ahturhgan', 5).current == true);
+assert(state.get_area('ahturhgan', 103).current == true);
+assert(state.get_area('ahturhgan', 127).completed == true);
+assert(state.get_area('ahturhgan', 128) == nil and state.get_area('ahturhgan', 255) == nil);
+assert(state.get_area('outlands', 136).completed == true);
+local aht_cache = state.export_area_cache('ahturhgan');
+assert(aht_cache.version == 1 and #aht_cache.current == 32 and #aht_cache.completed == 32);
+assert(aht_cache.current:sub(-2) == '00' and aht_cache.completed:sub(-2) == '80');
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0080, { 5, 103 }) }));
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x00C0, { 2, 99, 127 }) }));
+local clean_tail_cache = state.export_area_cache('ahturhgan');
+assert(clean_tail_cache.current == aht_cache.current and clean_tail_cache.completed == aht_cache.completed);
+assert(state.handle_packet({ id = 0x00A, data = '' }));
+assert(state.get_area('ahturhgan', 2).source == 'cache');
+assert(state.load_area_cache('ahturhgan', outlands_cache) == false, 'Reject 32-byte quest caches for Aht Urhgan.');
+assert(state.get_area('ahturhgan', 2) == nil);
+assert(state.get_area('outlands', 136).completed == true);
+assert(not state.load_area_cache('ahturhgan', { version = 1, current = string.rep('0', 31), completed = string.rep('0', 32) }));
+assert(not state.load_area_cache('ahturhgan', { version = 1, current = string.rep('X', 32), completed = string.rep('0', 32) }));
+assert(state.load_area_cache('ahturhgan', aht_cache));
+local aht_profile = { version = 'synthetic', categories = {
+    { id = 'ahturhgan_quests', name = 'Aht Urhgan', entries = require('ahturhgan_quest_data').entries },
+} };
+local aht_snapshot = catalog.build_snapshot(aht_profile, {});
+local aht_rows = {};
+for _, entry in ipairs(aht_snapshot.categories[1].entries) do aht_rows[entry.quest_index] = entry end;
+assert(aht_rows[2].state == 'auto_complete' and aht_rows[99].state == 'auto_complete');
+assert(aht_rows[5].state == 'auto_current' and aht_rows[103].state == 'auto_current');
+assert(aht_rows[0].state == 'auto_not_logged' and aht_rows[0].fame_label == 'N/A');
+assert(aht_snapshot.summary.known_total == 72 and aht_snapshot.summary.complete == 2);
+assert(aht_rows[2].state_note:find('saved character cache', 1, true));
+state.clear();
+assert(catalog.build_snapshot(aht_profile, { ['ahturhgan.quest.002'] = true }).summary.known_total == 0);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x0080, { 5 }) }));
+assert(state.get_area('ahturhgan', 5) == nil, 'A current-only log cannot resolve state.');
+assert(not state.handle_packet({ id = 0x056, data = make_packet(0x00C0, { 2 }):sub(1, 36) }));
+assert(state.get_area('ahturhgan', 5) == nil);
+assert(state.handle_packet({ id = 0x056, data = make_packet(0x00C0, { 2 }) }));
+assert(catalog.build_snapshot(aht_profile, {}).categories[1].entries[1].state_note:find('incoming Aht Urhgan quest log', 1, true));
+state.clear();
+assert(state.load_area_cache('ahturhgan', { version = 1, current = string.rep('00', 16), completed = string.rep('00', 16) }));
+assert(state.get_area('ahturhgan', 2).completed == false);
+assert(state.load_area_cache('ahturhgan', aht_cache));
+assert(state.get_area('ahturhgan', 2).completed == true);
+assert(state.get_area('outlands', 136) == nil);
+assert(state.load_area_cache('outlands', outlands_cache));
+assert(state.get_area('outlands', 136).completed == true, 'Older 32-byte cache format remains supported.');
+
 print('quest_state synthetic fixture passed');

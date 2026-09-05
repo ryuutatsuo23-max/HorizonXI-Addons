@@ -5,12 +5,16 @@ local sandoria_quest_data = require('sandoria_quest_data');
 local windurst_quest_data = require('windurst_quest_data');
 local jeuno_quest_data = require('jeuno_quest_data');
 local other_quest_data = require('other_quest_data');
+local outlands_quest_data = require('outlands_quest_data');
+local ahturhgan_quest_data = require('ahturhgan_quest_data');
+local custom_quest_data = require('custom_quest_data');
+local bastok_mission_data = require('bastok_mission_data');
 
 local profile = {
     id = 'horizon-foundation',
-    version = '2026-09-03-foundation.13',
+    version = '2026-09-04-foundation.19',
     incomplete = true,
-    scope_note = "This profile is intentionally incomplete: nine sourced magic catalogs, the HorizonXI Magical Maps catalog, and five client quest-log catalogs including Other Areas. Its totals are not whole-server completion.",
+    scope_note = "This profile is intentionally incomplete: magic, maps, seven client quest logs, four Horizon custom quests, and Bastok missions. Totals include self-reported custom completion and are not whole-server completion.",
     categories = {
         {
             id = 'magic_skills',
@@ -60,6 +64,32 @@ local profile = {
             description = 'Ninety-one named Other-area client quests, including Selbina, Mhaura, and Tavnazian Safehold. Sixty have HorizonXI table evidence: one is marked unavailable and three need verification. Thirty-one have no matching category evidence. Fame labels follow the source location; state is read from incoming logs and cached by character.',
             views = other_quest_data.views,
             entries = other_quest_data.entries,
+        },
+        {
+            id = 'outlands_quests',
+            name = 'Outlands Quests',
+            description = 'Fifty-seven named Outlands client quests, including Kazham, Norg, and Rabao. Fifty-one have HorizonXI table evidence; six remain unknown. Fame labels follow the source location. A listing is not a guarantee of current server availability; state is read from incoming logs and cached by character.',
+            views = outlands_quest_data.views,
+            entries = outlands_quest_data.entries,
+        },
+        {
+            id = 'ahturhgan_quests',
+            name = 'Aht Urhgan Quests',
+            description = 'Seventy-two named Aht Urhgan client quests with HorizonXI table evidence. Fame is N/A according to the source; other prerequisites may apply. Listings do not guarantee current server availability. Quest state is read from incoming logs and cached by character; Assault and mission data are excluded.',
+            views = ahturhgan_quest_data.views,
+            entries = ahturhgan_quest_data.entries,
+        },
+        {
+            id = 'custom_quests',
+            name = 'Horizon Custom Quests',
+            description = 'Four sourced custom quests with no confirmed automatic reader. Checkboxes save self-reported completion per character and count toward progress. Unchecked means not marked, not Not Accepted. Repeatable quests are marked for completion at least once; source uncertainties remain in tooltips.',
+            views = custom_quest_data.views,
+            entries = custom_quest_data.entries,
+        },
+        {
+            id = 'bastok_missions', name = 'Bastok Missions', mission_area = 'bastok',
+            description = 'Twenty main Bastok missions in rank order. Current state and explicit completion bits are read from incoming mission logs and cached per character. Emissary travel stages share one row. Not current does not mean available to start; completion is never inferred from rank or mission order.',
+            views = bastok_mission_data.views, entries = bastok_mission_data.entries,
         },
     },
 };

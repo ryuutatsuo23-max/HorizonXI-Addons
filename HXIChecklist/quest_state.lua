@@ -14,6 +14,9 @@ local area_configs = {
     windurst = { label = 'Windurst', current_type = 0x0060, completed_type = 0x00A0 },
     jeuno = { label = 'Jeuno', current_type = 0x0068, completed_type = 0x00A8 },
     other = { label = 'Other Areas', current_type = 0x0070, completed_type = 0x00B0 },
+    outlands = { label = 'Outlands', current_type = 0x0078, completed_type = 0x00B8 },
+    -- The remaining 16 bytes hold mission IDs/current or Assault flags/completed.
+    ahturhgan = { label = 'Aht Urhgan', current_type = 0x0080, completed_type = 0x00C0, flags_length = 0x10 },
 };
 
 local live_logs = {};
@@ -44,9 +47,9 @@ local function encode_hex(value)
     end));
 end
 
-local function decode_hex(value)
+local function decode_hex(value, length)
     if type(value) ~= 'string'
-        or #value ~= flags_length * 2
+        or #value ~= length * 2
         or value:find('[^0-9A-Fa-f]') ~= nil then
         return nil;
     end
@@ -94,8 +97,9 @@ function quest_state.handle_packet(e)
         return false, nil;
     end
 
-    local flags = e.data:sub(flags_offset + 1, flags_offset + flags_length);
-    if #flags ~= flags_length then
+    local length = area_configs[area].flags_length or flags_length;
+    local flags = e.data:sub(flags_offset + 1, flags_offset + length);
+    if #flags ~= length then
         return false, nil;
     end
     live_logs[area][log_name] = flags;
@@ -111,7 +115,8 @@ function quest_state.get_area(area, index)
     if config == nil then
         return nil, 'Unknown quest area.';
     end
-    if type(index) ~= 'number' or index < 0 or index >= flags_length * 8 then
+    local length = config.flags_length or flags_length;
+    if type(index) ~= 'number' or index < 0 or index >= length * 8 then
         return nil, string.format('Invalid %s quest index.', config.label);
     end
 
@@ -158,8 +163,9 @@ function quest_state.load_area_cache(area, cache)
         return false;
     end
 
-    local current = decode_hex(cache.current);
-    local completed = decode_hex(cache.completed);
+    local length = area_configs[area].flags_length or flags_length;
+    local current = decode_hex(cache.current, length);
+    local completed = decode_hex(cache.completed, length);
     if current == nil or completed == nil then
         return false;
     end

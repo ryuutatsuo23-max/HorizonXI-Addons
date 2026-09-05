@@ -5,14 +5,20 @@ local resource_cache = {};
 local requirement_cache = {};
 local key_item_state = require('key_item_state');
 local quest_state = require('quest_state');
+local mission_state = require('mission_state');
 local job_levels = require('job_levels');
 
 local labels = {
+    manual_complete = 'Completed (manual)',
+    manual_open = 'Not marked (manual)',
     complete = 'Checked',
     missing = 'Missing',
     auto_complete = 'Completed',
     auto_current = 'Accepted',
     auto_not_logged = 'Not Accepted',
+    mission_current = 'Current',
+    mission_repeat = 'Current (completed before)',
+    mission_not_current = 'Not current',
     unknown = 'Unknown',
     unavailable = 'Unavailable',
 };
@@ -227,17 +233,72 @@ local function direct_state(entry)
     return has_value and 'complete' or 'missing', nil;
 end
 
+local function is_custom_manual(entry)
+    return entry.kind == 'manual' and entry.tracking == 'manual'
+        and entry.quest_area == 'horizon_custom' and entry.quest_index == nil
+        and entry.availability == 'wiki_listed';
+end
+
+-- Only explicitly reviewed custom entries can change self-reported marks.
+-- Mapped quests and legacy pilot marks remain outside this write path.
+function catalog.set_manual_completed(profile, manual_completed, id, completed)
+    if type(manual_completed) ~= 'table' or type(id) ~= 'string'
+        or type(completed) ~= 'boolean' then
+        return false;
+    end
+    for _, category in ipairs(profile.categories) do
+        for _, entry in ipairs(category.entries) do
+            if entry.id == id and is_custom_manual(entry) then
+                if (manual_completed[id] == true) == completed then return false end;
+                manual_completed[id] = completed and true or nil;
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
 local function entry_state(entry, manual_completed)
     if entry.availability == 'reported_inactive' then
         return 'unavailable', entry.availability_note;
     end
 
+    if entry.kind == 'mission' then
+        if entry.mission_area ~= 'bastok' then
+            return 'unknown', 'No mission reader is assigned to this storyline.';
+        end
+        local automatic, note = mission_state.get_bastok(entry.mission_index);
+        if automatic == nil then return 'unknown', note end;
+        local source = automatic.source == 'cache' and 'the saved character cache' or 'incoming mission logs';
+        if automatic.completed then
+            if automatic.current then
+                return 'mission_repeat', 'Current mission with an explicit completion bit in ' .. source .. '. Counted complete once; still shown by Current only.';
+            end
+            return 'auto_complete', 'Explicit Bastok mission completion bit in ' .. source .. '.';
+        end
+        if automatic.current == nil then
+            return 'unknown', 'Unrecognized Bastok current-mission ID; no completion or missing state is inferred.';
+        end
+        if automatic.current then
+            return 'mission_current', 'Exact Bastok current-mission ID (or mapped Emissary travel stage) in ' .. source .. '.';
+        end
+        return 'mission_not_current', 'No completion bit and not the current Bastok mission in ' .. source .. '. This does not mean available to start; rank/order are not used to infer completion.';
+    end
+
     if entry.kind == 'manual' then
+        if is_custom_manual(entry) then
+            if manual_completed[entry.id] == true then
+                return 'manual_complete', 'Completion marked manually for this character; not verified from quest logs or reward ownership.';
+            end
+            return 'manual_open', 'Not marked complete by you. This does not mean Not Accepted or that the quest is currently obtainable. No confirmed automatic reader is assigned.';
+        end
         if (entry.quest_area == 'bastok'
                 or entry.quest_area == 'sandoria'
                 or entry.quest_area == 'windurst'
                 or entry.quest_area == 'jeuno'
-                or entry.quest_area == 'other')
+                or entry.quest_area == 'other'
+                or entry.quest_area == 'outlands'
+                or entry.quest_area == 'ahturhgan')
             and type(entry.quest_index) == 'number' then
             local automatic, automatic_note = quest_state.get_area(
                 entry.quest_area, entry.quest_index);
@@ -248,6 +309,8 @@ local function entry_state(entry, manual_completed)
                     windurst = 'Windurst',
                     jeuno = 'Jeuno',
                     other = 'Other Areas',
+                    outlands = 'Outlands',
+                    ahturhgan = 'Aht Urhgan',
                 };
                 local area_label = area_labels[entry.quest_area];
                 local source = automatic.source == 'cache'
@@ -278,12 +341,17 @@ end
 local function add_to_summary(summary, item)
     summary.entries = summary.entries + 1;
     if item.state == 'complete'
-        or item.state == 'auto_complete' then
+        or item.state == 'auto_complete'
+        or item.state == 'mission_repeat'
+        or item.state == 'manual_complete' then
         summary.complete = summary.complete + 1;
         summary.known_total = summary.known_total + 1;
     elseif item.state == 'missing'
         or item.state == 'auto_current'
-        or item.state == 'auto_not_logged' then
+        or item.state == 'auto_not_logged'
+        or item.state == 'mission_current'
+        or item.state == 'mission_not_current'
+        or item.state == 'manual_open' then
         summary.open = summary.open + 1;
         summary.known_total = summary.known_total + 1;
     elseif item.state == 'unknown' then
@@ -317,6 +385,7 @@ function catalog.build_snapshot(profile, manual_completed)
             id = category.id,
             name = category.name,
             description = category.description,
+            mission_area = category.mission_area,
             views = category.views,
             entries = {},
             summary = {

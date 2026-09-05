@@ -9,8 +9,8 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Toggle with `/hc`; show/hide and window close should remain synchronized.
 - [ ] Change scale and filters, reload the addon, and confirm they persist for that character.
 - [ ] Compare 75%, 100%, and 150% and confirm the addon text visibly changes size at each setting.
-- [ ] On a character with no cache, confirm all five quest-area catalogs show no manual checkboxes and unresolved rows are `UNKNOWN`.
-- [ ] After receiving the logs once, unload/reload the addon without zoning and confirm map and all five quest-area states restore from cache.
+- [ ] On a character with no cache, confirm all seven quest-area catalogs show no manual checkboxes and unresolved rows are `UNKNOWN`.
+- [ ] After receiving the logs once, unload/reload the addon without zoning and confirm map and all seven quest-area states restore from cache.
 - [ ] Log into another character and confirm it does not inherit the first character's cached state.
 - [ ] Return to the first character and confirm its own cache restores.
 
@@ -106,7 +106,81 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Test immediately after login or zoning; unresolved client data must show `UNKNOWN`, never a false missing state.
 - [ ] Use `/hc refresh` after login and verify unresolved resource names remain explicit.
 
+## Outlands upgrade
+
+- [ ] Copy the updated inner folder (16 runtime Lua files), reload the addon, and select Quests > Area > Outlands. Confirm the header shows profile `2026-09-03-foundation.14`.
+- [ ] With all filters enabled, confirm 57 rows and nine Location choices. Kazham has 14 rows, Norg 21, Rabao 11, and Unresolved six.
+- [ ] Confirm The Sahagin's Stash shows Norg Fame 4, The Missing Piece shows Rabao Fame 4, and the latter's tooltip explains the table/page discrepancy.
+- [ ] Confirm Divine Might and Divine Might (Repeat) have distinct rows and Source targets. Confirm category-listed red links open the category evidence, not an edit page.
+- [ ] Confirm both vertical dividers resize Quest, Source, and Required Fame columns; test narrow widths and 75%, 100%, and 150% scale.
+- [ ] Confirm location selection survives switching areas in the session and Show unknown hides unresolved rows without changing the counts.
+- [ ] Confirm existing quest/map caches survive the upgrade. Before Outlands' first log pair, its state must remain unknown rather than Not Accepted.
+- [ ] Zone after loading the new version; compare accepted, completed, and neither-bit quests with the game's Outlands log, including a Norg/Rabao entry above index 127.
+- [ ] Reload without zoning to verify Outlands cache restoration. Switch characters and verify state is isolated.
+
+## Aht Urhgan upgrade
+
+- [ ] Copy the updated inner folder (17 runtime Lua files), reload, and confirm profile `2026-09-03-foundation.15`. Select Quests > Area > Aht Urhgan without adding any new top-level tab.
+- [ ] Enable Show completed/Show unknown and confirm 72 rows with eight Location choices. Whitegate has 53, Al Zahbi 3, Nashmau 9, Bastok Markets 1, Wajaom Woodlands 2, Arrapago Reef 3, and Mount Zhayolm 1.
+- [ ] Confirm Cook-a-roon?, Totoroon's Treasure Hunt, and the Promotion: titles are readable. Confirm Source links open an existing quest page or the supporting category table.
+- [ ] Confirm Required Fame displays N/A, with a tooltip explaining the no-fame source statement and warning that other requirements may apply. Existing areas must keep their previous numeric/unknown/unlisted labels.
+- [ ] Drag both dividers and test a narrow window at all three scales. Location choices should survive switching areas during the session.
+- [ ] Before receiving the first Aht Urhgan log pair, expect UNKNOWN, not Not Accepted. Existing areas and map caches should restore normally.
+- [ ] Zone after reloading; compare an accepted, completed, and neither-bit quest with the game's Aht Urhgan quest log, including a higher mapped index such as a promotion or Ashu Talif quest.
+- [ ] Confirm there are no separate Assault mission rows. Where possible, compare status before/after mission or Assault-state changes and confirm unrelated quest rows stay unchanged.
+- [ ] Reload without zoning to check cache restoration. Switch characters and confirm Aht Urhgan and existing areas retain separate character data.
+
+## Horizon Custom manual tracking
+
+- [ ] Copy the updated inner folder (18 runtime files), reload, and confirm profile `2026-09-04-foundation.17`. Select Quests > Horizon Custom; this section requires no zone for its manual marks.
+- [ ] Confirm four rows and four Location choices: All Locations, Ru'Lude Gardens, Windurst Woods, and Mount Zhayolm.
+- [ ] Confirm only the custom rows have checkboxes and display Manual/Manual done, never Accepted or Not Accepted. Mapped areas retain their prior read-only states.
+- [ ] Check Omni Aketon; confirm the custom and global completed counts increase by one. With Show completed off, confirm the row disappears. Turn it on, uncheck, and confirm the counts return.
+- [ ] Disable Show unknown and confirm unmarked custom rows remain visible, including Fill In and A Mind Unbound with Unknown fame.
+- [ ] Reload without zoning; confirm checked custom entries restore. Change characters and confirm marks are isolated; return and confirm the original marks restore.
+- [ ] Confirm Omni Aketon and Dyer's Woad Quest show None fame, while Fill In and A Mind Unbound show Unknown. Read the provisional-title and repeatable-at-least-once caveats in tooltips.
+- [ ] Check Source links, location switching, both draggable dividers, and 75/100/150% scales. Existing caches and marks should remain unchanged except for custom boxes deliberately toggled during this test.
+
+## Quest-type filters
+
+- [ ] In Quests, select Artifact and Job Unlock under Type; confirm the rows match the sourced tags and Source buttons/dividers still work.
+- [ ] Combine Type with Location, search, and Show completed; confirm empty intersections show the no-matches message and All Types clears the type restriction.
+- [ ] Switch areas and return; confirm each area retains its Type selection for the session. Reload and confirm All Types returns, without changing saved marks or quest caches.
+- [ ] Confirm Type does not change area/global totals. Unknown Type remains distinct from UNKNOWN status and the Show unknown checkbox.
+- [ ] Confirm Type sits beside Location when space permits and wraps below it in narrow windows at 75/100/150% scale. No extra top-level tabs should appear.
+
+## Accepted-only and expandable quest details
+
+- [ ] With an active mapped quest, enable Accepted only. Confirm only Accepted rows remain, in combination with Location, Type, search, and visibility checkboxes; area/global totals must not change.
+- [ ] In Horizon Custom, confirm Accepted only hides manual rows and explains why. Disable it to restore the rows. Magic, Maps, and numeric Skill Levels must not be affected.
+- [ ] Expand and collapse a mapped quest with +/-. Confirm NPC, coordinates, rewards, and prerequisite summaries wrap beneath the correct row, with Source and fame still aligned; test both dividers and 75/100/150% scale in narrow/wide windows.
+- [ ] Expand a custom quest, toggle its completion checkbox separately, and confirm expanding/collapsing does not mark completion or save settings. Confirm other areas display Not yet verified for missing detail fields.
+- [ ] Check Gourmet shows the 100-350 gil range with the source caveat. Read the requirement-summary disclaimer; no eligibility is inferred from inventory, jobs, or fame.
+- [ ] Reload: Accepted only and expanded rows should reset, while character quest caches and manual marks remain unchanged.
+
 ## Evidence and totals
+
+### Bastok Missions (0.20.0 / foundation.19)
+
+- [ ] Copy all 20 runtime Lua files, reload, and confirm profile `2026-09-04-foundation.19`. Existing quests, maps, skills, and custom marks should remain intact.
+- [ ] Open Missions > Storyline: Bastok. With visibility filters enabled, confirm 20 main missions in 1-1 through 9-2 order, not alphabetical order, and Rank choices All Ranks plus 1 through 9.
+- [ ] Before the first paired mission logs, expect UNKNOWN. Zone once; compare the addon against the game's current/completed Bastok mission log, including optional missions that were skipped. A higher rank/later mission must not mark those complete.
+- [ ] Confirm Current only is separate from Accepted only in Quests, combines with Rank/search, and does not change totals. A currently repeated mission with a completion bit should show Current / Done, count complete once, and remain visible even with Show completed off.
+- [ ] If possible, observe The Emissary during travel stages: only the one 2-3 row should be current. Stage completion must not mark the main mission complete prematurely.
+- [ ] On a non-Bastok character, the other nation's current mission must not show as current in Bastok. Previously completed Bastok missions should still reflect their own completion bits.
+- [ ] Expand a gate-guard mission and Magicite. Verify the four named guard locations and Goggehn's H-10 location against Source. Check the alternate Magicite gil reward and the partial-prerequisite disclaimer.
+- [ ] Drag both dividers with long details expanded; check Source alignment and wrapping at 75/100/150% scale in narrow/wide windows. Mission expansion must not toggle completion or save UI filter state.
+- [ ] Reload without zoning after receiving both logs: mission progress should restore from the saved character cache. Switch characters and back; no mission, quest, or manual-mark data should leak between characters.
+- [ ] Confirm ordinary gameplay produces no addon-generated requests, packets, actions, chat, or movement. Treat mismatches as observations to investigate, not permission to change packet mappings speculatively.
+
+### Remaining-area details (0.19.1 / foundation.18)
+
+- [ ] Copy the updated inner HXIChecklist folder and reload; confirm profile `2026-09-04-foundation.18`. No new zoning is required for static detail fields if quest-state caches are already populated.
+- [ ] Expand quests in San d'Oria, Windurst, Jeuno, Other Areas, Outlands, and Aht Urhgan. Check coordinates, rewards, and partial prerequisite summaries against Source; missing fields must still say Not yet verified.
+- [ ] Inspect a Borghertz artifact quest: optional coffer rewards must be distinguished from the hands reward, and the earlier quest must be described as started rather than completed.
+- [ ] Read a source-conflict note and an unverified-requirement note. Neither should silently change the fame column or imply the character meets the requirements.
+- [ ] With long details expanded, drag both dividers and test narrow/wide windows at 75/100/150% scale. Source buttons should remain aligned and details should not overlap the next row.
+- [ ] Confirm Accepted only, Type/Location/search filters, totals, custom marks, and existing quest states behave as before. This update must not change character saves or add Missions.
 
 - [ ] Confirm `A Proper Burial` displays `UNKNOWN` and is excluded from the denominator.
 - [ ] Enable `Show unavailable`; confirm `All by Myself` displays `UNAVAILABLE` and is excluded.
