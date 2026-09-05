@@ -1,133 +1,77 @@
-# HorizonChecklist repository / HXIChecklist addon
+# HXIChecklist
 
-HXIChecklist is a source-only Ashita v4 checklist foundation for private-server testing. It is behaviorally inspired by [XIchecklist](https://github.com/HiPotionQ8/XIchecklist), but this implementation is written for Ashita v4 and uses a deliberately bounded HorizonXI-oriented profile.
+HXIChecklist is a read-only checklist addon for Final Fantasy XI on Ashita v4. It helps you review character progress using a HorizonXI-oriented catalog and links every sourced entry back to the HorizonXI Wiki.
 
-Version 0.20.0 is not a complete HorizonXI checklist. It includes six bounded pieces:
+Current version: **0.20.0**
 
-- live, read-only ownership for 316 sourced level-75-cap spells, summons, ninjutsu, and songs in nine catalogs;
-- live, read-only ownership for 72 map key items listed in HorizonXI's Magical Maps table, from the incoming `0x055` key-item log;
-- passive current/completed state for all 93 Bastok, 82 named San d'Oria, 90 named Windurst, 146 named Jeuno, 91 named Other-area, 57 named Outlands, and 72 named Aht Urhgan client quest-log entries, with sourced fame labels and no manual completion fallback;
-- live numeric values and client-reported cap flags for eleven magic-related skills;
-- four sourced Horizon custom quests with user-controlled completion checkboxes, saved per character;
-- 20 main Bastok missions, using passive current-mission IDs and explicit completion bits, never rank/order-based completion guesses.
+Profile: **2026-09-04-foundation.19**
 
-The `Magic Skills` tab has a compact `Category` selector for `All Magic`, `Dark Magic`, `Divine Magic`, `Elemental Magic`, `Enfeebling Magic`, `Enhancing Magic`, `Healing Magic`, `Summoning`, `Ninjutsu`, and `Songs`. These remain learned-ownership catalog views. Magic rows align their Source buttons and always show comma-separated level-75-era job requirements from the validated client spell resource, such as `BLM Lv.12, RDM Lv.16`; multi-job spells list each applicable job. The brighter visible column separators can be dragged horizontally, and the initial spell column keeps Source buttons closer to the names. The separate `Skill Levels` tab reads Divine, Healing, Enhancing, Enfeebling, Elemental, Dark, Summoning, Ninjutsu, Singing, String Instrument, and Wind Instrument values directly from Ashita.
+> [!IMPORTANT]
+> HXIChecklist has not been approved by HorizonXI. The current build is intended for private-server testing until the exact release has completed HorizonXI's addon review process.
 
-The `Maps` tab has its own compact selector for `All Maps`, `Original Areas`, `Rise of the Zilart`, `Chains of Promathia`, and `Treasures of Aht Urhgan`. Its Map, Source, and Obtained columns are aligned and separated by visible draggable dividers. Thirty maps show a sourced vendor price; the other 42 show their sourced quest, mission, mini-quest, chest, or coffer method. The list is intentionally limited to the 72 rows in the sourced HorizonXI table; additional retail client map records and map pages outside that table are not silently imported.
+## Features
 
-The single `Quests` tab has an `Area` dropdown for Bastok, San d'Oria, Windurst, Jeuno, Other Areas, Outlands, Aht Urhgan, and Horizon Custom, plus a `Location` dropdown for `All Locations` or a sourced location within that area. Each area's location selection is retained during the session. Bastok covers client log indices 0 through 92, San d'Oria covers all 82 named XIchecklist entries through index 119, Windurst covers its 90 named entries through index 96, Jeuno covers 146 named entries through index 186, Other Areas covers 91 named entries through index 209, Outlands covers 57 through index 203, and Aht Urhgan covers 72 through index 103. All seven retain aligned Quest, Source, and fame columns separated by visible draggable dividers. Fame is shown only as sourced numeric requirements, `Not listed`, `Unknown`, or explicitly sourced `N/A`; the addon does not infer missing requirements. Navigation does not change quest IDs, character caches, or progress calculations.
+- Checks ownership of 316 spells, summons, ninjutsu, and songs.
+- Shows live values for 11 magic-related skills.
+- Tracks 72 map key items and shows where each map is obtained.
+- Tracks the client quest logs for Bastok, San d'Oria, Windurst, Jeuno, Other Areas, Outlands, and Aht Urhgan.
+- Includes four Horizon-specific quests with optional per-character manual completion.
+- Tracks the 20 main Bastok missions, including current and explicitly completed states.
+- Provides search, visibility, area, location, quest-type, rank, and current/accepted filters.
+- Shows expandable NPC, coordinates, rewards, and prerequisite references where sourced.
+- Keeps Source buttons and draggable table dividers available throughout the main lists.
 
-Jeuno's current HorizonXI category supplies evidence for 83 mapped entries; 63 client entries remain explicit source unknowns. Its location views are Lower Jeuno, Upper Jeuno, Ru'Lude Gardens, Port Jeuno, and Unresolved. The custom `Omni Aketon` category row has no matched client-log index; it is now listed under Horizon Custom with manual tracking, not assigned a guessed bit in Jeuno.
+The addon only reads character data and incoming logs. It does not send or request packets, automate gameplay, move the character, target anything, send chat, write game memory, or access the web while running.
 
-`Other Areas` follows the client's shared Other quest log: Selbina, Mhaura, both listed Tavnazian Safehold levels, Mog House, and smaller locations. Its 60 source-table matches include `The Big One` as unavailable and three beastmen-headgear quests as verification-needed unknowns; 31 other named client entries lack matching category evidence. The column is called `Required Fame`, with `Selbina Fame X` or `Mhaura Fame X` for those sourced requirements. Mog House rows show `Fame X (see source)` because the table supplies a number but does not identify its fame region. Existing nation and Jeuno formatting is unchanged.
+## Installation
 
-`Outlands` adds 57 named client entries: 51 have HorizonXI table evidence and six remain source unknowns. Location views include Kazham, Norg, Rabao, Cape Teriggan, The Sanctuary of Zi'Tah, The Shrine of Ru'Avitau, Yuhtunga Jungle, and Unresolved. Its aligned `Required Fame` column shows 23 numeric requirements with source-region labels, 28 `Not listed`, and six `Unknown`. The Missing Piece uses its individual page's explicit Rabao Fame 4. Divine Might and Divine Might (Repeat) retain separate client bits. The existing `Show unknown` checkbox hides unresolved rows without deleting data or changing state rules.
+1. Download the ZIP from the [latest release](https://github.com/ryuutatsuo23-max/HorizonChecklist/releases/latest).
+2. Extract the included `HXIChecklist` folder into your Ashita v4 `addons` directory.
+3. Log into a character and run:
 
-`Aht Urhgan` adds 72 named client quests with matching HorizonXI category-table evidence across seven starting locations. Its Required Fame column shows `N/A`, with a tooltip explaining the source's no-fame statement and that other prerequisites may still apply. Only the 16-byte quest section of its incoming packets is read and cached; mission IDs and Assault flags are excluded. Its new character-cache key does not change the existing areas' 32-byte format. The catalog includes source-listed quests, not a promise that every listed quest is currently implemented.
+```text
+/addon load HXIChecklist
+```
 
-It passively reads the incoming `0x055` key-item and `0x056` quest logs and registers no outgoing packet handler. It injects, modifies, blocks, or requests no game packet, sends no gameplay input, writes no game memory, and performs no runtime web requests. The only blocked input is its own `/hc` addon command so the command is not sent to the game server.
+4. Use `/hc` to show or hide the window.
+5. Zone once after installing so the client can naturally send its quest and mission logs. Future reloads can use the per-character cache.
 
-## Safety and server status
-
-This repository is for local private-server evaluation. It has not been submitted to or approved by HorizonXI, and it should not be represented as an approved HorizonXI addon. Keep it out of a live HorizonXI installation until the server's addon review process has approved the exact release you intend to use.
-
-## Install for a private Ashita v4 test
-
-1. Copy the `HXIChecklist` folder from this repository into the private test client's `addons` directory. Do not copy the repository's outer `HorizonChecklist` folder.
-2. Start the test client and log into a character.
-3. Run `/addon load HXIChecklist`.
-4. Use `/hc` to toggle the window.
-
-The copy-ready folder contains exactly the required runtime files:
-
-- `HXIChecklist.lua`
-- `ahturhgan_quest_data.lua`
-- `bastok_quest_data.lua`
-- `catalog.lua`
-- `custom_quest_data.lua`
-- `checklist_ui.lua`
-- `horizon_profile.lua`
-- `job_levels.lua`
-- `jeuno_quest_data.lua`
-- `key_item_state.lua`
-- `magic_data.lua`
-- `map_data.lua`
-- `other_quest_data.lua`
-- `outlands_quest_data.lua`
-- `quest_state.lua`
-- `sandoria_quest_data.lua`
-- `skill_levels.lua`
-- `windurst_quest_data.lua`
-
-Copy the whole `HXIChecklist` folder so these eighteen files stay together.
+To update, replace the complete `HXIChecklist` folder with the folder from the new release. Do not copy the repository's outer folder into `addons`.
 
 ## Commands
 
-- `/hc`, `/hcheck`, `/hxichecklist`, or `/horizonchecklist`: toggle the window.
-- `/hc show` and `/hc hide`: explicitly show or hide it.
-- `/hc refresh`: clear resource-name caches and refresh the snapshot.
-- `/hc status`: print the current profile summary.
-- `/hc scale <75-150>`: adjust window font scale.
+| Command | Action |
+| --- | --- |
+| `/hc` | Toggle the window |
+| `/hc show` | Show the window |
+| `/hc hide` | Hide the window |
+| `/hc refresh` | Refresh the displayed state and resource lookups |
+| `/hc status` | Print the current profile summary |
+| `/hc scale 75-150` | Set the interface scale percentage |
 
-The on-screen Scale slider and `/hc scale` command resize the addon's text using Ashita v4's font-stack API when the older per-window scaling call is unavailable.
+The longer aliases `/hcheck`, `/hxichecklist`, and `/horizonchecklist` also toggle the window.
 
-## State labels
+## Understanding the labels
 
-- `Checked` / `Missing`: read from the logged-in character through Ashita. Imported spells are resolved by explicit client ID plus English name and magic-skill validation.
-- `Completed` / `Accepted` / `Not Accepted`: decoded from both incoming logs for the relevant area. `Not Accepted` claims only that neither bit is set, not that the quest is currently obtainable.
-- `Manual` / `Manual done`: self-reported custom-quest completion, not client-log state. These rows contribute to progress; unchecked means not marked complete.
-- `UNKNOWN`: the client state or source status is unresolved and is excluded from the denominator.
-- `UNAVAILABLE`: the source reports the entry inactive; it is excluded from the denominator.
+- **Checked / Missing:** spell or map ownership read from the character.
+- **Completed / Accepted / Not Accepted:** quest-log bits reported by the client. Not Accepted only means neither client bit is set; it does not guarantee that a quest is currently obtainable.
+- **Current**, **Current / Done**, **Not current:** Bastok mission state. Earlier missions are never assumed complete from rank or story order.
+- **Manual / Manual done:** completion marked by you for a supported Horizon-specific quest.
+- **UNKNOWN:** the addon does not have enough client or source evidence. It is excluded from progress totals.
+- **UNAVAILABLE:** the reviewed source reports the entry inactive. It is excluded from progress totals.
 
-`Wiki-listed` is evidence that a wiki page exists, not proof that the content is currently active or matches every server detail. See [docs/SOURCES.md](docs/SOURCES.md) for provenance and [docs/VALIDATION.md](docs/VALIDATION.md) for the private-server checklist.
+Wiki-listed information is reference material, not proof that every entry is currently active or that every requirement applies unchanged. Missing information remains visibly unknown instead of being guessed.
 
-Map and all seven quest-area packet states are cached in Ashita's existing character-specific settings folder, keyed by character name and server ID. Reloading the addon or logging back into the same character can reuse the cache without zoning. A character with no valid cache for an area shows `UNKNOWN` and must zone once so the client sends the incoming logs; the addon never requests them. Adding Aht Urhgan does not invalidate existing quest-area or map caches.
+## Saved data
 
-Each incoming key-item or complete area quest-log update refreshes that character's cache. The versioned `cached_state` container is the extension point for future packet-derived categories. Direct spell ownership remains live-only because Ashita exposes it immediately; it does not need or write a spell cache.
+Quest logs, map ownership, Bastok mission state, and manual custom-quest marks are stored through Ashita's character-specific settings. Switching characters loads a separate cache. Search, dropdown choices, Current/Accepted-only filters, and expanded rows are session-only.
 
-Numeric skill levels are also live-only and are deliberately separate from the checklist-state system. They do not change progress totals, ownership labels, filters, or cached packet state. `Capped` and `Training` report only Ashita's current client cap flag; the addon does not calculate a job- or level-specific maximum.
+## Current scope
 
-## Horizon Custom manual tracking
+This is an intentionally incomplete foundation. Mission storylines other than Bastok, live fame points, Records of Eminence, objectives, calculated skill caps, equipment/food bonuses, blue magic, and geomancy are not included yet.
 
-Under Quests > Area > Horizon Custom, the initial four entries are Omni Aketon, Dyer's Woad Quest, Fill In, and A Mind Unbound. This follows the reviewed custom-content category, not a claim of complete Horizon-exclusive coverage. The historical 2023 anniversary event is not included in this batch.
+For the technical evidence, packet boundaries, catalog decisions, and known uncertainty, see [Source notes](docs/SOURCES.md). For manual testing steps, see the [Validation checklist](docs/VALIDATION.md). Credits and upstream acknowledgements are in [CREDITS.md](CREDITS.md).
 
-Only these explicitly opted-in, unmapped custom rows have checkboxes. They use the existing character-scoped `manual_completed` settings table with new stable `horizon.custom.*` IDs. `Manual done` means you marked completion; `Manual` means not marked, not Not Accepted. Repeatable entries are tracked as completed at least once. Toggling a mark updates progress and is reversible by enabling Show completed and unchecking it. Show unknown does not hide manual rows merely because a fame value is unknown. Source buttons, location filters, and draggable columns work as in the other quest areas.
+## License
 
-The header explicitly notes that totals include self-reported custom completion. Mapped quests still have no manual fallback. No client bits, reward-item ownership, ranks, or hidden game variables are guessed. None is displayed only when the source explicitly confirms no fame requirement; the uncertain requirements for Fill In and A Mind Unbound remain Unknown. A Mind Unbound is the wiki's provisional name, not a confirmed official title.
-
-## Quest-type filters
-
-Quests has a Type dropdown beside Location, wrapping below it in narrow windows. Options come from the selected area's catalog tags: job-specific AF tags are grouped as Artifact and Flag tags as Job Unlock; WS, LB, SJ, and RSE use readable labels. Other source types remain distinct, including Custom and Custom Repeatable. No types are inferred from quest names or rewards.
-
-Type combines with Area, Location, search, and the visibility checkboxes. Each area's selection is remembered for the current session only; All Types restores the full view. Unknown Type means missing type metadata, not UNKNOWN tracking state. Area and overall progress totals remain unchanged by filtering, as do automatic tracking and saved manual marks.
-
-## Accepted quests and expandable details
-
-Quests also has an **Accepted only** checkbox, which includes only rows reported as Accepted by the existing client-log reader. It combines with Area, Location, Type, search, and visibility filters; it never changes totals. Manual custom quests have no Accepted state and are excluded while this is enabled. The checkbox is session-only.
-
-Click **+** beside a quest to expand its NPC, location, coordinates, rewards, and prerequisites beneath the row; **-** collapses it. Sources and fame remain in their existing resizable columns. Open rows are remembered for the session, not written to character saves. Missing detail fields say **Not yet verified**, never implicitly None. Requirements are reference summaries, not live eligibility checks; items needed may be completion requirements rather than requirements to start.
-
-Detail data now spans all seven imported quest areas and Horizon Custom. The remaining-area detail pass adds fields to 393 quests across San d'Oria, Windurst, Jeuno, Other Areas, Outlands, and Aht Urhgan; missing pages, coordinates, and unverified fields remain explicit rather than guessed. Category-listed rewards are labelled as summaries; individual-page values take precedence when reviewed, with obvious source conflicts called out. Prerequisite summaries cover explicit infobox fields and labelled previous-quest links, not an exhaustive walkthrough. See Source for alternative rewards, timing, and additional conditions.
-
-## Bastok Missions
-
-The **Missions** tab starts with **Storyline: Bastok**, covering 20 main missions from 1-1 through 9-2, ordered by rank/mission number. **Rank** filters the list without changing totals. **Current only** is independent of Accepted only in Quests. Mission, Source, and Rank / Type columns have draggable dividers; **+/-** expands sourced starting NPC/location/coordinates, rewards, and partial prerequisites.
-
-Completion requires the mission's explicit completed bit. Current requires Bastok allegiance in the incoming nation packet and an exact mission ID; The Emissary's four travel-stage IDs map to its one main row, but their completion bits do not complete that row. **Not current** does not mean eligible to start. A mission that is current and previously completed shows **Current / Done**, counts complete once, and remains visible with Current only even when Show completed is off. No earlier missions are marked complete from rank or a later mission ID.
-
-Copy all **20 runtime Lua files**, reload, and confirm profile **2026-09-04-foundation.19**. Zone once to receive both mission logs; until then an uncached character shows UNKNOWN. Later reloads can use the character's saved mission cache. Mission filter/expansion choices are session-only. Existing quest/map caches and custom marks are preserved; no gameplay input or packet requests are sent. Live tracking and long-detail layout still need the checks in [docs/VALIDATION.md](docs/VALIDATION.md).
-
-## Data compatibility
-
-Existing legacy manual-mark values are left untouched in settings for compatibility but are no longer displayed or used by the mapped Bastok quests. The original `HXQ-0001` through `HXQ-0019` IDs remain stable, and the same character-scoped quest-bit cache now covers all imported indices without a format migration. Cached packet state uses Ashita's character-scoped settings; switching characters loads a different cache. Future profile growth should retain existing IDs and extend the versioned cache without silently converting unknown state into missing or complete.
-
-## Explicitly deferred
-
-- mission storylines other than Bastok, live fame-point reading, RoE tracking, objectives, and quest regions outside the Bastok, San d'Oria, Windurst, Jeuno, Other, Outlands, and Aht Urhgan client logs;
-- calculated skill caps, equipment or food bonuses, and skill-history tracking;
-- other magic systems such as blue magic and geomancy unless separately sourced and reviewed;
-- retail-only XIchecklist categories not verified against HorizonXI;
-- automatic imports from upstream or the HorizonXI wiki;
-- live HorizonXI deployment, publishing, or approval submission.
-
-The expanded nation catalogs should be validated independently on the local private server before their packet mapping or profile scope is expanded.
+HXIChecklist is available under the [MIT License](LICENSE).
