@@ -8,13 +8,18 @@ local other_quest_data = require('other_quest_data');
 local outlands_quest_data = require('outlands_quest_data');
 local ahturhgan_quest_data = require('ahturhgan_quest_data');
 local custom_quest_data = require('custom_quest_data');
+local sandoria_mission_data = require('sandoria_mission_data');
 local bastok_mission_data = require('bastok_mission_data');
+local windurst_mission_data = require('windurst_mission_data');
+local zilart_mission_data = require('zilart_mission_data');
+local promathia_mission_data = require('promathia_mission_data');
+local ahturhgan_mission_data = require('ahturhgan_mission_data');
 
 local profile = {
     id = 'horizon-foundation',
-    version = '2026-09-04-foundation.19',
+    version = '2026-09-07-foundation.20',
     incomplete = true,
-    scope_note = "This profile is intentionally incomplete: magic, maps, seven client quest logs, four Horizon custom quests, and Bastok missions. Totals include self-reported custom completion and are not whole-server completion.",
+    scope_note = "This profile is intentionally incomplete: magic, maps, seven client quest logs, four Horizon custom quests, and six Horizon-era mission storylines. Totals include self-reported custom completion and are not whole-server completion.",
     categories = {
         {
             id = 'magic_skills',
@@ -89,7 +94,38 @@ local profile = {
         {
             id = 'bastok_missions', name = 'Bastok Missions', mission_area = 'bastok',
             description = 'Twenty main Bastok missions in rank order. Current state and explicit completion bits are read from incoming mission logs and cached per character. Emissary travel stages share one row. Not current does not mean available to start; completion is never inferred from rank or mission order.',
+            mission_view_label = 'Rank', mission_column_label = 'Rank / Type',
             views = bastok_mission_data.views, entries = bastok_mission_data.entries,
+        },
+        {
+            id = 'sandoria_missions', name = "San d'Oria Missions", mission_area = 'sandoria',
+            description = "Twenty main San d'Oria missions in rank order. Current state is nation-gated and completion uses only explicit incoming mission bits. Journey Abroad travel stages share one row; rank/order never imply completion.",
+            mission_view_label = 'Rank', mission_column_label = 'Rank / Type',
+            views = sandoria_mission_data.views, entries = sandoria_mission_data.entries,
+        },
+        {
+            id = 'windurst_missions', name = 'Windurst Missions', mission_area = 'windurst',
+            description = 'Twenty main Windurst missions in rank order. Current state is nation-gated and completion uses only explicit incoming mission bits. Three Kingdoms travel stages share one row; rank/order never imply completion.',
+            mission_view_label = 'Rank', mission_column_label = 'Rank / Type',
+            views = windurst_mission_data.views, entries = windurst_mission_data.entries,
+        },
+        {
+            id = 'zilart_missions', name = 'Rise of the Zilart Missions', mission_area = 'zilart',
+            description = 'Eighteen HorizonXI-listed Zilart missions. Current state and explicit completion bits are read from incoming mission logs. Packet gaps remain unknown; story order is never used to infer completion.',
+            mission_view_label = 'Mission', mission_column_label = 'Type',
+            views = zilart_mission_data.views, entries = zilart_mission_data.entries,
+        },
+        {
+            id = 'promathia_missions', name = 'Chains of Promathia Missions', mission_area = 'promathia',
+            description = 'Thirty-four numbered Promathia missions across eight chapters. Incoming logs identify the current mission and reviewed multi-part stages, but no completion bitfield is used; every non-current row therefore remains Unknown.',
+            mission_view_label = 'Chapter', mission_column_label = 'Chapter / Type',
+            views = promathia_mission_data.views, entries = promathia_mission_data.entries,
+        },
+        {
+            id = 'ahturhgan_missions', name = 'Treasures of Aht Urhgan Missions', mission_area = 'ahturhgan',
+            description = 'Forty-eight Aht Urhgan missions from the HorizonXI category, which currently labels the list as planned content. Current state and explicit completion bits are read when supplied; the listing itself does not prove server availability.',
+            mission_view_label = 'Mission', mission_column_label = 'Type',
+            views = ahturhgan_mission_data.views, entries = ahturhgan_mission_data.entries,
         },
     },
 };

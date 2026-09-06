@@ -20,7 +20,7 @@ local categories = {
     {id='magic_skills',name='Magic Skills',summary=summary,entries={}},
     {id='maps',name='Maps',summary=summary,entries={}},
     {id='bastok_quests',name='Bastok Quests',summary=summary,entries={}},
-    {id='bastok_missions',name='Bastok Missions',mission_area='bastok',summary=summary,entries=entries,
+    {id='bastok_missions',name='Bastok Missions',mission_area='bastok',mission_view_label='Rank',summary=summary,entries=entries,
         views={{id='all',name='All Ranks'},{id='rank_1',name='Rank 1',mission_rank=1},{id='rank_2',name='Rank 2',mission_rank=2}}},
 };
 local function frame(interaction, width)

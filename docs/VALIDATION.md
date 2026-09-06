@@ -187,6 +187,21 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Open several Source buttons and confirm they lead to the expected HorizonXI Wiki pages.
 - [ ] Confirm the header clearly says the profile is intentionally incomplete.
 
+### Remaining mission storylines (0.21.0 / foundation.20)
+
+- [ ] Copy all 25 runtime Lua files, reload, and confirm profile `2026-09-07-foundation.20`. Existing quest, map, skill, custom-mark, and Bastok mission data must remain intact.
+- [ ] Zone once, then switch Missions > Storyline among Bastok, San d'Oria, Windurst, Rise of the Zilart, Chains of Promathia, and Treasures of Aht Urhgan. Confirm counts 20, 20, 20, 18, 34, and 48 and no additional top-level tabs.
+- [ ] On matching-nation characters, compare San d'Oria and Windurst current/completed rows against the game. On a different allegiance, confirm current state is not borrowed while explicit prior completion remains visible.
+- [ ] If possible, observe Journey Abroad or The Three Kingdoms travel stages. Each must keep only its single 2-3 main row current; travel-stage bits must not complete that row.
+- [ ] Compare Zilart current and several explicit completion bits. If an unexpected packet-stage ID appears, record it; the addon should show unresolved open rows as UNKNOWN rather than selecting the nearest mission.
+- [ ] For Promathia, confirm exactly the current numbered mission is `Current`, including a 3-3 or 5-3 branch if available. Every non-current Promathia row must remain UNKNOWN and excluded from totals because no completion bitfield is used.
+- [ ] On a character that declined or has not started Zilart/Promathia, confirm mission 1 is not falsely shown Current. Report any discrepancy with the observed packet/state; do not infer from later story access.
+- [ ] Review Aht Urhgan as reference-first planned content. Compare any current/completed state the client supplies, but do not treat the wiki listing or an empty log as proof that a mission is active or unavailable.
+- [ ] Expand rows in each storyline. Category-sourced rewards should display; unresearched NPC/location/coordinates should say `See Source`. Source buttons and the two draggable dividers must stay aligned at 75/100/150% scale and narrow/wide widths.
+- [ ] Toggle Current only, storyline-specific Rank/Chapter selectors, search, and visibility filters. Filters must not change totals, save settings, or affect Quests > Accepted only.
+- [ ] Reload without zoning after logs are cached, then switch characters and back. Each mission storyline must restore independently without leaking state or altering the existing Bastok cache.
+- [ ] Confirm no Wings of the Goddess, Assault, add-on scenario, Adoulin, or Rhapsodies rows were added, and ordinary play produces no addon-generated packet requests, actions, chat, targeting, or movement.
+
 ## Safety observation
 
 - [ ] Confirm ordinary play produces no addon-generated actions, targeting, movement, or chat.

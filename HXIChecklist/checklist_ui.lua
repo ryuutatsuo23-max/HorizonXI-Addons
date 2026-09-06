@@ -320,13 +320,19 @@ local function render_mission_entry(item, ui_state, actions, imgui)
     imgui.TableSetColumnIndex(1);
     if item.source_url and imgui.SmallButton('Source') then actions.open_source(item.source_url) end;
     imgui.TableSetColumnIndex(2);
-    imgui.TextWrapped(('Rank %d / %s'):fmt(item.mission_rank, item.mission_type or 'Not listed'));
+    local group = item.mission_rank and ('Rank %d'):fmt(item.mission_rank)
+        or (item.mission_group ~= 'Story' and item.mission_group or nil);
+    imgui.TextWrapped(group and ('%s / %s'):fmt(group, item.mission_type or 'Not listed')
+        or (item.mission_type or 'Not listed'));
     if expanded then render_quest_details(item, imgui) end;
     imgui.PopID();
 end
 
 local function matches_view(item, view)
     if view.mission_rank ~= nil and item.mission_rank ~= view.mission_rank then
+        return false;
+    end
+    if view.mission_group ~= nil and item.mission_group ~= view.mission_group then
         return false;
     end
     if view.magic_skill ~= nil and item.magic_skill ~= view.magic_skill then
@@ -416,15 +422,16 @@ local function render_entries(category, view, settings, ui_state, actions, imgui
     if category.mission_area then
         local scale = settings.scale_percent / 100;
         local width = math.max(250 * scale, math.min(imgui.GetWindowWidth() * 0.45, 360 * scale));
+        local mission_heading = category.mission_column_label or 'Rank / Type';
         imgui.TextColored({ 0.68, 0.72, 0.78, 1.00 },
-            'Click + for details. Drag dividers to resize Mission, Source, and Rank / Type columns.');
+            ('Click + for details. Drag dividers to resize Mission, Source, and %s columns.'):fmt(mission_heading));
         imgui.PushStyleColor(ImGuiCol_TableBorderStrong, { 0.78, 0.82, 0.88, 1.00 });
         imgui.PushStyleColor(ImGuiCol_TableBorderLight, { 0.58, 0.64, 0.72, 1.00 });
         local flags = bit.bor(ImGuiTableFlags_Resizable, ImGuiTableFlags_BordersInnerV, ImGuiTableFlags_SizingStretchProp);
         if imgui.BeginTable('##MissionRows_' .. category.id, 3, flags) then
             imgui.TableSetupColumn('Mission', ImGuiTableColumnFlags_WidthFixed, width, 0);
             imgui.TableSetupColumn('Source', ImGuiTableColumnFlags_WidthFixed, imgui.CalcTextSize('Source') + 24, 0);
-            imgui.TableSetupColumn('Rank / Type', ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
+            imgui.TableSetupColumn(mission_heading, ImGuiTableColumnFlags_WidthStretch, 1.0, 0);
             for _, item in ipairs(visible) do render_mission_entry(item, ui_state, actions, imgui) end;
             imgui.EndTable();
         end
@@ -622,7 +629,8 @@ local function render_missions(categories, settings, ui_state, actions, imgui)
     local current = { ui_state.mission_current_only == true };
     if imgui.Checkbox('Current only', current) then ui_state.mission_current_only = current[1] end;
     imgui.Separator();
-    render_category(selected, settings, ui_state, actions, imgui, 'Rank');
+    render_category(selected, settings, ui_state, actions, imgui,
+        selected.mission_view_label or 'Mission');
 end
 
 local function render_quests(categories, settings, ui_state, actions, imgui)

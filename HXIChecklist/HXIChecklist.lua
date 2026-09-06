@@ -1,6 +1,6 @@
 addon.name = 'HXIChecklist';
 addon.author = 'HXIChecklist contributors';
-addon.version = '0.20.0';
+addon.version = '0.21.0';
 addon.desc = 'Read-only, source-backed checklist foundation for Ashita v4 and HorizonXI.';
 addon.link = 'https://github.com/HiPotionQ8/XIchecklist';
 
@@ -35,7 +35,12 @@ local default_settings = T{
         other_quests = T{},
         outlands_quests = T{},
         ahturhgan_quests = T{},
+        sandoria_missions = T{},
         bastok_missions = T{},
+        windurst_missions = T{},
+        zilart_missions = T{},
+        promathia_missions = T{},
+        ahturhgan_missions = T{},
     },
 };
 
@@ -75,7 +80,12 @@ local function normalize_settings(value)
     value.cached_state.other_quests = value.cached_state.other_quests or T{};
     value.cached_state.outlands_quests = value.cached_state.outlands_quests or T{};
     value.cached_state.ahturhgan_quests = value.cached_state.ahturhgan_quests or T{};
+    value.cached_state.sandoria_missions = value.cached_state.sandoria_missions or T{};
     value.cached_state.bastok_missions = value.cached_state.bastok_missions or T{};
+    value.cached_state.windurst_missions = value.cached_state.windurst_missions or T{};
+    value.cached_state.zilart_missions = value.cached_state.zilart_missions or T{};
+    value.cached_state.promathia_missions = value.cached_state.promathia_missions or T{};
+    value.cached_state.ahturhgan_missions = value.cached_state.ahturhgan_missions or T{};
     value.scale_percent = math.max(75, math.min(150, tonumber(value.scale_percent) or 100));
     return value;
 end
@@ -97,7 +107,12 @@ local function load_cached_state()
     quest_state.load_area_cache('other', state.settings.cached_state.other_quests);
     quest_state.load_area_cache('outlands', state.settings.cached_state.outlands_quests);
     quest_state.load_area_cache('ahturhgan', state.settings.cached_state.ahturhgan_quests);
-    mission_state.load_cache(state.settings.cached_state.bastok_missions);
+    mission_state.load_area_cache('sandoria', state.settings.cached_state.sandoria_missions);
+    mission_state.load_area_cache('bastok', state.settings.cached_state.bastok_missions);
+    mission_state.load_area_cache('windurst', state.settings.cached_state.windurst_missions);
+    mission_state.load_area_cache('zilart', state.settings.cached_state.zilart_missions);
+    mission_state.load_area_cache('promathia', state.settings.cached_state.promathia_missions);
+    mission_state.load_area_cache('ahturhgan', state.settings.cached_state.ahturhgan_missions);
 end
 
 local function save_cached_state(key, value)
@@ -196,7 +211,7 @@ end);
 ashita.events.register('packet_in', 'HXIChecklist_PacketIn', function(e)
     local key_items_changed = key_item_state.handle_packet(e);
     local quests_changed, quest_area = quest_state.handle_packet(e);
-    local missions_changed = mission_state.handle_packet(e);
+    local missions_changed, mission_areas = mission_state.handle_packet(e);
 
     if key_items_changed and e.id == 0x055 then
         save_cached_state('key_items', key_item_state.export_cache());
@@ -208,7 +223,15 @@ ashita.events.register('packet_in', 'HXIChecklist_PacketIn', function(e)
     end
 
     if missions_changed and e.id == 0x056 then
-        save_cached_state('bastok_missions', mission_state.export_cache());
+        local save_missions = false;
+        for _, area in ipairs(mission_areas or {}) do
+            local value = mission_state.export_area_cache(area);
+            if value ~= nil then
+                state.settings.cached_state[area .. '_missions'] = value;
+                save_missions = true;
+            end
+        end
+        if save_missions then settings.save() end;
     end
 
     local changed = key_items_changed or missions_changed;

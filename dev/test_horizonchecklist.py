@@ -16,6 +16,14 @@ OTHER_QUEST_DATA = PACKAGE / "other_quest_data.lua"
 OUTLANDS_QUEST_DATA = PACKAGE / "outlands_quest_data.lua"
 AHTURHGAN_QUEST_DATA = PACKAGE / "ahturhgan_quest_data.lua"
 CUSTOM_QUEST_DATA = PACKAGE / "custom_quest_data.lua"
+MISSION_DATA = [
+    PACKAGE / "sandoria_mission_data.lua",
+    PACKAGE / "bastok_mission_data.lua",
+    PACKAGE / "windurst_mission_data.lua",
+    PACKAGE / "zilart_mission_data.lua",
+    PACKAGE / "promathia_mission_data.lua",
+    PACKAGE / "ahturhgan_mission_data.lua",
+]
 SKILL_LEVELS = PACKAGE / "skill_levels.lua"
 
 
@@ -33,6 +41,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         cls.outlands_quest_data = OUTLANDS_QUEST_DATA.read_text(encoding="utf-8")
         cls.ahturhgan_quest_data = AHTURHGAN_QUEST_DATA.read_text(encoding="utf-8")
         cls.custom_quest_data = CUSTOM_QUEST_DATA.read_text(encoding="utf-8")
+        cls.mission_data = [path.read_text(encoding="utf-8") for path in MISSION_DATA]
         cls.skill_levels = SKILL_LEVELS.read_text(encoding="utf-8")
         cls.main = (PACKAGE / "HXIChecklist.lua").read_text(encoding="utf-8")
         cls.catalog = (PACKAGE / "catalog.lua").read_text(encoding="utf-8")
@@ -50,7 +59,12 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             {
                 "HXIChecklist.lua",
                 "mission_state.lua",
+                "sandoria_mission_data.lua",
                 "bastok_mission_data.lua",
+                "windurst_mission_data.lua",
+                "zilart_mission_data.lua",
+                "promathia_mission_data.lua",
+                "ahturhgan_mission_data.lua",
                 "ahturhgan_quest_data.lua",
                 "bastok_quest_data.lua",
                 "catalog.lua",
@@ -72,8 +86,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.20.0'", self.main)
-        self.assertIn("version = '2026-09-04-foundation.19'", self.profile)
+        self.assertIn("addon.version = '0.21.0'", self.main)
+        self.assertIn("version = '2026-09-07-foundation.20'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',\s*(\d+),", self.map_data, re.MULTILINE)
@@ -210,10 +224,12 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         generated_ids = [f"spell.{resource_id}" for resource_id in spell_ids]
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',", self.map_data, re.MULTILINE)
-        mission_ids = re.findall(r"\{ id = '([^']+)'", (PACKAGE / 'bastok_mission_data.lua').read_text(encoding='utf-8').split('data.entries = {')[1])
-        self.assertEqual(len(mission_ids), 20)
+        mission_ids = []
+        for data in self.mission_data:
+            mission_ids.extend(re.findall(r"\{ id = '([^']+)'", data.split('data.entries = {')[1]))
+        self.assertEqual(len(mission_ids), 160)
         all_ids = quest_entry_ids + generated_ids + map_ids + mission_ids
-        self.assertEqual(len(all_ids), 1043)
+        self.assertEqual(len(all_ids), 1183)
         self.assertEqual(len(all_ids), len(set(all_ids)))
 
     def test_all_entries_are_sourced(self):

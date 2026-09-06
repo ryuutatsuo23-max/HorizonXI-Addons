@@ -264,25 +264,32 @@ local function entry_state(entry, manual_completed)
     end
 
     if entry.kind == 'mission' then
-        if entry.mission_area ~= 'bastok' then
-            return 'unknown', 'No mission reader is assigned to this storyline.';
-        end
-        local automatic, note = mission_state.get_bastok(entry.mission_index);
+        local automatic, note = mission_state.get_area(
+            entry.mission_area, entry.mission_index, entry.current_ids);
         if automatic == nil then return 'unknown', note end;
         local source = automatic.source == 'cache' and 'the saved character cache' or 'incoming mission logs';
-        if automatic.completed then
+        local storyline = entry.mission_area == 'sandoria' and "San d'Oria"
+            or entry.mission_area == 'windurst' and 'Windurst'
+            or entry.mission_area == 'zilart' and 'Rise of the Zilart'
+            or entry.mission_area == 'promathia' and 'Chains of Promathia'
+            or entry.mission_area == 'ahturhgan' and 'Treasures of Aht Urhgan'
+            or 'Bastok';
+        if automatic.completed == true then
             if automatic.current then
                 return 'mission_repeat', 'Current mission with an explicit completion bit in ' .. source .. '. Counted complete once; still shown by Current only.';
             end
-            return 'auto_complete', 'Explicit Bastok mission completion bit in ' .. source .. '.';
+            return 'auto_complete', 'Explicit ' .. storyline .. ' mission completion bit in ' .. source .. '.';
         end
         if automatic.current == nil then
-            return 'unknown', 'Unrecognized Bastok current-mission ID; no completion or missing state is inferred.';
+            return 'unknown', 'Unrecognized ' .. storyline .. ' current-mission ID; no completion or missing state is inferred.';
         end
         if automatic.current then
-            return 'mission_current', 'Exact Bastok current-mission ID (or mapped Emissary travel stage) in ' .. source .. '.';
+            return 'mission_current', 'Exact ' .. storyline .. ' current-mission ID (including reviewed sub-stages) in ' .. source .. '.';
         end
-        return 'mission_not_current', 'No completion bit and not the current Bastok mission in ' .. source .. '. This does not mean available to start; rank/order are not used to infer completion.';
+        if automatic.current_only then
+            return 'unknown', storyline .. ' exposes current mission progress here, but no reviewed completion bitfield. Earlier missions are not inferred complete.';
+        end
+        return 'mission_not_current', 'No completion bit and not the current ' .. storyline .. ' mission in ' .. source .. '. This does not mean available to start; sequence/order are not used to infer completion.';
     end
 
     if entry.kind == 'manual' then
@@ -386,6 +393,8 @@ function catalog.build_snapshot(profile, manual_completed)
             name = category.name,
             description = category.description,
             mission_area = category.mission_area,
+            mission_view_label = category.mission_view_label,
+            mission_column_label = category.mission_column_label,
             views = category.views,
             entries = {},
             summary = {

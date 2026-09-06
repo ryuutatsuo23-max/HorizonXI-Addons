@@ -2,9 +2,9 @@
 
 HXIChecklist is a read-only checklist addon for Final Fantasy XI on Ashita v4. It helps you review character progress using a HorizonXI-oriented catalog and links every sourced entry back to the HorizonXI Wiki.
 
-Current version: **0.20.0**
+Current version: **0.21.0**
 
-Profile: **2026-09-04-foundation.19**
+Profile: **2026-09-07-foundation.20**
 
 > [!IMPORTANT]
 > HXIChecklist has not been approved by HorizonXI. The current build is intended for private-server testing until the exact release has completed HorizonXI's addon review process.
@@ -16,7 +16,7 @@ Profile: **2026-09-04-foundation.19**
 - Tracks 72 map key items and shows where each map is obtained.
 - Tracks the client quest logs for Bastok, San d'Oria, Windurst, Jeuno, Other Areas, Outlands, and Aht Urhgan.
 - Includes four Horizon-specific quests with optional per-character manual completion.
-- Tracks the 20 main Bastok missions, including current and explicitly completed states.
+- Tracks San d'Oria, Bastok, Windurst, Rise of the Zilart, Chains of Promathia, and Treasures of Aht Urhgan missions.
 - Provides search, visibility, area, location, quest-type, rank, and current/accepted filters.
 - Shows expandable NPC, coordinates, rewards, and prerequisite references where sourced.
 - Keeps Source buttons and draggable table dividers available throughout the main lists.
@@ -55,7 +55,7 @@ The longer aliases `/hcheck`, `/hxichecklist`, and `/horizonchecklist` also togg
 
 - **Checked / Missing:** spell or map ownership read from the character.
 - **Completed / Accepted / Not Accepted:** quest-log bits reported by the client. Not Accepted only means neither client bit is set; it does not guarantee that a quest is currently obtainable.
-- **Current**, **Current / Done**, **Not current:** Bastok mission state. Earlier missions are never assumed complete from rank or story order.
+- **Current**, **Current / Done**, **Not current:** mission-log state. Earlier missions are never assumed complete from rank or story order. Promathia has current-only tracking, so non-current rows remain UNKNOWN.
 - **Manual / Manual done:** completion marked by you for a supported Horizon-specific quest.
 - **UNKNOWN:** the addon does not have enough client or source evidence. It is excluded from progress totals.
 - **UNAVAILABLE:** the reviewed source reports the entry inactive. It is excluded from progress totals.
@@ -64,11 +64,11 @@ Wiki-listed information is reference material, not proof that every entry is cur
 
 ## Saved data
 
-Quest logs, map ownership, Bastok mission state, and manual custom-quest marks are stored through Ashita's character-specific settings. Switching characters loads a separate cache. Search, dropdown choices, Current/Accepted-only filters, and expanded rows are session-only.
+Quest logs, map ownership, mission state, and manual custom-quest marks are stored through Ashita's character-specific settings. Switching characters loads a separate cache. Search, dropdown choices, Current/Accepted-only filters, and expanded rows are session-only.
 
 ## Current scope
 
-This is an intentionally incomplete foundation. Mission storylines other than Bastok, live fame points, Records of Eminence, objectives, calculated skill caps, equipment/food bonuses, blue magic, and geomancy are not included yet.
+This is an intentionally incomplete foundation. Wings of the Goddess and later storylines, Assaults, live fame points, Records of Eminence, objectives, calculated skill caps, equipment/food bonuses, blue magic, and geomancy are not included yet. The HorizonXI Wiki currently labels its Aht Urhgan mission list as planned content, so those rows are reference-first and do not claim server availability.
 
 For the technical evidence, packet boundaries, catalog decisions, and known uncertainty, see [Source notes](docs/SOURCES.md). For manual testing steps, see the [Validation checklist](docs/VALIDATION.md). Credits and upstream acknowledgements are in [CREDITS.md](CREDITS.md).
 
