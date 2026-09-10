@@ -8,8 +8,7 @@ game's interface to hide, without installing a separate addon for each one.
 [Download the latest release](https://github.com/ryuutatsuo23-max/HXIUIBegone/releases/latest)
 · [Report a problem](https://github.com/ryuutatsuo23-max/HXIUIBegone/issues)
 
-Outdated picture:
-![Earlier HXIUIBegone settings preview showing individual native UI options](docs/preview.png)
+![HXIUIBegone v0.2.8 settings with individual native UI and chat-window options](docs/preview.png)
 
 ## What can I hide?
 
