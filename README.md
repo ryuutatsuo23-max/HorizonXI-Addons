@@ -20,13 +20,14 @@ Outdated picture:
 - Compass / radar
 - Clock
 - Connection info: arrows, S/R counters, and percentage
+- Main and second chat windows, separately
 
 You choose what stays visible. HXIUIBegone does not draw a replacement interface.
 
 ## Install
 
 1. Open [Releases](https://github.com/ryuutatsuo23-max/HXIUIBegone/releases/latest)
-   and download **HXIUIBegone-v0.2.7.zip** under **Assets**.
+   and download **HXIUIBegone-v0.2.8.zip** under **Assets**.
 2. Extract the ZIP into your `HorizonXI\Game\addons` folder.
 3. In game, load the addon:
 
@@ -73,6 +74,9 @@ example setup, not the defaults.
 
 ## A few things to know
 
+- **Chat windows:** Hide the main and second windows separately. Both start off.
+  The typing box stays visible. Chat hiding and NPC dialogue were confirmed on
+  the author's HorizonXI setup, including with FancyChat and Balloon.
 - **Target arrow:** The target option moves only the native box and icon
   coordinates off-screen. The separate main-target and sub-target arrow
   coordinates remain under the game’s control.
@@ -85,6 +89,7 @@ example setup, not the defaults.
   bar may flash for less than a second before the addon hides it.
 - **Clock:** Unchecking it turns the game clock on, even if it was off before.
 - **Other UI addons:** Do not use two addons to hide the same part of the UI.
+  OGui blocks the party, alliance, target, and chat options while loaded.
   `hideparty` blocks the party, alliance, and target options; FancyCompass blocks
   the compass and clock options while loaded. If moving from `hideparty`, run
   `/hideparty show` before unloading it.
@@ -115,7 +120,8 @@ problem remains. Use `/clock on` after login if the clock needs restoring.
 | `/hxiuibegone hide connection off` | Stop hiding connection info |
 
 The last command also accepts `party`, `alliance1`, `alliance2`, `target`,
-`castbar`, `compass`, or `clock`. Use `on` to hide and `off` to stop hiding.
+`castbar`, `compass`, `clock`, `chat1`, or `chat2`.
+Use `on` to hide and `off` to stop hiding.
 All commands also work with `/hxiui`.
 
 </details>

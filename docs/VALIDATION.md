@@ -1,4 +1,28 @@
-# Validation — v0.2.7
+# Validation — v0.2.8
+
+## Chat windows
+
+Two default-off controls resolve the main and secondary chat slots using
+the existing party signature and OGui's documented offsets. All writes and
+restoration use the existing primitive ownership path. OGui loading blocks
+overlapping party/alliance/target/chat controls; cast bar and other controls
+continue independently.
+
+All 42 synthetic LuaJIT tests pass. New coverage checks independent chat
+visibility, preservation of originally hidden bytes, pause restoration,
+zoning and missing/replaced objects, OGui conflicts, checkbox and command
+saving, unload restoration, and old settings gaining default-off chat options.
+
+The author confirmed both chat controls working in game on HorizonXI.
+Window 1 was explicitly checked across zoning, with typing still visible,
+and restored on both uncheck and addon unload. NPC conversations worked with
+FancyChat and Balloon, and the author subsequently confirmed native NPC
+dialogue as well. Window 2 was reported working as intended.
+
+These reports do not establish retail compatibility or cover every cutscene,
+client build, or combination of UI replacement addons.
+
+The previous zoning warning fix was confirmed working in game by the author.
 
 ## Quiet fishing check during zoning
 

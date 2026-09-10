@@ -22,6 +22,10 @@ M.controls = {
         hint = 'Unchecking turns the clock on, even if it was off before.'},
     {key = 'connection', label = 'Hide connection info (arrows, S/R, %)',
         hint = 'Hides the arrows, S/R counters, and percentage.\nMail/friend notifications are not fully tested.'},
+    {key = 'chat1', label = 'Hide chat window 1',
+        hint = 'Hides the main chat window; the typing box stays visible.\nUse /hxiuibegone off to show it again.'},
+    {key = 'chat2', label = 'Hide chat window 2',
+        hint = 'Hides the second chat window.\nUse /hxiuibegone off to show it again.'},
 };
 local target_frame_offsets = {0x4C, 0x4E, 0x50, 0x52};
 local target_hidden_coordinate = 30000;
@@ -66,6 +70,7 @@ function M.new(io, notify)
         local party = scan(M.signatures.party);
         local alliance = scan(M.signatures.alliance);
         for key, source in pairs({party = {party, 0x19}, target = {party, 0x23},
+            chat1 = {party, 0x0F}, chat2 = {party, 0x37},
             alliance1 = {alliance, 0x01}, alliance2 = {alliance, 0x07}}) do
             local row = self.rows[key];
             local ok, slot = pcall(resolve_slot, source[1], source[2]);
@@ -253,13 +258,16 @@ function M.new(io, notify)
         end
         if session == 0 then return; end
         if not self.initialized then self:initialize(); end
-        local conflict_ok, party_conflict, compass_conflict = pcall(function()
-            return io.loaded('hideparty'), io.loaded('fancycompass');
+        local conflict_ok, party_conflict, compass_conflict, ogui_conflict = pcall(function()
+            return io.loaded('hideparty'), io.loaded('fancycompass'), io.loaded('ogui');
         end);
         local fishing_ok, fishing = pcall(io.fishing);
         for _, control in ipairs(M.controls) do
             local key, row = control.key, self.rows[control.key];
             local blocker = not conflict_ok and 'could not check other addons; click Retry'
+                or ((key == 'party' or key == 'alliance1' or key == 'alliance2'
+                    or key == 'target' or key == 'chat1' or key == 'chat2')
+                    and ogui_conflict and 'OGui')
                 or ((key == 'clock' or key == 'compass') and compass_conflict and 'FancyCompass')
                 or ((key == 'party' or key == 'alliance1' or key == 'alliance2' or key == 'target')
                     and party_conflict and 'hideparty');

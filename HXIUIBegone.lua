@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 addon.name = 'HXIUIBegone';
 addon.author = 'DragoHorse';
-addon.version = '0.2.7';
+addon.version = '0.2.8';
 addon.desc = 'Choose which parts of the FFXI interface to hide.';
 
 require('common');
@@ -12,7 +12,7 @@ local io_adapter = require('memory_io');
 
 local defaults = T{enabled = true, party = false, alliance1 = false,
     alliance2 = false, target = false, castbar = false, compass = false,
-    clock = false, connection = false};
+    clock = false, connection = false, chat1 = false, chat2 = false};
 local config = settings.load(defaults);
 local opened = {false};
 local feedback = nil;

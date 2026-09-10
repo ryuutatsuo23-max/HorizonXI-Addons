@@ -32,8 +32,10 @@ def load_controller():
     mem[0x401100 + 0x01] = 0x402008
     mem[0x401100 + 0x07] = 0x40200C
     mem[0x401400 + 0x20] = 0x402010
+    mem[0x401000 + 0x0F] = 0x402014
+    mem[0x401000 + 0x37] = 0x402018
     objects = {}
-    for index, slot in enumerate((0x402000, 0x402004, 0x402008, 0x40200C, 0x402010)):
+    for index, slot in enumerate((0x402000, 0x402004, 0x402008, 0x40200C, 0x402010, 0x402014, 0x402018)):
         first = 0x500000 + index * 0x100
         obj = 0x510000 + index * 0x100
         objects[slot] = obj
@@ -90,7 +92,7 @@ def load_controller():
 def config(lua, **values):
     result = lua.table(enabled=True, party=False, alliance1=False,
                        alliance2=False, target=False, castbar=False, compass=False,
-                       clock=False, connection=False)
+                       clock=False, connection=False, chat1=False, chat2=False)
     for key, value in values.items():
         result[key] = value
     return result
@@ -98,6 +100,59 @@ def config(lua, **values):
 
 def call(controller, name, *args):
     return getattr(controller, name)(controller, *args)
+
+
+def test_chat_windows_are_independent_and_restore_original_visibility():
+    for key, slot, other_slot in (("chat1", 0x402014, 0x402018),
+                                  ("chat2", 0x402018, 0x402014)):
+        lua, _, controller, state, objects, _ = load_controller()
+        obj, other = objects[slot], objects[other_slot]
+        state["mem"][obj + 0x69] = 0  # already hidden by the game
+        call(controller, "tick", config(lua, **{key: True}))
+        assert state["writes"] == [(obj + 0x6A, 0)]
+        assert state["mem"][other + 0x69] == 1
+        call(controller, "tick", config(lua, enabled=False, **{key: True}))
+        assert state["mem"][obj + 0x69] == 0
+        assert state["mem"][obj + 0x6A] == 1
+
+
+def test_chat_zoning_waits_and_reacquires_replaced_object():
+    lua, _, controller, state, objects, messages = load_controller()
+    selected = config(lua, chat1=True, chat2=True)
+    call(controller, "tick", selected)
+    state["session"] = 0
+    call(controller, "tick", selected)
+    for slot in (0x402014, 0x402018):
+        assert state["mem"][objects[slot] + 0x69] == 1
+    first = state["mem"][0x402014]
+    state["mem"][first + 8] = 0
+    state["session"] = 123
+    call(controller, "tick", selected)
+    assert controller.rows.chat1.status == "Waiting for this panel to appear"
+    replacement = 0x520000
+    state["mem"][first + 8] = replacement
+    state["mem"][replacement + 0x69] = 1
+    state["mem"][replacement + 0x6A] = 1
+    state["writes"].clear()
+    call(controller, "tick", selected)
+    assert state["writes"] == [(replacement + 0x69, 0), (replacement + 0x6A, 0)]
+    assert messages == []
+
+
+def test_ogui_conflict_releases_overlapping_controls_only():
+    lua, _, controller, state, objects, _ = load_controller()
+    selected = config(lua, party=True, alliance1=True, alliance2=True,
+                      target=True, chat1=True, chat2=True, castbar=True)
+    call(controller, "tick", selected)
+    state["loaded"].add("ogui")
+    call(controller, "tick", selected)
+    for key in ("party", "alliance1", "alliance2", "target", "chat1", "chat2"):
+        assert controller.rows[key].owned is False
+        assert "OGui" in controller.rows[key].status
+    assert state["mem"][objects[0x402010] + 0x69] == 0
+    state["loaded"].clear()
+    call(controller, "tick", selected)
+    assert state["mem"][objects[0x402014] + 0x69] == 0
 
 
 def test_each_requested_control_is_available_in_synthetic_matching_client():
@@ -566,6 +621,30 @@ def load_host():
     """)
     lua.execute((ADDON / "HXIUIBegone.lua").read_text(encoding="utf-8"))
     return lua, state, objects
+
+
+def test_host_chat_defaults_save_commands_and_unload():
+    lua, state, objects = load_host()
+    assert lua.globals().test_config.chat1 is False
+    assert lua.globals().test_config.chat2 is False
+    lua.globals().events.command(lua.table(command="/hxiuibegone", blocked=False))
+    lua.globals().clicks["Hide chat window 1"] = True
+    lua.globals().events.d3d_present()
+    assert lua.globals().test_config.chat1 is True
+    assert lua.globals().saved == 1
+    assert state["mem"][objects[0x402014] + 0x69] == 0
+    lua.globals().events.command(lua.table(command="/hxiui hide chat2 on", blocked=False))
+    assert lua.globals().test_config.chat2 is True
+    assert state["mem"][objects[0x402018] + 0x69] == 0
+    lua.globals().events.unload()
+    for slot in (0x402014, 0x402018):
+        assert state["mem"][objects[slot] + 0x69] == 1
+    assert lua.globals().test_config.chat1 is True
+    assert lua.globals().test_config.chat2 is True
+    legacy = lua.table(enabled=True, party=True)
+    lua.globals().settings_callback(legacy)
+    assert legacy.party is True
+    assert legacy.chat1 is False and legacy.chat2 is False
 
 
 def test_host_draw_checkbox_save_and_unload_restore():

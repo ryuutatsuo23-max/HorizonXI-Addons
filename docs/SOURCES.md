@@ -54,5 +54,16 @@ positions are distinct fields:
 The addon changes only the box/icon position fields and retains the existing
 target object ownership and restoration checks.
 
+The chat controls use the main/secondary chat slot offsets
+`+0x0F` and `+0x37` documented by Ferris in OGui at commit
+`4e3e8b8948275fed5827de29add2fdb05aa6d2e7`:
+<https://github.com/ferrisaj87/ogui/blob/4e3e8b8948275fed5827de29add2fdb05aa6d2e7/ogui.lua#L22-L43>.
+The author subsequently confirmed both chat controls working on HorizonXI.
+The controls use HXIUIBegone's existing guarded slot discovery, primitive
+validation, and original-byte restoration. No OGui renderer, assets, fishing
+message detector, unknown-pointer toggles, or layout writes were imported.
+OGui's target-layout observations at lines 341-396 remain a possible future
+read-only investigation if target movement is reported.
+
 Because the party-control implementation is adapted from GPL-covered Ashita
 code, this addon is distributed under GPL version 3 or later. See `LICENSE`.
