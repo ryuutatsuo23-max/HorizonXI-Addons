@@ -54,6 +54,7 @@ local wave_mapper = 0xFFFFFFFF;
 local wave_format_pcm = 1;
 local wave_header_done = 0x00000001;
 local active = nil;
+local busy_until = 0;
 
 local function stop_active()
     if active == nil then
@@ -216,15 +217,24 @@ end
 function sound_player.play(path, volume_percent)
     local volume = math.max(0, math.min(150, tonumber(volume_percent) or 100));
     if volume == 0 then
+        busy_until = 0;
         stop_active();
         return true, nil;
     end
     if volume == 100 then
         stop_active();
         ashita.misc.play_sound(path);
+        local format, pcm = read_pcm16_wav(path);
+        local duration = format and format.average_bytes_per_second > 0
+            and #pcm / format.average_bytes_per_second or 3;
+        busy_until = ashita.time.tick64() / 1000 + duration;
         return true, nil;
     end
     return play_scaled(path, volume);
+end
+
+function sound_player.is_busy()
+    return active ~= nil or ashita.time.tick64() / 1000 < busy_until;
 end
 
 function sound_player.tick()
@@ -235,6 +245,7 @@ function sound_player.tick()
 end
 
 function sound_player.shutdown()
+    busy_until = 0;
     stop_active();
 end
 

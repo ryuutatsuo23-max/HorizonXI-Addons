@@ -56,6 +56,20 @@ local function centered_text(draw_list, x, y, color, value)
     draw_list:AddText({x - width / 2, y - height / 2}, color, value);
 end
 
+local function frame_point(shape, center_x, center_y, radius, angle, inset)
+    local direction_x = math.cos(angle);
+    local direction_y = math.sin(angle);
+    local edge_radius = radius - (inset or 0);
+    if shape == 'square' then
+        local largest_component = math.max(math.abs(direction_x), math.abs(direction_y));
+        if largest_component > 0 then
+            edge_radius = edge_radius / largest_component;
+        end
+    end
+    return center_x + direction_x * edge_radius,
+        center_y + direction_y * edge_radius;
+end
+
 local function selected_target()
     -- Read each draw so selecting/clearing a target does not wait for the scan.
     local ok, index, server_id = pcall(function()
@@ -162,29 +176,50 @@ function compass.draw(config, radar_entities, radar_range)
         local center_x = window_x + window_width / 2;
         local center_y = window_y + diameter / 2 + 8;
         local radius = diameter * 0.42;
+        local radar_shape = config.radar_shape == 'square' and 'square' or 'circle';
 
-        draw_list:AddCircleFilled(
-            {center_x, center_y},
-            radius,
-            0xC0202020,
-            48
-        );
-        draw_list:AddCircle(
-            {center_x, center_y},
-            radius,
-            0xFFE0E0E0,
-            48,
-            2.0
-        );
+        if radar_shape == 'square' then
+            draw_list:AddRectFilled(
+                {center_x - radius, center_y - radius},
+                {center_x + radius, center_y + radius},
+                0xC0202020,
+                0,
+                0
+            );
+            draw_list:AddRect(
+                {center_x - radius, center_y - radius},
+                {center_x + radius, center_y + radius},
+                0xFFE0E0E0,
+                0,
+                0,
+                2.0
+            );
+        else
+            draw_list:AddCircleFilled(
+                {center_x, center_y},
+                radius,
+                0xC0202020,
+                48
+            );
+            draw_list:AddCircle(
+                {center_x, center_y},
+                radius,
+                0xFFE0E0E0,
+                48,
+                2.0
+            );
+        end
 
         for tick = 0, 15 do
             local angle = tick * two_pi / 16;
             local screen_angle = angle - view_heading - pi / 2;
-            local outer_x = center_x + math.cos(screen_angle) * (radius - 3);
-            local outer_y = center_y + math.sin(screen_angle) * (radius - 3);
+            local outer_x, outer_y = frame_point(
+                radar_shape, center_x, center_y, radius, screen_angle, 3
+            );
             local tick_length = tick % 4 == 0 and 9 or 5;
-            local inner_x = center_x + math.cos(screen_angle) * (radius - tick_length);
-            local inner_y = center_y + math.sin(screen_angle) * (radius - tick_length);
+            local inner_x, inner_y = frame_point(
+                radar_shape, center_x, center_y, radius, screen_angle, tick_length
+            );
             draw_list:AddLine(
                 {inner_x, inner_y},
                 {outer_x, outer_y},
@@ -217,9 +252,20 @@ function compass.draw(config, radar_entities, radar_range)
                 npc = 0xFF60D060,
                 interactable = 0xFF60D060,
             };
+            local vertical_limit = math.max(
+                1,
+                math.min(100, tonumber(config.radar_vertical_range_yalms) or 10)
+            );
             for _, radar_entity in ipairs(radar_entities or {}) do
                 local distance = tonumber(radar_entity.distance) or 0;
-                if distance <= maximum_range then
+                local height_difference = tonumber(radar_entity.height_difference);
+                local height_is_known = height_difference ~= nil
+                    and height_difference == height_difference
+                    and math.abs(height_difference) < math.huge;
+                local height_is_visible = config.radar_vertical_filter_enabled ~= true
+                    or not height_is_known
+                    or math.abs(height_difference) <= vertical_limit;
+                if distance <= maximum_range and height_is_visible then
                     local angle = math.atan2(
                         -radar_entity.delta_x,
                         -radar_entity.delta_y
@@ -235,6 +281,9 @@ function compass.draw(config, radar_entities, radar_range)
                         end
                         draw_list:AddCircleFilled({dot_x, dot_y}, 4, 0xD0000000, 12);
                         draw_list:AddCircleFilled({dot_x, dot_y}, 3, color, 12);
+                        if config.camps_placeholder_markers and radar_entity.placeholder then
+                            centered_text(draw_list, dot_x + 6, dot_y - 6, 0xFF50D8FF, 'P');
+                        end
                         if config.radar_notorious_markers_enabled == true
                             and radar_entity.notorious == true then
                             draw_notorious_star(draw_list, dot_x, dot_y);
@@ -272,6 +321,7 @@ function compass.draw(config, radar_entities, radar_range)
                     and 'Notorious Monster'
                     or (category_labels[hovered_entity.kind] or 'Unknown');
                 local height_hint = '';
+                if hovered_entity.placeholder then category = category .. ' | NM placeholder (user assigned)'; end
                 local height_difference = tonumber(hovered_entity.height_difference);
                 local threshold = tonumber(config.height_hint_threshold_yalms) or 4;
                 if config.height_hint_enabled == true and height_difference ~= nil then
@@ -292,9 +342,9 @@ function compass.draw(config, radar_entities, radar_range)
 
         for _, cardinal in ipairs(cardinals) do
             local screen_angle = cardinal.angle - view_heading - pi / 2;
-            local text_radius = radius - 18;
-            local text_x = center_x + math.cos(screen_angle) * text_radius;
-            local text_y = center_y + math.sin(screen_angle) * text_radius;
+            local text_x, text_y = frame_point(
+                radar_shape, center_x, center_y, radius, screen_angle, 18
+            );
             local color = cardinal.label == 'N' and 0xFF5050E8 or 0xFFF0F0F0;
             centered_text(draw_list, text_x, text_y, color, cardinal.label);
         end

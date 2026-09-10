@@ -1,12 +1,14 @@
 addon.name = 'HorizonScout';
 addon.author = 'DragoHorse';
-addon.version = '0.16.1';
+addon.version = '0.20.1';
 addon.desc = 'Nearby alerts, aggression warnings, compass radar, map position, and targeting.';
 addon.link = '';
 
 require('common');
 
 local chat = require('chat');
+local camps = require('camps');
+local camp_observer = require('camp_observer');
 local aggro_database = require('aggro_database');
 local compass = require('compass');
 local fonts = require('fonts');
@@ -22,10 +24,12 @@ end
 
 local maximum_entity_index = 0x08FF;
 local scan_interval_seconds = 0.50;
+local radar_position_refresh_interval_seconds = 1 / 30;
 local minimum_range = 1;
 local maximum_range = 50;
 local minimum_aggressive_alert_range = 1;
 local maximum_aggressive_alert_range = 50;
+local maximum_tracked_sound_cooldown_seconds = 60;
 local maximum_aggressive_sound_cooldown_seconds = 60;
 local maximum_compass_size = 240;
 -- Ordinary chocobos and other mounts have distinct entity statuses:
@@ -42,6 +46,8 @@ local monster_sound_path = addon.path .. '\\mobalert.wav';
 local npc_sound_path = addon.path .. '\\npcalert.wav';
 local interactable_sound_path = addon.path .. '\\interactablealert.wav';
 local aggressive_sound_path = addon.path .. '\\aggressivealert.wav';
+local notorious_sound_path = addon.path .. '/Notorious Monster.wav';
+local camps_sound_path = addon.path .. '/Camps.wav';
 local overlay_settings_icon = type(ICON_FA_GEAR) == 'string'
     and ICON_FA_GEAR
     or 'Settings';
@@ -53,6 +59,11 @@ local overlay_expand_icon = type(ICON_FA_EXPAND) == 'string'
     or '+';
 
 local default_settings = T{
+    camps_enabled = false,
+    camps_notify = false,
+    camps_sound_enabled = false,
+    camps_diagnostics = false,
+    camps = T{},
     enabled = true,
     display_enabled = true,
     overlay_locked = false,
@@ -67,8 +78,11 @@ local default_settings = T{
     aggressive_alert_range = 18,
     aggressive_sound_cooldown_seconds = 10,
     aggressive_suppress_on_chocobo = true,
+    aggressive_vertical_filter_enabled = false,
+    aggressive_vertical_range_yalms = 10,
     aggressive_level_filter_enabled = true,
     aggressive_level_gap = 15,
+    tracked_sound_cooldown_seconds = 10,
     sound_volume_percent = 100,
     chat_notifications_enabled = false,
     compass_enabled = true,
@@ -80,9 +94,14 @@ local default_settings = T{
     radar_npcs_enabled = true,
     radar_objects_enabled = true,
     radar_hover_details_enabled = false,
+    radar_vertical_filter_enabled = false,
+    radar_vertical_range_yalms = 10,
     radar_north_up = false,
+    radar_shape = 'circle',
     radar_notorious_markers_enabled = true,
     notorious_notification_enabled = false,
+    notorious_sound_enabled = false,
+    notorious_sound_cooldown_seconds = 10,
     radar_highlight_tracked = true,
     radar_highlight_target = true,
     overlay_scale_percent = 100,
@@ -123,7 +142,12 @@ local state = T{
     active_ids = T{},
     aggressive_active_ids = T{},
     notorious_active_ids = T{},
+    last_notorious_sound_at = nil,
+    pending_notorious_id = nil,
+    notorious_sound_active = false,
+    camp_sound_active = false,
     aggressive_nearby_count = 0,
+    last_tracked_sound_at = nil,
     last_aggressive_sound_at = nil,
     aggressive_suppressed_on_chocobo = false,
     player_main_job_level = 0,
@@ -131,6 +155,7 @@ local state = T{
     radar_entities = T{},
     map_position = '?-?',
     last_scan_at = 0,
+    last_radar_refresh_at = 0,
     zone_id = nil,
     overlay_force_position = true,
 };
@@ -141,6 +166,7 @@ local settings_ui = T{
     npc_name_input = {''},
     interactable_name_input = {''},
     preset_name_input = {''},
+    preset_transfer_text = {''},
     feedback = '',
     show_help = false,
     pending_overlay_target = nil,
@@ -157,6 +183,15 @@ local function aggressive_sound_cooldown_remaining(now)
 
     local cooldown = state.settings.aggressive_sound_cooldown_seconds;
     return math.max(0, cooldown - (now - state.last_aggressive_sound_at));
+end
+
+local function tracked_sound_cooldown_remaining(now)
+    if state.last_tracked_sound_at == nil then
+        return 0;
+    end
+
+    local cooldown = state.settings.tracked_sound_cooldown_seconds;
+    return math.max(0, cooldown - (now - state.last_tracked_sound_at));
 end
 
 local function normalize_name(value)
@@ -345,21 +380,30 @@ local function bind_active_tracking_preset()
 end
 
 local function clear_observation_state()
+    state.pending_notorious_id = nil;
     state.active_ids = T{};
     state.aggressive_active_ids = T{};
     state.notorious_active_ids = T{};
     state.aggressive_nearby_count = 0;
+    state.last_tracked_sound_at = nil;
     state.last_aggressive_sound_at = nil;
     state.aggressive_suppressed_on_chocobo = false;
     state.player_main_job_level = 0;
     state.matches = T{};
     state.radar_entities = T{};
+    state.last_radar_refresh_at = 0;
 end
 
 local function update_settings(new_settings)
     if new_settings ~= nil then
         state.settings = new_settings;
     end
+
+    camps.normalize(state.settings);
+    camp_observer.reset();
+    state.settings.notorious_sound_enabled = state.settings.notorious_sound_enabled == true;
+    state.settings.notorious_sound_cooldown_seconds = math.max(0, math.min(60,
+        tonumber(state.settings.notorious_sound_cooldown_seconds) or 10));
 
     state.settings.range = math.max(
         minimum_range,
@@ -404,9 +448,19 @@ local function update_settings(new_settings)
     if state.settings.radar_hover_details_enabled == nil then
         state.settings.radar_hover_details_enabled = false;
     end
+    if state.settings.radar_vertical_filter_enabled == nil then
+        state.settings.radar_vertical_filter_enabled = false;
+    end
+    state.settings.radar_vertical_range_yalms = math.max(
+        1,
+        math.min(100, tonumber(state.settings.radar_vertical_range_yalms) or 10)
+    );
     if state.settings.radar_north_up == nil then
         state.settings.radar_north_up = false;
     end
+    state.settings.radar_shape = state.settings.radar_shape == 'square'
+        and 'square'
+        or 'circle';
     if state.settings.radar_notorious_markers_enabled == nil then
         state.settings.radar_notorious_markers_enabled = true;
     end
@@ -456,12 +510,26 @@ local function update_settings(new_settings)
     if state.settings.aggressive_suppress_on_chocobo == nil then
         state.settings.aggressive_suppress_on_chocobo = true;
     end
+    if state.settings.aggressive_vertical_filter_enabled == nil then
+        state.settings.aggressive_vertical_filter_enabled = false;
+    end
+    state.settings.aggressive_vertical_range_yalms = math.max(
+        1,
+        math.min(100, tonumber(state.settings.aggressive_vertical_range_yalms) or 10)
+    );
     if state.settings.aggressive_level_filter_enabled == nil then
         state.settings.aggressive_level_filter_enabled = true;
     end
     state.settings.aggressive_level_gap = math.max(
         1,
         math.min(99, tonumber(state.settings.aggressive_level_gap) or 15)
+    );
+    state.settings.tracked_sound_cooldown_seconds = math.max(
+        0,
+        math.min(
+            maximum_tracked_sound_cooldown_seconds,
+            tonumber(state.settings.tracked_sound_cooldown_seconds) or 10
+        )
     );
     state.settings.sound_volume_percent = math.max(
         0,
@@ -609,6 +677,199 @@ local function create_tracking_preset(name, copy_active)
     state.settings.tracking_presets:append(preset);
     local ok, feedback = set_fallback_tracking_preset(name);
     return ok, ('Created %s. %s'):fmt(name, feedback);
+end
+
+local preset_transfer_header = 'HorizonScoutPreset:1';
+local maximum_preset_transfer_size = 16384;
+local maximum_imported_names_per_category = 100;
+
+local function encode_preset_value(value)
+    return tostring(value or ''):gsub('([^%w _%.%-])', function(character)
+        return ('%%%02X'):fmt(string.byte(character));
+    end);
+end
+
+local function decode_preset_value(value)
+    local decoded = {};
+    local index = 1;
+    while index <= #value do
+        local character = value:sub(index, index);
+        if character == '%' then
+            local hex = value:sub(index + 1, index + 2);
+            if #hex ~= 2 or hex:match('^[%x][%x]$') == nil then
+                return nil, 'The preset contains an invalid percent escape.';
+            end
+            decoded[#decoded + 1] = string.char(tonumber(hex, 16));
+            index = index + 3;
+        else
+            decoded[#decoded + 1] = character;
+            index = index + 1;
+        end
+    end
+    return table.concat(decoded);
+end
+
+local function append_unique_imported_name(names, seen, value, category)
+    local decoded, decode_error = decode_preset_value(value);
+    if decoded == nil then
+        return false, decode_error;
+    end
+    if decoded:find('%c') ~= nil then
+        return false, ('The preset has an invalid %s name.'):fmt(category);
+    end
+    local name = display_name(decoded);
+    if name == '' or #name > 127 then
+        return false, ('The preset has an invalid %s name.'):fmt(category);
+    end
+    local normalized = normalize_name(name);
+    if seen[normalized] ~= true then
+        if #names >= maximum_imported_names_per_category then
+            return false, ('The preset has more than %d %s names.'):fmt(
+                maximum_imported_names_per_category,
+                category
+            );
+        end
+        seen[normalized] = true;
+        names:append(name);
+    end
+    return true;
+end
+
+local function export_active_tracking_preset()
+    local preset = bind_active_tracking_preset();
+    local lines = {
+        preset_transfer_header,
+        'Name:' .. encode_preset_value(preset.name),
+    };
+    for _, name in ipairs(preset.watch_names) do
+        lines[#lines + 1] = 'Monster:' .. encode_preset_value(name);
+    end
+    for _, name in ipairs(preset.npc_watch_names) do
+        lines[#lines + 1] = 'NPC:' .. encode_preset_value(name);
+    end
+    for _, name in ipairs(preset.interactable_watch_names) do
+        lines[#lines + 1] = 'Object:' .. encode_preset_value(name);
+    end
+    return table.concat(lines, '\n');
+end
+
+local function unique_imported_preset_name(name)
+    if find_tracking_preset(name) == nil then
+        return name;
+    end
+    local suffix_index = 1;
+    while true do
+        local suffix = suffix_index == 1
+            and ' (Imported)'
+            or (' (Imported %d)'):fmt(suffix_index);
+        local candidate = name:sub(1, math.max(1, 40 - #suffix)) .. suffix;
+        if find_tracking_preset(candidate) == nil then
+            return candidate;
+        end
+        suffix_index = suffix_index + 1;
+    end
+end
+
+local function parse_tracking_preset_text(text)
+    text = tostring(text or '');
+    if text == '' then
+        return nil, 'Paste or enter a preset first.';
+    end
+    if #text > maximum_preset_transfer_size then
+        return nil, 'The preset text is larger than 16 KB.';
+    end
+    text = text:gsub('\r\n', '\n'):gsub('\r', '\n');
+    local lines = {};
+    for line in (text .. '\n'):gmatch('(.-)\n') do
+        if line ~= '' then
+            lines[#lines + 1] = line;
+        end
+    end
+    if lines[1] ~= preset_transfer_header then
+        return nil, 'This is not a supported HorizonScout preset.';
+    end
+
+    local preset = T{
+        name = nil,
+        watch_names = T{},
+        npc_watch_names = T{},
+        interactable_watch_names = T{},
+    };
+    local seen = {
+        Monster = {},
+        NPC = {},
+        Object = {},
+    };
+    for line_index = 2, #lines do
+        local key, value = lines[line_index]:match('^([A-Za-z]+):(.*)$');
+        if key == nil then
+            return nil, ('Invalid preset line %d.'):fmt(line_index);
+        end
+        if key == 'Name' then
+            if preset.name ~= nil then
+                return nil, 'The preset contains more than one Name line.';
+            end
+            local decoded, decode_error = decode_preset_value(value);
+            if decoded == nil then
+                return nil, decode_error;
+            end
+            if decoded:find('%c') ~= nil then
+                return nil, 'The preset name contains unsupported control characters.';
+            end
+            preset.name = display_name(decoded);
+            if preset.name == '' or #preset.name > 40 then
+                return nil, 'The preset name must use 1 to 40 characters.';
+            end
+        elseif key == 'Monster' then
+            local ok, error_message = append_unique_imported_name(
+                preset.watch_names,
+                seen.Monster,
+                value,
+                'monster'
+            );
+            if not ok then return nil, error_message; end
+        elseif key == 'NPC' then
+            local ok, error_message = append_unique_imported_name(
+                preset.npc_watch_names,
+                seen.NPC,
+                value,
+                'NPC'
+            );
+            if not ok then return nil, error_message; end
+        elseif key == 'Object' then
+            local ok, error_message = append_unique_imported_name(
+                preset.interactable_watch_names,
+                seen.Object,
+                value,
+                'object'
+            );
+            if not ok then return nil, error_message; end
+        else
+            return nil, ('Unsupported preset field: %s'):fmt(key);
+        end
+    end
+    if preset.name == nil then
+        return nil, 'The preset is missing its Name line.';
+    end
+    return preset;
+end
+
+local function import_tracking_preset_text(text)
+    local preset, error_message = parse_tracking_preset_text(text);
+    if preset == nil then
+        return false, error_message;
+    end
+    local original_name = preset.name;
+    preset.name = unique_imported_preset_name(preset.name);
+    state.settings.tracking_presets:append(preset);
+    local ok, feedback = activate_tracking_preset(preset.name, false);
+    if not ok then
+        return false, feedback;
+    end
+    local renamed = preset.name ~= original_name
+        and (' Name conflict resolved as "%s".'):fmt(preset.name)
+        or '';
+    return true, ('Imported and activated preset: %s.%s'):fmt(preset.name, renamed);
 end
 
 local function delete_tracking_preset(name)
@@ -774,7 +1035,8 @@ local function get_radar_entity(
     if kind == 'monster'
         and (state.settings.radar_only_aggressive_monsters == true
             or state.settings.radar_notorious_markers_enabled == true
-            or state.settings.notorious_notification_enabled == true) then
+            or state.settings.notorious_notification_enabled == true
+            or state.settings.notorious_sound_enabled == true) then
         monster_info = aggro_database.get_monster_info(zone_id, index, name);
     end
     if kind == 'player' and state.settings.radar_players_enabled ~= true then
@@ -957,7 +1219,8 @@ local function scan_entities()
         and state.settings.radar_monsters_enabled
         and (state.settings.radar_only_aggressive_monsters
             or state.settings.radar_notorious_markers_enabled
-            or state.settings.notorious_notification_enabled);
+            or state.settings.notorious_notification_enabled
+            or state.settings.notorious_sound_enabled);
     if aggressive_scanning or radar_requires_mobdb then
         aggro_database.load_zone(current_zone_id);
     end
@@ -971,9 +1234,14 @@ local function scan_entities()
         radar_scanning = false;
     end
     local player_z = nil;
-    if state.settings.height_hint_enabled
-        and (alert_scanning
-            or (radar_scanning and state.settings.radar_hover_details_enabled)) then
+    local radar_height_needed = radar_scanning
+        and (state.settings.radar_vertical_filter_enabled == true
+            or (state.settings.height_hint_enabled == true
+                and state.settings.radar_hover_details_enabled == true));
+    if (state.settings.height_hint_enabled and alert_scanning)
+        or radar_height_needed
+        or (aggressive_scanning
+            and state.settings.aggressive_vertical_filter_enabled == true) then
         player_z = read_entity_height(entity, player_index);
     end
 
@@ -1012,7 +1280,20 @@ local function scan_entities()
                         player_main_job_level
                     );
                     if aggressive_monster ~= nil then
-                        aggressive_candidates:append(aggressive_monster);
+                        local aggressive_height_visible = true;
+                        if state.settings.aggressive_vertical_filter_enabled == true
+                            and player_z ~= nil then
+                            local monster_z = read_entity_height(entity, index);
+                            if monster_z ~= nil then
+                                aggressive_monster.height_difference = player_z - monster_z;
+                                aggressive_height_visible = math.abs(
+                                    aggressive_monster.height_difference
+                                ) <= state.settings.aggressive_vertical_range_yalms;
+                            end
+                        end
+                        if aggressive_height_visible then
+                            aggressive_candidates:append(aggressive_monster);
+                        end
                     end
                 end
             end
@@ -1046,6 +1327,7 @@ local function scan_entities()
     local next_radar_entities = T{};
     for _, radar_entity in ipairs(radar_candidates) do
         if not pet_indices[radar_entity.index] then
+            radar_entity.placeholder = camps.is_placeholder(state.settings, current_zone_id, radar_entity);
             next_radar_entities:append(radar_entity);
         end
     end
@@ -1057,6 +1339,12 @@ local function scan_entities()
     for _, radar_entity in ipairs(next_radar_entities) do
         if radar_entity.kind == 'monster' and radar_entity.notorious == true then
             next_notorious_ids[radar_entity.id] = true;
+            if state.settings.notorious_sound_enabled
+                and state.notorious_active_ids[radar_entity.id] ~= true
+                and (state.last_notorious_sound_at == nil or tick_seconds()
+                    - state.last_notorious_sound_at >= state.settings.notorious_sound_cooldown_seconds) then
+                state.pending_notorious_id = radar_entity.id;
+            end
             if state.settings.notorious_notification_enabled == true
                 and state.notorious_active_ids[radar_entity.id] ~= true then
                 notification_message(
@@ -1126,31 +1414,74 @@ local function scan_entities()
         ));
     end
 
-    if #new_monsters > 0 and state.settings.sound_enabled then
-        play_alert_sound(
-            monster_sound_path,
-            'monster alert',
-            state.settings.sound_volume_percent
-        );
+    local tracked_sound_candidate = nil;
+    local function consider_tracked_sound(matches, enabled, path, label)
+        if enabled ~= true or not sound_file_exists(path) then
+            return;
+        end
+        for _, match in ipairs(matches) do
+            if tracked_sound_candidate == nil
+                or match.distance < tracked_sound_candidate.distance then
+                tracked_sound_candidate = {
+                    distance = match.distance,
+                    path = path,
+                    label = label,
+                };
+            end
+        end
     end
-    if #new_npcs > 0 and state.settings.npc_sound_enabled
-        and sound_file_exists(npc_sound_path) then
-        play_alert_sound(
-            npc_sound_path,
-            'NPC alert',
-            state.settings.sound_volume_percent
-        );
+    consider_tracked_sound(
+        new_monsters,
+        state.settings.sound_enabled,
+        monster_sound_path,
+        'monster alert'
+    );
+    consider_tracked_sound(
+        new_npcs,
+        state.settings.npc_sound_enabled,
+        npc_sound_path,
+        'NPC alert'
+    );
+    consider_tracked_sound(
+        new_interactables,
+        state.settings.interactable_sound_enabled,
+        interactable_sound_path,
+        'interactable-object alert'
+    );
+    local tracked_sound_now = tick_seconds();
+    if not sound_player.is_busy() then
+        state.notorious_sound_active = false;
+        state.camp_sound_active = false;
     end
-    if #new_interactables > 0 and state.settings.interactable_sound_enabled
-        and sound_file_exists(interactable_sound_path) then
-        play_alert_sound(
-            interactable_sound_path,
-            'interactable-object alert',
+    if state.pending_notorious_id and (not state.settings.notorious_sound_enabled
+        or not next_notorious_ids[state.pending_notorious_id]) then
+        state.pending_notorious_id = nil;
+    end
+    if state.pending_notorious_id and not sound_player.is_busy() then
+        local played = play_alert_sound(notorious_sound_path, 'Notorious Monster alert',
+            state.settings.sound_volume_percent);
+        state.pending_notorious_id = nil;
+        if played and state.settings.sound_volume_percent > 0 then
+            state.last_notorious_sound_at = tracked_sound_now;
+            state.notorious_sound_active = true;
+        end
+    end
+    local nm_speaking = (state.notorious_sound_active or state.camp_sound_active) and sound_player.is_busy();
+    if tracked_sound_candidate ~= nil
+        and not nm_speaking
+        and tracked_sound_cooldown_remaining(tracked_sound_now) <= 0 then
+        local played = play_alert_sound(
+            tracked_sound_candidate.path,
+            tracked_sound_candidate.label,
             state.settings.sound_volume_percent
         );
+        if played and state.settings.sound_volume_percent > 0 then
+            state.last_tracked_sound_at = tracked_sound_now;
+        end
     end
     local aggressive_sound_now = tick_seconds();
     if #new_aggressive_monsters > 0 and state.settings.aggressive_sound_enabled
+        and not nm_speaking
         and aggressive_sound_cooldown_remaining(aggressive_sound_now) <= 0 then
         local played = play_alert_sound(
             aggressive_sound_path,
@@ -1161,6 +1492,80 @@ local function scan_entities()
             state.last_aggressive_sound_at = aggressive_sound_now;
         end
     end
+end
+
+local function refresh_radar_positions()
+    if state.settings.compass_enabled ~= true
+        or state.settings.radar_enabled ~= true
+        or #state.radar_entities == 0 then
+        return;
+    end
+
+    local memory = AshitaCore:GetMemoryManager();
+    if memory == nil then
+        return;
+    end
+    local party = memory:GetParty();
+    local entity = memory:GetEntity();
+    if party == nil or entity == nil
+        or party:GetMemberIsActive(0) == 0
+        or party:GetMemberServerId(0) == 0 then
+        return;
+    end
+
+    local player_index = tonumber(party:GetMemberTargetIndex(0));
+    if player_index == nil or player_index <= 0 then
+        return;
+    end
+    local player_x = tonumber(entity:GetLocalPositionX(player_index));
+    local player_y = tonumber(entity:GetLocalPositionY(player_index));
+    if player_x == nil or player_y == nil
+        or player_x ~= player_x or player_y ~= player_y
+        or math.abs(player_x) == math.huge or math.abs(player_y) == math.huge then
+        return;
+    end
+
+    local include_height = state.settings.radar_vertical_filter_enabled == true
+        or (state.settings.height_hint_enabled == true
+            and state.settings.radar_hover_details_enabled == true);
+    local player_z = include_height and read_entity_height(entity, player_index) or nil;
+    local maximum_distance_squared = state.settings.range * state.settings.range;
+    local refreshed = T{};
+    for _, radar_entity in ipairs(state.radar_entities) do
+        local index = tonumber(radar_entity.index);
+        if index ~= nil and index > 0 and index <= maximum_entity_index then
+            local current_id = tonumber(entity:GetServerId(index)) or 0;
+            if current_id ~= 0 and current_id == radar_entity.id then
+                local entity_x = tonumber(entity:GetLocalPositionX(index));
+                local entity_y = tonumber(entity:GetLocalPositionY(index));
+                if entity_x ~= nil and entity_y ~= nil
+                    and entity_x == entity_x and entity_y == entity_y
+                    and math.abs(entity_x) < math.huge
+                    and math.abs(entity_y) < math.huge then
+                    local delta_x = entity_x - player_x;
+                    local delta_y = entity_y - player_y;
+                    local distance_squared = delta_x * delta_x + delta_y * delta_y;
+                    if distance_squared <= maximum_distance_squared then
+                        radar_entity.delta_x = delta_x;
+                        radar_entity.delta_y = delta_y;
+                        radar_entity.distance = math.sqrt(distance_squared);
+                        if include_height then
+                            radar_entity.height_difference = nil;
+                            local entity_z = read_entity_height(entity, index);
+                            if player_z ~= nil and entity_z ~= nil then
+                                radar_entity.height_difference = player_z - entity_z;
+                            end
+                        end
+                        refreshed:append(radar_entity);
+                    end
+                end
+            end
+        end
+    end
+    refreshed:sort(function(left, right)
+        return left.distance > right.distance;
+    end);
+    state.radar_entities = refreshed;
 end
 
 local function update_display()
@@ -1263,6 +1668,23 @@ local function read_current_target()
         return nil, validation_error or 'The selected target is unavailable.';
     end
     return target_info;
+end
+
+local function bind_camp_target(camp, placeholder)
+    local selected, reason = read_current_target();
+    if not selected then return reason; end
+    local live = camp_observer.read(selected.index);
+    if not live or live.id ~= selected.id or live.hp <= 0 then
+        return 'Select a living, rendered monster in the current area.';
+    end
+    live.placeholder = placeholder;
+    settings_ui.feedback = '';
+    camp.binding = camps.binding(live);
+    camp.auto_death = camp.auto_start_on_bind == true;
+    camp.auto_start_on_bind = false;
+    camp_observer.reset();
+    return camp.auto_death and 'Spawn bound. Automatic death tracking enabled; check the respawn timings.'
+        or 'Spawn bound. Enable observed-death tracking after checking its identity and timings.';
 end
 
 local function add_current_target(kind)
@@ -1683,8 +2105,25 @@ local function draw_name_editor(kind, title, input, id_prefix)
     if #names == 0 then
         imgui.TextDisabled('No ' .. kind_label(kind) .. ' names configured.');
     else
-        for _, name in ipairs(names) do
-            imgui.Text(display_name(name));
+        local remove_index = nil;
+        for index, name in ipairs(names) do
+            local name_text = display_name(name);
+            imgui.Text(name_text);
+            imgui.SameLine(math.max(350, imgui.CalcTextSize(name_text) + 18));
+            if imgui.SmallButton(
+                ('X##%sRemoveName%d'):fmt(id_prefix, index)
+            ) then
+                remove_index = index;
+            end
+            if imgui.IsItemHovered() then
+                imgui.BeginTooltip();
+                imgui.Text('Remove ' .. name_text);
+                imgui.EndTooltip();
+            end
+        end
+        if remove_index ~= nil then
+            local _, feedback = remove_watch_index(remove_index, kind);
+            settings_ui.feedback = feedback;
         end
     end
 
@@ -1765,357 +2204,471 @@ local function draw_sound_setting(
 end
 
 local function draw_main_settings_tab()
-    local enabled = {state.settings.enabled};
-    if imgui.Checkbox('Enable scanning', enabled) then
-        state.settings.enabled = enabled[1];
-        update_settings();
-        state.last_scan_at = 0;
+    if not imgui.BeginTabBar('##HorizonScoutMainSubtabs') then
+        return;
     end
 
-    local chat_notifications = {state.settings.chat_notifications_enabled};
-    if imgui.Checkbox('Print routine notices in chat', chat_notifications) then
-        state.settings.chat_notifications_enabled = chat_notifications[1];
-        settings.save();
-    end
-    imgui.SameLine();
-    imgui.TextDisabled('Off by default; errors remain visible');
+    if imgui.BeginTabItem('General') then
+        local enabled = {state.settings.enabled};
+        if imgui.Checkbox('Enable scanning', enabled) then
+            state.settings.enabled = enabled[1];
+            update_settings();
+            state.last_scan_at = 0;
+        end
+        local chat_notifications = {state.settings.chat_notifications_enabled};
+        if imgui.Checkbox('Print routine notices in chat', chat_notifications) then
+            state.settings.chat_notifications_enabled = chat_notifications[1];
+            settings.save();
+        end
+        imgui.SameLine();
+        imgui.TextDisabled('Off by default; errors remain visible');
 
-    local display_enabled = {state.settings.display_enabled};
-    if imgui.Checkbox('Show overlay', display_enabled) then
-        state.settings.display_enabled = display_enabled[1];
-        settings.save();
-        update_display();
-    end
-
-    local overlay_locked = {state.settings.overlay_locked};
-    if imgui.Checkbox('Lock overlay position', overlay_locked) then
-        state.settings.overlay_locked = overlay_locked[1];
-        settings.save();
-    end
-
-    local overlay_compact = {state.settings.overlay_compact_mode};
-    if imgui.Checkbox('Use compact overlay mode', overlay_compact) then
-        state.settings.overlay_compact_mode = overlay_compact[1];
-        settings.save();
-    end
-
-    imgui.Text('Size Overlay UI');
-    imgui.SameLine();
-    imgui.SetNextItemWidth(190);
-    local overlay_scale = {math.floor(state.settings.overlay_scale_percent)};
-    if imgui.SliderInt(
-        '##HorizonScoutOverlayScale',
-        overlay_scale,
-        50,
-        200,
-        '%d%%',
-        ImGuiSliderFlags_AlwaysClamp
-    ) then
-        state.settings.overlay_scale_percent = overlay_scale[1];
-        settings.save();
-    end
-    imgui.SameLine();
-    if imgui.SmallButton('Reset##HorizonScoutOverlayScaleReset') then
-        state.settings.overlay_scale_percent = 100;
-        settings.save();
-    end
-
-    local position_enabled = {state.settings.position_enabled};
-    if imgui.Checkbox('Show Position in Overlay', position_enabled) then
-        state.settings.position_enabled = position_enabled[1];
-        settings.save();
-        update_display();
-    end
-    imgui.SameLine();
-    imgui.TextDisabled('Current: ' .. state.map_position);
-
-    local height_hint_enabled = {state.settings.height_hint_enabled};
-    if imgui.Checkbox('Show above/below hints in nearby matches', height_hint_enabled) then
-        state.settings.height_hint_enabled = height_hint_enabled[1];
-        settings.save();
-        state.last_scan_at = 0;
-    end
-    imgui.Text('Above/below threshold');
-    imgui.SameLine();
-    imgui.SetNextItemWidth(80);
-    local height_threshold = {
-        math.floor(state.settings.height_hint_threshold_yalms)
-    };
-    if imgui.InputInt('##HorizonScoutHeightThreshold', height_threshold, 1, 2) then
-        state.settings.height_hint_threshold_yalms = math.max(
-            1,
-            math.min(20, height_threshold[1])
+        imgui.Spacing();
+        imgui.Separator();
+        imgui.Text('Shared detection');
+        imgui.Text('Alert volume');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(220);
+        local sound_volume = {math.floor(state.settings.sound_volume_percent)};
+        if imgui.SliderInt(
+            '##HorizonScoutSoundVolume', sound_volume, 0, 150, '%d%%',
+            ImGuiSliderFlags_AlwaysClamp
+        ) then
+            state.settings.sound_volume_percent = sound_volume[1];
+            settings.save();
+        end
+        imgui.Text('Tracked sound cooldown');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(90);
+        local tracked_cooldown = {
+            math.floor(state.settings.tracked_sound_cooldown_seconds)
+        };
+        if imgui.InputInt('##HorizonScoutTrackedSoundCooldown', tracked_cooldown, 1, 5) then
+            state.settings.tracked_sound_cooldown_seconds = math.max(
+                0,
+                math.min(maximum_tracked_sound_cooldown_seconds, tracked_cooldown[1])
+            );
+            settings.save();
+        end
+        imgui.SameLine();
+        imgui.Text('seconds');
+        imgui.TextDisabled(
+            'Shared by monster, NPC, and object sounds; 0 disables the cooldown.'
         );
-        settings.save();
-        state.last_scan_at = 0;
-    end
-    imgui.SameLine();
-    imgui.Text('yalms');
-    imgui.TextDisabled('Relative height only; not a floor number. Default: 4 yalms.');
+        local tracked_cooldown_remaining = tracked_sound_cooldown_remaining(tick_seconds());
+        if tracked_cooldown_remaining > 0 then
+            imgui.TextDisabled(
+                ('Tracked sound cooldown: %.1f seconds remaining'):fmt(
+                    tracked_cooldown_remaining
+                )
+            );
+        else
+            imgui.TextDisabled('Tracked sound cooldown: ready');
+        end
+        imgui.Text('Tracked-name / radar range');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(190);
+        local range = {math.floor(state.settings.range)};
+        if imgui.SliderInt(
+            '##HorizonScoutRange', range, minimum_range, maximum_range,
+            '%d yalms', ImGuiSliderFlags_AlwaysClamp
+        ) then
+            state.settings.range = range[1];
+            update_settings();
+            state.last_scan_at = 0;
+        end
 
-    local compass_enabled = {state.settings.compass_enabled};
-    if imgui.Checkbox('Show radar', compass_enabled) then
-        state.settings.compass_enabled = compass_enabled[1];
-        settings.save();
-    end
-
-    local compass_locked = {state.settings.compass_locked};
-    if imgui.Checkbox('Lock radar position', compass_locked) then
-        state.settings.compass_locked = compass_locked[1];
-        settings.save();
-    end
-
-    local radar_north_up = {state.settings.radar_north_up};
-    if imgui.Checkbox('Keep radar north-up (stop rotating)', radar_north_up) then
-        state.settings.radar_north_up = radar_north_up[1];
-        settings.save();
-    end
-
-    local radar_players_enabled = {state.settings.radar_players_enabled};
-    if imgui.Checkbox('Show players on radar', radar_players_enabled) then
-        state.settings.radar_players_enabled = radar_players_enabled[1];
-        settings.save();
-        state.last_scan_at = 0;
-    end
-
-    local highlight_tracked = {state.settings.radar_highlight_tracked};
-    if imgui.Checkbox('Highlight tracked radar dots (gold ring)', highlight_tracked) then
-        state.settings.radar_highlight_tracked = highlight_tracked[1];
-        settings.save();
-        state.last_scan_at = 0;
-    end
-    local highlight_target = {state.settings.radar_highlight_target};
-    if imgui.Checkbox('Highlight selected radar target (white diamond)', highlight_target) then
-        state.settings.radar_highlight_target = highlight_target[1];
-        settings.save();
-    end
-    local hover_details = {state.settings.radar_hover_details_enabled};
-    if imgui.Checkbox('Show radar details while hovering dots', hover_details) then
-        state.settings.radar_hover_details_enabled = hover_details[1];
-        settings.save();
-    end
-    imgui.TextDisabled('Hover details do not capture game clicks while the radar is locked.');
-
-    imgui.Text('Fix player arrow heading');
-    imgui.SameLine();
-    imgui.SetNextItemWidth(190);
-    local heading_offset = {math.floor(state.settings.compass_heading_offset_degrees)};
-    if imgui.SliderInt(
-        '##HorizonScoutHeadingOffset',
-        heading_offset,
-        -180,
-        180,
-        '%d deg',
-        ImGuiSliderFlags_AlwaysClamp
-    ) then
-        state.settings.compass_heading_offset_degrees = heading_offset[1];
-        settings.save();
-    end
-    imgui.SameLine();
-    if imgui.SmallButton('Screenshot default##HorizonScoutHeadingReset') then
-        state.settings.compass_heading_offset_degrees = -90;
-        settings.save();
+        imgui.Spacing();
+        local help_button_label = settings_ui.show_help
+            and 'Hide command help##HorizonScoutHelp'
+            or 'Show command help##HorizonScoutHelp';
+        if imgui.Button(help_button_label) then
+            settings_ui.show_help = not settings_ui.show_help;
+        end
+        draw_command_help();
+        imgui.EndTabItem();
     end
 
-    imgui.Text('Radar size');
-    imgui.SameLine();
-    imgui.SetNextItemWidth(190);
-    local compass_size = {math.floor(state.settings.compass_size)};
-    if imgui.SliderInt(
-        '##HorizonScoutCompassSize',
-        compass_size,
-        80,
-        maximum_compass_size,
-        '%d px',
-        ImGuiSliderFlags_AlwaysClamp
-    ) then
-        state.settings.compass_size = compass_size[1];
-        settings.save();
-    end
-    imgui.SameLine();
-    if imgui.SmallButton('Reset position##HorizonScoutCompassReset') then
-        state.settings.compass_position_x = scaling.scale_w(80);
-        state.settings.compass_position_y = scaling.scale_h(80);
-        compass.request_position_reset();
-        settings.save();
+    if imgui.BeginTabItem('Overlay') then
+        local display_enabled = {state.settings.display_enabled};
+        if imgui.Checkbox('Show overlay', display_enabled) then
+            state.settings.display_enabled = display_enabled[1];
+            settings.save();
+            update_display();
+        end
+        local overlay_locked = {state.settings.overlay_locked};
+        if imgui.Checkbox('Lock overlay position', overlay_locked) then
+            state.settings.overlay_locked = overlay_locked[1];
+            settings.save();
+        end
+        local overlay_compact = {state.settings.overlay_compact_mode};
+        if imgui.Checkbox('Use compact overlay mode', overlay_compact) then
+            state.settings.overlay_compact_mode = overlay_compact[1];
+            settings.save();
+        end
+        imgui.Text('Size Overlay UI');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(190);
+        local overlay_scale = {math.floor(state.settings.overlay_scale_percent)};
+        if imgui.SliderInt(
+            '##HorizonScoutOverlayScale', overlay_scale, 50, 200, '%d%%',
+            ImGuiSliderFlags_AlwaysClamp
+        ) then
+            state.settings.overlay_scale_percent = overlay_scale[1];
+            settings.save();
+        end
+        imgui.SameLine();
+        if imgui.SmallButton('Reset##HorizonScoutOverlayScaleReset') then
+            state.settings.overlay_scale_percent = 100;
+            settings.save();
+        end
+
+        imgui.Spacing();
+        imgui.Separator();
+        imgui.Text('Overlay information');
+        local position_enabled = {state.settings.position_enabled};
+        if imgui.Checkbox('Show Position in Overlay', position_enabled) then
+            state.settings.position_enabled = position_enabled[1];
+            settings.save();
+            update_display();
+        end
+        imgui.SameLine();
+        imgui.TextDisabled('Current: ' .. state.map_position);
+        local height_hint_enabled = {state.settings.height_hint_enabled};
+        if imgui.Checkbox('Show above/below hints in nearby matches', height_hint_enabled) then
+            state.settings.height_hint_enabled = height_hint_enabled[1];
+            settings.save();
+            state.last_scan_at = 0;
+        end
+        imgui.Text('Above/below threshold');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(80);
+        local height_threshold = {math.floor(state.settings.height_hint_threshold_yalms)};
+        if imgui.InputInt('##HorizonScoutHeightThreshold', height_threshold, 1, 2) then
+            state.settings.height_hint_threshold_yalms = math.max(
+                1, math.min(20, height_threshold[1])
+            );
+            settings.save();
+            state.last_scan_at = 0;
+        end
+        imgui.SameLine();
+        imgui.Text('yalms');
+        imgui.TextDisabled('Relative height only; not a floor number. Default: 4 yalms.');
+        imgui.EndTabItem();
     end
 
-    imgui.Text('Alert volume');
-    imgui.SameLine();
-    imgui.SetNextItemWidth(220);
-    local sound_volume = {math.floor(state.settings.sound_volume_percent)};
-    if imgui.SliderInt(
-        '##HorizonScoutSoundVolume',
-        sound_volume,
-        0,
-        150,
-        '%d%%',
-        ImGuiSliderFlags_AlwaysClamp
-    ) then
-        state.settings.sound_volume_percent = sound_volume[1];
-        settings.save();
+    if imgui.BeginTabItem('Radar') then
+        local compass_enabled = {state.settings.compass_enabled};
+        if imgui.Checkbox('Show radar', compass_enabled) then
+            state.settings.compass_enabled = compass_enabled[1];
+            settings.save();
+        end
+        local compass_locked = {state.settings.compass_locked};
+        if imgui.Checkbox('Lock radar position', compass_locked) then
+            state.settings.compass_locked = compass_locked[1];
+            settings.save();
+        end
+        local radar_north_up = {state.settings.radar_north_up};
+        if imgui.Checkbox('Keep radar north-up (stop rotating)', radar_north_up) then
+            state.settings.radar_north_up = radar_north_up[1];
+            settings.save();
+        end
+
+        imgui.Text('Radar shape');
+        imgui.SameLine();
+        if imgui.RadioButton('Circle##HorizonScoutRadarShapeCircle', state.settings.radar_shape == 'circle') then
+            state.settings.radar_shape = 'circle';
+            settings.save();
+        end
+        imgui.SameLine();
+        if imgui.RadioButton('Square##HorizonScoutRadarShapeSquare', state.settings.radar_shape == 'square') then
+            state.settings.radar_shape = 'square';
+            settings.save();
+        end
+
+        imgui.Spacing();
+        imgui.Separator();
+        imgui.Text('Radar contents and details');
+        local radar_players_enabled = {state.settings.radar_players_enabled};
+        if imgui.Checkbox('Show players on radar', radar_players_enabled) then
+            state.settings.radar_players_enabled = radar_players_enabled[1];
+            settings.save();
+            state.last_scan_at = 0;
+        end
+        local highlight_tracked = {state.settings.radar_highlight_tracked};
+        if imgui.Checkbox('Highlight tracked radar dots (gold ring)', highlight_tracked) then
+            state.settings.radar_highlight_tracked = highlight_tracked[1];
+            settings.save();
+            state.last_scan_at = 0;
+        end
+        local highlight_target = {state.settings.radar_highlight_target};
+        if imgui.Checkbox('Highlight selected radar target (white diamond)', highlight_target) then
+            state.settings.radar_highlight_target = highlight_target[1];
+            settings.save();
+        end
+        local hover_details = {state.settings.radar_hover_details_enabled};
+        if imgui.Checkbox('Show radar details while hovering dots', hover_details) then
+            state.settings.radar_hover_details_enabled = hover_details[1];
+            settings.save();
+        end
+        imgui.TextDisabled('Hover details do not capture game clicks while the radar is locked.');
+
+        local vertical_filter = {state.settings.radar_vertical_filter_enabled};
+        if imgui.Checkbox('Limit radar dots by height', vertical_filter) then
+            state.settings.radar_vertical_filter_enabled = vertical_filter[1];
+            settings.save();
+            state.last_scan_at = 0;
+        end
+        imgui.Text('Show dots within');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(80);
+        local vertical_range = {
+            math.floor(state.settings.radar_vertical_range_yalms)
+        };
+        if imgui.InputInt('##HorizonScoutRadarVerticalRange', vertical_range, 1, 5) then
+            state.settings.radar_vertical_range_yalms = math.max(
+                1,
+                math.min(100, vertical_range[1])
+            );
+            settings.save();
+            state.last_scan_at = 0;
+        end
+        imgui.SameLine();
+        imgui.Text('yalms above or below');
+        imgui.TextDisabled('Dots with unknown height remain visible. Default: 10 yalms.');
+
+        imgui.Spacing();
+        imgui.Separator();
+        imgui.Text('Radar layout');
+        imgui.Text('Fix player arrow heading');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(190);
+        local heading_offset = {math.floor(state.settings.compass_heading_offset_degrees)};
+        if imgui.SliderInt(
+            '##HorizonScoutHeadingOffset', heading_offset, -180, 180, '%d deg',
+            ImGuiSliderFlags_AlwaysClamp
+        ) then
+            state.settings.compass_heading_offset_degrees = heading_offset[1];
+            settings.save();
+        end
+        imgui.SameLine();
+        if imgui.SmallButton('Screenshot default##HorizonScoutHeadingReset') then
+            state.settings.compass_heading_offset_degrees = -90;
+            settings.save();
+        end
+        imgui.Text('Radar size');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(190);
+        local compass_size = {math.floor(state.settings.compass_size)};
+        if imgui.SliderInt(
+            '##HorizonScoutCompassSize', compass_size, 80, maximum_compass_size,
+            '%d px', ImGuiSliderFlags_AlwaysClamp
+        ) then
+            state.settings.compass_size = compass_size[1];
+            settings.save();
+        end
+        imgui.SameLine();
+        if imgui.SmallButton('Reset position##HorizonScoutCompassReset') then
+            state.settings.compass_position_x = scaling.scale_w(80);
+            state.settings.compass_position_y = scaling.scale_h(80);
+            compass.request_position_reset();
+            settings.save();
+        end
+        imgui.EndTabItem();
     end
 
-    imgui.Text('Tracked-name / radar range');
-    imgui.SameLine();
-    imgui.SetNextItemWidth(190);
-    local range = {math.floor(state.settings.range)};
-    if imgui.SliderInt(
-        '##HorizonScoutRange',
-        range,
-        minimum_range,
-        maximum_range,
-        '%d yalms',
-        ImGuiSliderFlags_AlwaysClamp
-    ) then
-        state.settings.range = range[1];
-        update_settings();
-        state.last_scan_at = 0;
-    end
-
-    imgui.Spacing();
-    local help_button_label = settings_ui.show_help
-        and 'Hide command help##HorizonScoutHelp'
-        or 'Show command help##HorizonScoutHelp';
-    if imgui.Button(help_button_label) then
-        settings_ui.show_help = not settings_ui.show_help;
-    end
-    draw_command_help();
+    imgui.EndTabBar();
 end
 
 local function draw_monsters_tab()
-    local show_monsters = {state.settings.radar_monsters_enabled};
-    if imgui.Checkbox('Show monsters on radar', show_monsters) then
-        state.settings.radar_monsters_enabled = show_monsters[1];
-        settings.save();
-        state.last_scan_at = 0;
+    if not imgui.BeginTabBar('##HorizonScoutMonsterSubtabs') then
+        return;
     end
-    local aggressive_only = {state.settings.radar_only_aggressive_monsters};
-    if imgui.Checkbox('Show only aggressive monsters on radar', aggressive_only) then
-        state.settings.radar_only_aggressive_monsters = aggressive_only[1];
-        settings.save();
-        state.last_scan_at = 0;
-    end
-    imgui.TextDisabled('Aggressive-only radar filtering uses the local MobDB database.');
 
-    local notorious_markers = {state.settings.radar_notorious_markers_enabled};
-    if imgui.Checkbox('Show Notorious Monster star markers', notorious_markers) then
-        state.settings.radar_notorious_markers_enabled = notorious_markers[1];
-        settings.save();
-        state.last_scan_at = 0;
-    end
-    local notorious_notification = {state.settings.notorious_notification_enabled};
-    if imgui.Checkbox('Notify in chat when an NM appears on radar', notorious_notification) then
-        state.settings.notorious_notification_enabled = notorious_notification[1];
-        state.notorious_active_ids = T{};
-        settings.save();
-        state.last_scan_at = 0;
-    end
-    imgui.TextDisabled(
-        'NM identification uses local MobDB Notorious data; unknown entries are not guessed.'
-    );
-    imgui.Spacing();
-    draw_sound_setting(
-        'sound_enabled',
-        'Play tracked-monster detection sound',
-        'HorizonScoutMonsterSoundTest',
-        monster_sound_path,
-        'monster alert',
-        'Played mobalert.wav at the configured volume.',
-        'Monster sound is muted at 0%.',
-        'The monster sound test failed; see chat.'
-    );
-    draw_sound_setting(
-        'aggressive_sound_enabled',
-        'Play aggressive-monster warning',
-        'HorizonScoutAggressiveSoundTest',
-        aggressive_sound_path,
-        'aggressive-monster warning',
-        'Played aggressivealert.wav at the configured volume.',
-        'Aggressive-monster warning is muted at 0%.',
-        'The aggressive-monster sound test failed; see chat.'
-    );
-
-    imgui.Text('Aggressive warning range');
-    imgui.SameLine();
-    imgui.SetNextItemWidth(90);
-    local aggressive_range = {math.floor(state.settings.aggressive_alert_range)};
-    if imgui.InputInt('##HorizonScoutAggressiveRange', aggressive_range, 1, 5) then
-        state.settings.aggressive_alert_range = math.max(
-            minimum_aggressive_alert_range,
-            math.min(maximum_aggressive_alert_range, aggressive_range[1])
+    if imgui.BeginTabItem('Tracking') then
+        local show_monsters = {state.settings.radar_monsters_enabled};
+        if imgui.Checkbox('Show monsters on radar', show_monsters) then
+            state.settings.radar_monsters_enabled = show_monsters[1];
+            settings.save();
+            state.last_scan_at = 0;
+        end
+        draw_sound_setting(
+            'sound_enabled',
+            'Play tracked-monster detection sound',
+            'HorizonScoutMonsterSoundTest',
+            monster_sound_path,
+            'monster alert',
+            'Played mobalert.wav at the configured volume.',
+            'Monster sound is muted at 0%.',
+            'The monster sound test failed; see chat.'
         );
-        settings.save();
-        restart_aggressive_scan();
+        imgui.Spacing();
+        imgui.Separator();
+        draw_name_editor('monster', 'Monster names', settings_ui.name_input, 'HorizonScoutMonster');
+        imgui.EndTabItem();
     end
-    imgui.SameLine();
-    imgui.Text('yalms');
 
-    imgui.Text('Aggressive sound cooldown');
-    imgui.SameLine();
-    imgui.SetNextItemWidth(90);
-    local aggressive_cooldown = {
-        math.floor(state.settings.aggressive_sound_cooldown_seconds)
-    };
-    if imgui.InputInt('##HorizonScoutAggressiveCooldown', aggressive_cooldown, 1, 5) then
-        state.settings.aggressive_sound_cooldown_seconds = math.max(
-            0,
-            math.min(
-                maximum_aggressive_sound_cooldown_seconds,
-                aggressive_cooldown[1]
+    if imgui.BeginTabItem('Aggro & NM') then
+        imgui.Text('Radar filters and markers');
+        local aggressive_only = {state.settings.radar_only_aggressive_monsters};
+        if imgui.Checkbox('Show only aggressive monsters on radar', aggressive_only) then
+            state.settings.radar_only_aggressive_monsters = aggressive_only[1];
+            settings.save();
+            state.last_scan_at = 0;
+        end
+        imgui.TextDisabled('Aggressive-only radar filtering uses the local MobDB database.');
+        local notorious_markers = {state.settings.radar_notorious_markers_enabled};
+        if imgui.Checkbox('Show Notorious Monster star markers', notorious_markers) then
+            state.settings.radar_notorious_markers_enabled = notorious_markers[1];
+            settings.save();
+            state.last_scan_at = 0;
+        end
+        local notorious_notification = {state.settings.notorious_notification_enabled};
+        if imgui.Checkbox('Notify in chat when an NM appears on radar', notorious_notification) then
+            state.settings.notorious_notification_enabled = notorious_notification[1];
+            state.notorious_active_ids = T{};
+            settings.save();
+            state.last_scan_at = 0;
+        end
+        imgui.TextDisabled(
+            'NM identification uses local MobDB Notorious data; unknown entries are not guessed.'
+        );
+        draw_sound_setting('notorious_sound_enabled', 'Play Notorious Monster detection sound',
+            'HorizonScoutNotoriousSoundTest', notorious_sound_path, 'Notorious Monster alert',
+            'Played Notorious Monster.wav.', 'NM sound test muted.', 'NM sound test failed.');
+        local nm_cooldown = {state.settings.notorious_sound_cooldown_seconds};
+        imgui.SetNextItemWidth(130);
+        if imgui.InputInt('NM sound cooldown (seconds)', nm_cooldown) then
+            state.settings.notorious_sound_cooldown_seconds = math.max(0, math.min(60, nm_cooldown[1]));
+            settings.save();
+        end
+        imgui.TextDisabled('One sound for new radar sightings; waits for current audio to finish.');
+
+        imgui.Spacing();
+        imgui.Separator();
+        imgui.Text('Aggressive warning');
+        draw_sound_setting(
+            'aggressive_sound_enabled',
+            'Play aggressive-monster warning',
+            'HorizonScoutAggressiveSoundTest',
+            aggressive_sound_path,
+            'aggressive-monster warning',
+            'Played aggressivealert.wav at the configured volume.',
+            'Aggressive-monster warning is muted at 0%.',
+            'The aggressive-monster sound test failed; see chat.'
+        );
+        imgui.Text('Warning range');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(90);
+        local aggressive_range = {math.floor(state.settings.aggressive_alert_range)};
+        if imgui.InputInt('##HorizonScoutAggressiveRange', aggressive_range, 1, 5) then
+            state.settings.aggressive_alert_range = math.max(
+                minimum_aggressive_alert_range,
+                math.min(maximum_aggressive_alert_range, aggressive_range[1])
+            );
+            settings.save();
+            restart_aggressive_scan();
+        end
+        imgui.SameLine();
+        imgui.Text('yalms');
+        local aggressive_vertical_filter = {
+            state.settings.aggressive_vertical_filter_enabled
+        };
+        if imgui.Checkbox(
+            'Limit aggressive warnings by height',
+            aggressive_vertical_filter
+        ) then
+            state.settings.aggressive_vertical_filter_enabled = aggressive_vertical_filter[1];
+            settings.save();
+            restart_aggressive_scan();
+        end
+        imgui.Text('Warn within');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(90);
+        local aggressive_vertical_range = {
+            math.floor(state.settings.aggressive_vertical_range_yalms)
+        };
+        if imgui.InputInt(
+            '##HorizonScoutAggressiveVerticalRange',
+            aggressive_vertical_range,
+            1,
+            5
+        ) then
+            state.settings.aggressive_vertical_range_yalms = math.max(
+                1,
+                math.min(100, aggressive_vertical_range[1])
+            );
+            settings.save();
+            restart_aggressive_scan();
+        end
+        imgui.SameLine();
+        imgui.Text('yalms above or below');
+        imgui.TextDisabled('Unknown monster height still warns. Default: 10 yalms.');
+        imgui.Text('Sound cooldown');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(90);
+        local aggressive_cooldown = {
+            math.floor(state.settings.aggressive_sound_cooldown_seconds)
+        };
+        if imgui.InputInt('##HorizonScoutAggressiveCooldown', aggressive_cooldown, 1, 5) then
+            state.settings.aggressive_sound_cooldown_seconds = math.max(
+                0,
+                math.min(
+                    maximum_aggressive_sound_cooldown_seconds,
+                    aggressive_cooldown[1]
+                )
+            );
+            settings.save();
+        end
+        imgui.SameLine();
+        imgui.Text('seconds');
+        imgui.TextDisabled('Automatic warning only; 0 disables the cooldown.');
+
+        local suppress_on_chocobo = {state.settings.aggressive_suppress_on_chocobo};
+        if imgui.Checkbox('Suppress aggressive warning while on a chocobo', suppress_on_chocobo) then
+            state.settings.aggressive_suppress_on_chocobo = suppress_on_chocobo[1];
+            settings.save();
+            restart_aggressive_scan();
+        end
+        local level_filter = {state.settings.aggressive_level_filter_enabled};
+        if imgui.Checkbox('Ignore aggressive monsters far below your level', level_filter) then
+            state.settings.aggressive_level_filter_enabled = level_filter[1];
+            settings.save();
+            restart_aggressive_scan();
+        end
+        imgui.Text('Ignore when at least');
+        imgui.SameLine();
+        imgui.SetNextItemWidth(70);
+        local level_gap = {math.floor(state.settings.aggressive_level_gap)};
+        if imgui.InputInt('##HorizonScoutAggressiveLevelGap', level_gap, 1, 5) then
+            state.settings.aggressive_level_gap = math.max(1, math.min(99, level_gap[1]));
+            settings.save();
+            restart_aggressive_scan();
+        end
+        imgui.SameLine();
+        imgui.Text('levels below your main job');
+        imgui.TextDisabled('Uses maximum spawn level; unknown levels still alert.');
+
+        local aggression_status = state.aggressive_suppressed_on_chocobo
+            and 'suppressed on chocobo'
+            or ('nearby: %d'):fmt(state.aggressive_nearby_count);
+        imgui.TextDisabled(
+            ('Database: %s | main level: %d | %s'):fmt(
+                aggro_database.get_status(),
+                state.player_main_job_level,
+                aggression_status
             )
         );
-        settings.save();
-    end
-    imgui.SameLine();
-    imgui.Text('seconds');
-    imgui.TextDisabled('Automatic warning only; 0 disables the cooldown.');
-
-    local suppress_on_chocobo = {state.settings.aggressive_suppress_on_chocobo};
-    if imgui.Checkbox('Suppress aggressive warning while on a chocobo', suppress_on_chocobo) then
-        state.settings.aggressive_suppress_on_chocobo = suppress_on_chocobo[1];
-        settings.save();
-        restart_aggressive_scan();
+        local cooldown_remaining = aggressive_sound_cooldown_remaining(tick_seconds());
+        if cooldown_remaining > 0 then
+            imgui.TextDisabled(('Sound cooldown: %.1f seconds remaining'):fmt(cooldown_remaining));
+        else
+            imgui.TextDisabled('Sound cooldown: ready');
+        end
+        imgui.EndTabItem();
     end
 
-    local level_filter = {state.settings.aggressive_level_filter_enabled};
-    if imgui.Checkbox('Ignore aggressive monsters far below your level', level_filter) then
-        state.settings.aggressive_level_filter_enabled = level_filter[1];
-        settings.save();
-        restart_aggressive_scan();
-    end
-    imgui.Text('Ignore when at least');
-    imgui.SameLine();
-    imgui.SetNextItemWidth(70);
-    local level_gap = {math.floor(state.settings.aggressive_level_gap)};
-    if imgui.InputInt('##HorizonScoutAggressiveLevelGap', level_gap, 1, 5) then
-        state.settings.aggressive_level_gap = math.max(1, math.min(99, level_gap[1]));
-        settings.save();
-        restart_aggressive_scan();
-    end
-    imgui.SameLine();
-    imgui.Text('levels below your main job');
-    imgui.TextDisabled('Uses the monster maximum spawn level; unknown levels still alert.');
-
-    local aggression_status = state.aggressive_suppressed_on_chocobo
-        and 'suppressed on chocobo'
-        or ('nearby: %d'):fmt(state.aggressive_nearby_count);
-    imgui.TextDisabled(
-        ('Database: %s | main level: %d | %s'):fmt(
-            aggro_database.get_status(),
-            state.player_main_job_level,
-            aggression_status
-        )
-    );
-    local cooldown_remaining = aggressive_sound_cooldown_remaining(tick_seconds());
-    if cooldown_remaining > 0 then
-        imgui.TextDisabled(('Sound cooldown: %.1f seconds remaining'):fmt(cooldown_remaining));
-    else
-        imgui.TextDisabled('Sound cooldown: ready');
-    end
-
-    imgui.Spacing();
-    draw_name_editor('monster', 'Monster names', settings_ui.name_input, 'HorizonScoutMonster');
+    imgui.EndTabBar();
 end
 
 local function draw_npcs_tab()
@@ -2167,7 +2720,7 @@ local function draw_objects_tab()
     );
 end
 
-local function draw_presets_tab()
+local function draw_preset_management()
     imgui.Text('Named tracking presets');
     imgui.TextDisabled(
         'Monster, NPC, and object exact-name lists belong to the active preset.'
@@ -2255,12 +2808,82 @@ local function draw_presets_tab()
     end
 end
 
+local function draw_preset_transfer()
+    imgui.Text('Share the active preset as safe, portable text.');
+    imgui.TextDisabled('Only exact-name lists are included; settings and area assignments stay local.');
+
+    if imgui.Button('Export active##HorizonScoutPresetExport') then
+        settings_ui.preset_transfer_text[1] = export_active_tracking_preset();
+        settings_ui.feedback = 'Exported the active preset to the text box.';
+    end
+    imgui.SameLine();
+    if imgui.Button('Copy##HorizonScoutPresetCopy') then
+        local transfer_text = settings_ui.preset_transfer_text[1] or '';
+        if transfer_text == '' then
+            settings_ui.feedback = 'Export a preset before copying it.';
+        else
+            local ok = pcall(imgui.SetClipboardText, transfer_text);
+            settings_ui.feedback = ok
+                and 'Copied the preset text to the clipboard.'
+                or 'Clipboard copy failed; copy the text box manually.';
+        end
+    end
+    imgui.SameLine();
+    if imgui.Button('Paste##HorizonScoutPresetPaste') then
+        local ok, clipboard_text = pcall(imgui.GetClipboardText);
+        if ok and type(clipboard_text) == 'string' then
+            settings_ui.preset_transfer_text[1] = clipboard_text:sub(
+                1,
+                maximum_preset_transfer_size
+            );
+            settings_ui.feedback = #clipboard_text > maximum_preset_transfer_size
+                and 'Pasted the first 16 KB; the source text was too large.'
+                or 'Pasted preset text from the clipboard.';
+        else
+            settings_ui.feedback = 'Clipboard paste failed; paste into the text box manually.';
+        end
+    end
+
+    imgui.Spacing();
+    imgui.InputTextMultiline(
+        '##HorizonScoutPresetTransferText',
+        settings_ui.preset_transfer_text,
+        maximum_preset_transfer_size,
+        {-1, 180}
+    );
+    if imgui.Button('Import as new preset##HorizonScoutPresetImport') then
+        local ok, feedback = import_tracking_preset_text(
+            settings_ui.preset_transfer_text[1]
+        );
+        settings_ui.feedback = feedback;
+        if ok then
+            state.last_scan_at = 0;
+        end
+    end
+    imgui.TextDisabled('Import never overwrites an existing preset; duplicate names are renamed.');
+end
+
+local function draw_presets_tab()
+    if not imgui.BeginTabBar('##HorizonScoutPresetSubtabs') then
+        return;
+    end
+    if imgui.BeginTabItem('Manage') then
+        draw_preset_management();
+        imgui.EndTabItem();
+    end
+    if imgui.BeginTabItem('Import / Export') then
+        draw_preset_transfer();
+        imgui.EndTabItem();
+    end
+    imgui.EndTabBar();
+end
+
 local function draw_settings_ui()
     if not settings_ui.is_open[1] then
         return;
     end
 
-    imgui.SetNextWindowSize({460, 0}, ImGuiCond_FirstUseEver);
+    imgui.SetNextWindowSize({500, 0}, ImGuiCond_FirstUseEver);
     if imgui.Begin(
         'HorizonScout Settings##HorizonScoutSettings',
         settings_ui.is_open,
@@ -2285,6 +2908,18 @@ local function draw_settings_ui()
             end
             if imgui.BeginTabItem('Presets') then
                 draw_presets_tab();
+                imgui.EndTabItem();
+            end
+            if imgui.BeginTabItem('Camps') then
+                camps.draw(state.settings, settings.save, os.time(), bind_camp_target, function(camp)
+                    local status, last = camp_observer.describe(state.settings, camp, tick_seconds());
+                    return status, last, camp_observer.is_alive(state.settings, camp, tick_seconds());
+                end, function()
+                    if state.settings.sound_volume_percent <= 0 then return 'Camp sound test muted.'; end
+                    local played = play_alert_sound(camps_sound_path, 'camp window alert', state.settings.sound_volume_percent);
+                    if played then state.camp_sound_active = true; end
+                    return played and 'Played Camps.wav.' or 'Camp sound test failed.';
+                end);
                 imgui.EndTabItem();
             end
             imgui.EndTabBar();
@@ -2642,11 +3277,33 @@ ashita.events.register('command', 'HorizonScout_Command', function(e)
     show_help('Unknown command: ' .. command);
 end);
 
+ashita.events.register('packet_in', 'HorizonScout_CampDeath', function(e)
+    local changed = camp_observer.packet(state.settings, e, tick_seconds(), os.time());
+    if changed > 0 then
+        settings.save();
+        -- Per-camp observer details replace the ambiguous persistent global message.
+    end
+end);
+
 ashita.events.register('d3d_present', 'HorizonScout_Present', function()
     local now = tick_seconds();
     if state.last_scan_at == 0 or (now - state.last_scan_at) >= scan_interval_seconds then
         state.last_scan_at = now;
+        camp_observer.observe(state.settings, now);
+        local camp_messages, camps_changed, camp_due = camps.advance(state.settings, os.time());
+        camps.queue_sound(state.settings, camp_due, now);
+        if camps_changed then settings.save(); end
+        if #camp_messages > 0 then
+            local summary = #camp_messages == 1 and camp_messages[1]
+                or ('%d estimated windows reached; see the Camps tab.'):fmt(#camp_messages);
+            notification_message('Camps: ' .. summary, true);
+        end
         scan_entities();
+        state.last_radar_refresh_at = now;
+    elseif state.last_radar_refresh_at == 0
+        or (now - state.last_radar_refresh_at) >= radar_position_refresh_interval_seconds then
+        state.last_radar_refresh_at = now;
+        refresh_radar_positions();
     end
     state.map_position = map_grid.get_position();
     update_display();
@@ -2657,6 +3314,12 @@ ashita.events.register('d3d_present', 'HorizonScout_Present', function()
         state.settings.range
     );
     sound_player.tick();
+    camps.play_pending(state.settings, now, sound_player.is_busy(), function()
+        if state.settings.sound_volume_percent <= 0 then return false; end
+        local played = play_alert_sound(camps_sound_path, 'camp window alert', state.settings.sound_volume_percent);
+        if played then state.camp_sound_active = true; end
+        return played;
+    end);
     draw_settings_ui();
 end);
 
