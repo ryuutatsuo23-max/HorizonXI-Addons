@@ -21,7 +21,7 @@ Only published main-branch source and tagged history are published here. Other r
 
 ## Releases and tooling
 
-GitHub issues, pull requests, release pages, and binary release attachments remain in the original repositories. They are not Git history and were not migrated. The original repositories remain intact and unarchived. There is no automatic synchronization between them and this collection.
+GitHub issues, pull requests, release pages, and binary release attachments remain in the original repositories. They are not Git history and were not migrated. The original repositories were archived on 2026-09-20 after migration notices and links to this collection were added. Their existing releases and downloads remain available. There is no automatic synchronization between them and this collection.
 
 No source repository contains a tracked `.github` workflow or submodule requiring migration. Existing per-addon development files are preserved. Run tools from their respective addon folders and review assumptions about Git-root paths before using them to publish future releases.
 
