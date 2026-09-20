@@ -1,0 +1,2 @@
+# Offline tests only; not needed to use the addon.
+lupa==2.8
