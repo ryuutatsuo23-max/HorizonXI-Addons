@@ -1,0 +1,157 @@
+local blue_magic_data = {};
+
+-- HorizonXI Wiki Category:Blue Magic, Levels 1-50 and 51-75 tables,
+-- reviewed 2026-09-08. The source marks the spell list as needing
+-- verification, so inclusion means wiki-listed rather than confirmed
+-- server availability. Learning monster and zone data is deliberately
+-- excluded until a Horizon-specific source can be verified.
+local source_url = 'https://horizonffxi.wiki/Category:Blue_Magic';
+
+-- { resource id, Horizon learn level, display name, spell type, set trait,
+--   optional Ashita resource name }
+local spells = {
+    { 577, 1, 'Foot Kick', 'Slashing', 'Lizard Killer' },
+    { 549, 1, 'Pollen', 'Light-based', 'Resist Sleep' },
+    { 524, 1, 'Sandspin', 'Earth-based', 'None' },
+    { 551, 4, 'Power Attack', 'Blunt', 'Plantoid Killer' },
+    { 597, 4, 'Sprout Smack', 'Blunt', 'Beast Killer' },
+    { 603, 4, 'Wild Oats', 'Piercing', 'Beast Killer' },
+    { 547, 8, 'Cocoon', 'Earth-based', 'None' },
+    { 517, 8, 'Metallic Body', 'Earth-based', 'Conserve MP' },
+    { 599, 8, 'Queasyshroom', 'Ranged', 'None' },
+    { 620, 12, 'Battle Dance', 'Slashing', 'Attack Bonus' },
+    { 638, 12, 'Feather Storm', 'Ranged', 'Rapid Shot' },
+    { 623, 12, 'Head Butt', 'Blunt', 'None' },
+    { 581, 16, 'Healing Breeze', 'Wind-based', 'Auto Regen' },
+    { 567, 16, 'Helldive', 'Blunt', 'None' },
+    { 584, 16, 'Sheep Song', 'Light-based', 'Auto Regen' },
+    { 618, 18, 'Blastbomb', 'Fire-based', 'Magic Attack Bonus' },
+    { 529, 18, 'Bludgeon', 'Blunt', 'Undead Killer' },
+    { 544, 18, 'Cursed Sphere', 'Water-based', 'Magic Attack Bonus' },
+    { 570, 20, 'Blood Drain', 'Dark-based', 'Conserve MP' },
+    { 587, 20, 'Claw Cyclone', 'Slashing', 'Lizard Killer' },
+    { 536, 22, 'Poison Breath', 'Water-based', 'Clear Mind' },
+    { 598, 24, 'Soporific', 'Dark-based', 'Clear Mind' },
+    { 519, 26, 'Screwdriver', 'Piercing', 'Evasion Bonus' },
+    { 626, 28, 'Bomb Toss', 'Fire-based', 'Magic Accuracy' },
+    { 667, 28, 'Vanity Dive', 'Slashing', 'Accuracy Bonus' },
+    { 622, 30, 'Grand Slam', 'Blunt', 'Defense Bonus' },
+    { 578, 30, 'Wild Carrot', 'Light-based', 'Resist Sleep' },
+    { 582, 32, 'Chaotic Eye', 'Wind-based', 'Conserve MP' },
+    { 572, 32, 'Sound Blast', 'Fire-based', 'Magic Attack Bonus' },
+    { 522, 34, 'Death Ray', 'Dark-based', 'None' },
+    { 677, 34, 'Empty Thrash', 'Slashing', 'Max HP Boost' },
+    { 527, 34, 'Smite of Rage', 'Slashing', 'Undead Killer' },
+    { 542, 36, 'Digest', 'Dark-based', 'Conserve MP' },
+    { 596, 36, 'Pinecone Bomb', 'Ranged', 'None' },
+    { 592, 38, 'Blank Gaze', 'Light-based', 'Magic Attack Bonus' },
+    { 569, 38, 'Jet Stream', 'Blunt', 'Rapid Shot' },
+    { 679, 38, 'Occultation', 'Wind-based', 'Evasion Bonus' },
+    { 594, 38, 'Uppercut', 'Blunt', 'Attack Bonus' },
+    { 534, 40, 'Mysterious Light', 'Wind-based', 'Max MP Boost' },
+    { 539, 40, 'Terror Touch', 'Hand-to-Hand', 'Defense Bonus' },
+    { 671, 42, 'Auroral Drape', 'Wind-based', 'Fast Cast' },
+    { 521, 42, 'MP Drainkiss', 'Dark-based', 'None' },
+    { 513, 42, 'Venom Shell', 'Water-based', 'Clear Mind' },
+    { 532, 44, 'Blitzstrahl', 'Thunder-based', 'Magic Accuracy' },
+    { 543, 44, 'Mandibular Bite', 'Slashing', 'Plantoid Killer' },
+    { 537, 44, 'Stinking Gas', 'Wind-based', 'Auto Refresh' },
+    { 606, 46, 'Awful Eye', 'Water-based', 'Clear Mind' },
+    { 605, 46, 'Geist Wall', 'Dark-based', 'Auto Refresh' },
+    { 555, 46, 'Magnetite Cloud', 'Earth-based', 'Magic Defense Bonus' },
+    { 541, 48, 'Blood Saber', 'Dark-based', 'Auto Refresh' },
+    { 575, 48, 'Jettatura', 'Dark-based', 'None' },
+    { 530, 48, 'Refueling', 'Wind-based', 'None' },
+    { 545, 48, 'Sickle Slash', 'Hand-to-Hand', 'Store TP' },
+    { 561, 50, 'Frightful Roar', 'Wind-based', 'Auto Refresh' },
+    { 531, 50, 'Ice Break', 'Ice-based', 'Magic Defense Bonus' },
+    { 533, 50, 'Self-Destruct', 'Fire-based', 'Auto Refresh' },
+    { 535, 52, 'Cold Wave', 'Ice-based', 'Auto Refresh' },
+    { 548, 52, 'Filamented Hold', 'Earth-based', 'Clear Mind' },
+    { 563, 54, 'Hecatomb Wave', 'Wind-based', 'Max MP Boost' },
+    { 673, 54, 'Quadratic Continuum', 'Piercing', 'Defense Bonus', 'Quad. Continuum' },
+    { 565, 54, 'Radiant Breath', 'Light-based', 'None' },
+    { 574, 56, 'Feather Barrier', 'Wind-based', 'Resist Gravity' },
+    { 681, 56, 'Winds of Promyvion', 'Light-based', 'Auto Refresh', 'Winds of Promy.' },
+    { 629, 58, 'Flying Hip Press', 'Wind-based', 'Max HP Boost' },
+    { 634, 58, 'Light of Penance', 'Light-based', 'Auto Refresh' },
+    { 593, 58, 'Magic Fruit', 'Light-based', 'Resist Sleep' },
+    { 554, 60, 'Death Scissors', 'Slashing', 'Attack Bonus' },
+    { 589, 60, 'Dimensional Death', 'Hand-to-Hand', 'Accuracy Bonus' },
+    { 604, 61, 'Bad Breath', 'Earth-based', 'Fast Cast' },
+    { 557, 61, 'Eyes On Me', 'Dark-based', 'Magic Attack Bonus' },
+    { 515, 61, 'Maelstrom', 'Water-based', 'Clear Mind' },
+    { 595, 62, '1000 Needles', 'Light-based', 'Beast Killer' },
+    { 564, 62, 'Body Slam', 'Blunt', 'Max HP Boost' },
+    { 538, 62, 'Memento Mori', 'Ice-based', 'Magic Attack Bonus' },
+    { 560, 63, 'Frenetic Rip', 'Blunt', 'Accuracy Bonus' },
+    { 628, 63, 'Frypan', 'Blunt', 'Max HP Boost' },
+    { 631, 63, 'Hydro Shot', 'Hand-to-Hand', 'Rapid Shot' },
+    { 540, 63, 'Spinal Cleave', 'Slashing', 'Attack Bonus' },
+    { 573, 64, 'Feather Tickle', 'Wind-based', 'Clear Mind' },
+    { 579, 64, 'Voracious Trunk', 'Wind-based', 'Auto Refresh' },
+    { 576, 64, 'Yawn', 'Light-based', 'Resist Sleep' },
+    { 610, 65, 'Infrasonics', 'Ice-based', 'None' },
+    { 647, 65, 'Zephyr Mantle', 'Wind-based', 'Conserve MP' },
+    { 608, 66, 'Frost Breath', 'Ice-based', 'Conserve MP' },
+    { 621, 66, 'Sandspray', 'Dark-based', 'Clear Mind' },
+    { 632, 67, 'Diamondhide', 'Earth-based', 'None' },
+    { 633, 67, 'Enervation', 'Dark-based', 'Counter' },
+    { 637, 68, 'Firespit', 'Fire-based', 'Conserve MP' },
+    { 636, 68, 'Warm-Up', 'Earth-based', 'Clear Mind' },
+    { 641, 69, 'Hysteric Barrage', 'Hand-to-Hand', 'Evasion Bonus' },
+    { 640, 69, 'Tail Slap', 'Hand-to-Hand', 'Store TP' },
+    { 642, 70, 'Amplification', 'Water-based', 'None' },
+    { 643, 70, 'Cannonball', 'Hand-to-Hand', 'None' },
+    { 591, 71, 'Heat Breath', 'Fire-based', 'Magic Attack Bonus' },
+    { 588, 71, 'Lowing', 'Fire-based', 'Clear Mind' },
+    { 611, 72, 'Disseverment', 'Piercing', 'Accuracy Bonus' },
+    { 614, 72, 'Saline Coat', 'Light-based', 'Defense Bonus' },
+    { 644, 73, 'Mind Blast', 'Thunder-based', 'Clear Mind' },
+    { 585, 73, 'Ram Charge', 'Blunt', 'Lizard Killer' },
+    { 616, 73, 'Temporal Shift', 'Thunder-based', 'Attack Bonus' },
+    { 612, 74, 'Actinic Burst', 'Light-based', 'Auto Refresh' },
+    { 646, 74, 'Magic Hammer', 'Light-based', 'Magic Attack Bonus' },
+    { 613, 74, 'Reactor Cool', 'Ice-based', 'Magic Attack Bonus' },
+    { 645, 75, 'Exuviation', 'Fire-based', 'Resist Sleep' },
+    { 615, 75, 'Plasma Charge', 'Thunder-based', 'Auto Refresh' },
+    { 617, 75, 'Vertical Cleave', 'Slashing', 'Defense Bonus' },
+};
+
+blue_magic_data.views = {
+    { id = 'all', name = 'All Levels' },
+    { id = 'levels_1_20', name = 'Levels 1-20', blue_level_band = 'levels_1_20' },
+    { id = 'levels_21_40', name = 'Levels 21-40', blue_level_band = 'levels_21_40' },
+    { id = 'levels_41_60', name = 'Levels 41-60', blue_level_band = 'levels_41_60' },
+    { id = 'levels_61_75', name = 'Levels 61-75', blue_level_band = 'levels_61_75' },
+};
+
+local function level_band(level)
+    if level <= 20 then return 'levels_1_20' end;
+    if level <= 40 then return 'levels_21_40' end;
+    if level <= 60 then return 'levels_41_60' end;
+    return 'levels_61_75';
+end
+
+blue_magic_data.entries = {};
+for _, spell in ipairs(spells) do
+    table.insert(blue_magic_data.entries, {
+        id = ('blue_magic.%d'):fmt(spell[1]),
+        kind = 'spell',
+        blue_magic = true,
+        name = spell[3],
+        resource_name = spell[6] or spell[3],
+        resource_id = spell[1],
+        skill_id = 43,
+        learn_level = spell[2],
+        blue_level_band = level_band(spell[2]),
+        spell_type = spell[4],
+        set_trait = spell[5],
+        availability = 'wiki_listed',
+        description = ('Blue Magic learned at level %d; %s; set trait: %s.')
+            :fmt(spell[2], spell[4], spell[5]),
+        source_url = source_url,
+    });
+end
+
+return blue_magic_data;

@@ -1,6 +1,6 @@
 # Sources and evidence boundaries
 
-Profile snapshot: `2026-09-04-foundation.17`.
+Profile snapshot: `2026-09-08-foundation.26`.
 
 ## Upstream inspiration
 
@@ -46,6 +46,16 @@ Version 0.5.0 adds 116 ownership rows from the current Horizon job lists:
 These additions bring `All Magic` to 316 unique ownership entries. Summoning uses client skill ID 38, Ninjutsu 39, and Songs 40. The displayed `Lightning Threnody` row validates against the client's shortened English resource name `Ltng. Threnody`. Singing, String Instrument, and Wind Instrument are numeric skill values—not additional song ownership lists—and appear only in the separate live `Skill Levels` view.
 
 The job-level text beside each ownership row comes from the same locally installed client spell resource used to validate its ID, English name, and magic-skill ID. Only WAR through SCH and requirements from level 1 through 75 are displayed. This is client metadata for the private test installation, not a new claim that every listed spell is currently obtainable on HorizonXI.
+
+## Blue Magic (0.26.0 / foundation.26)
+
+The Blue Magic subtab contains the 106 unique level-1-to-75 rows in the HorizonXI Wiki's current [Blue Magic category table](https://horizonffxi.wiki/Category:Blue_Magic), reviewed 2026-09-08. The table itself is marked as needing verification, so `wiki_listed` remains a source-presence label rather than a claim that every spell is obtainable on the current server build.
+
+Each row uses an explicit client spell ID and validates its English resource name and Blue Magic skill ID 43 before calling `IPlayer:HasSpell`. `IPlayer:HasSpellData` must also report loaded data; missing or mismatched client data fails closed to `UNKNOWN`. No new packet reader, character cache, or manual ownership state is added.
+
+The displayed learn levels, attack/type labels, and set traits come from the HorizonXI table rather than the retail client's `LevelRequired` field. This matters for Horizon-specific level adjustments such as Vanity Dive, Empty Thrash, Occultation, Auroral Drape, Quadratic Continuum, and Winds of Promyvion. The two client-abbreviated English names `Quad. Continuum` and `Winds of Promy.` are retained only for runtime resource validation; the UI uses the full source names.
+
+The older broad spell list and community location datasets were not treated as authoritative learning-location evidence. Exact monsters and zones remain excluded because the Horizon category is incomplete and many individual spell pages are missing. Asuran Claws, Corrosive Ooze, Regurgitation, Seedspray, Spiral Spin, Sub-zero Smash, and Triumphant Roar are absent from the current category table and are therefore not inferred into this catalog.
 
 ## Numeric skill levels
 
@@ -215,6 +225,88 @@ The [Windower `0x056` definitions](https://github.com/Windower/Lua/blob/dev/addo
 Promathia has no reviewed completed-missions packet in this layout. Its exact current row can display `Current`, including reviewed multi-part IDs, but all other Promathia rows remain `UNKNOWN` and outside the progress denominator. The other five storylines require their current and completion halves before saving a per-character version-1 cache. Nation current state is gated by allegiance, explicit completion bits remain visible across allegiance changes, expansion-declined flags prevent mission-zero false positives, and unexpected current IDs remain unknown. Existing Bastok cache format and behavior are retained.
 
 Offline validation passed 52 Python tests, 19 Lua fixture files, parsing all 25 runtime files as Lua 5.1, and the whitespace check. Synthetic fixtures cover every packet slice, both packet orders, completion-bit boundaries, nation gates, travel/branch aliases, expansion-declined flags, malformed caches, cache fallback, character isolation, and Promathia's current-only denominator behavior. In-game verification remains required for the five newly added storylines.
+
+## Mission detail enrichment (foundation.21)
+
+The 2026-09-07 detail pass reads the `Mission Header` on every linked San d'Oria, Windurst, Rise of the Zilart, Chains of Promathia, and Treasures of Aht Urhgan mission page. It adds source-listed start NPCs or targets, start locations, grid coordinates, item/level requirements, previous missions, and mission-page rewards where the category table had no reward. Existing category-table rewards remain canonical because their reviewed formatting is more consistent.
+
+Blank source fields are not guessed. A blank start with an explicit previous mission displays `No separate start listed` and `Continues from previous mission`; source values such as `None`, `N/A`, or an omitted coordinate remain explicit. Nation gate-guard starts say that coordinates vary by guard. The shared Magicite walkthrough explicitly supplies Nelcabrit at G-9 for San d'Oria and Pakh Jatalfih at I-9 for Windurst. The pass also corrects the category parser to retain the complete `Ro'Maeve(Mission)` URL and to choose `Ark Angels`, rather than its optional Divine Might link, for Zilart mission 14.
+
+`dev/mission_catalog_import.py` still generates all five catalogs deterministically from ignored `.firecrawl` category and MediaWiki API caches; `dev/mission_wikitext.py` performs conservative offline parsing. HXIChecklist does not access the wiki at runtime. Mission state, packet handling, cache formats, IDs, filters, and completion rules are unchanged.
+
+Offline validation passed 56 Python tests, 20 Lua fixture files, Lua parsing for all 26 runtime files, deterministic catalog regeneration, and the whitespace check. In-game layout and source-link verification remain pending.
+
+## Conservative quest-gap resolution (foundation.22)
+
+The 2026-09-07 follow-up refreshed the seven public HorizonXI quest categories for [Bastok](https://horizonffxi.wiki/Category:Bastok_Quests), [San d'Oria](https://horizonffxi.wiki/Category:San_d%27Oria_Quests), [Windurst](https://horizonffxi.wiki/Category:Windurst_Quests), [Jeuno](https://horizonffxi.wiki/Category:Jeuno_Quests), [Other Areas](https://horizonffxi.wiki/Category:Other_Quests), [Outlands](https://horizonffxi.wiki/Category:Outlands_Quests), and [Aht Urhgan](https://horizonffxi.wiki/Category:Aht_Urhgan_Quests), plus the raw MediaWiki wikitext for every existing Source target. The linked Quest Headers resolve 20 category-table `Not listed` fame values and 10 previously absent start coordinates. The three category-listed Other Areas rows still marked `Verification Needed` remain Unknown, as do 104 unmatched client-log rows. No row is promoted from Unknown merely because its name resembles later-era content.
+
+`dev/quest_wikitext.py` now conservatively reads explicit `Start` and `Start Location` fields, including the wiki's Location template. `dev/quest_gap_import.py` emits only absent NPC/location/coordinate fields and exact numeric fame values supplied by a linked Quest Header. It never replaces populated fields, explicit Unknown values, availability, quest IDs, indices, ordering, tracking state, or save data. A literal missing-coordinate marker is retained as `N/A`; omitted facts stay omitted rather than becoming `None`.
+
+All refreshed evidence remains in ignored `.firecrawl/current-*-quests.md` and `.firecrawl/current-*-quest-api-*.md` files. The addon does not access the wiki at runtime. Parser fixtures cover explicit NPC/location/coordinate extraction and regression checks pin representative fame/coordinate additions plus the unchanged total of 107 Unknown availability rows. In-game display verification remains required.
+
+## Job unlocks (0.23.0 / foundation.23)
+
+The [HorizonXI Jobs category](https://horizonffxi.wiki/Category:Jobs) separates the six starting jobs from twelve advanced jobs available through the original game, Rise of the Zilart, and Treasures of Aht Urhgan. This scope therefore includes PLD, DRK, BST, BRD, RNG, SMN, SAM, NIN, DRG, BLU, COR, and PUP. Later-era DNC and SCH are excluded rather than presented as Horizon-era unlocks.
+
+Unlock state is read directly through Ashita v4's documented player interface and the local official SDK contract: `IPlayer:GetJobLevel(job_id)`. A level of at least 1 means the advanced job is unlocked; zero means locked. The reader first requires a valid WAR level because every character begins with WAR: if the login is not ready, WAR is zero, or a job-level call fails, affected rows remain `UNKNOWN` instead of marking every job locked. No quest bit, mission order, cache, or manual mark is used to infer an unlock. The [Ashita IPlayer documentation](https://wiki.ashitaxi.com/doku.php?id=addons:adk:iplayer) is the public interface reference.
+
+Each row reuses the already reviewed unlock quest's Source URL, NPC, location, coordinates, rewards, and prerequisites from the existing quest catalogs. Those fields are expandable reference information only and are not evaluated against the character. Era views, existing visibility/search filters, draggable columns, and visible-tab TSV export are supported. The twelve stable `job_unlock.<abbr>` IDs bring the profile total to 1,195 entries without changing character settings or save formats.
+
+Offline validation passed 59 Python tests, 22 Lua fixture files, parsing all 27 runtime files as Lua 5.1, and the whitespace check. The new synthetic fixtures cover all twelve job IDs, era groupings, unlocked and locked levels, login/unloaded-data failure, an individual failed job read, filtering, expansion, export, and the absence of quest-log inference. In-game comparison against a real character remains required.
+
+## Quest-unlocked weapon skills (0.24.0 / foundation.24)
+
+The current HorizonXI [Weapon Skills category](https://horizonffxi.wiki/Category:Weapon_Skills) lists one level-75-era quest unlock for each of fourteen weapon types: Asuran Fists, Evisceration, Savage Blade, Ground Strike, Decimation, Steel Cyclone, Spiral Hell, Impulse Drive, Blade: Ku, Tachi: Kasha, Black Halo, Retribution, Empyreal Arrow, and Detonator. Each row reuses the corresponding reviewed quest's stable area/index mapping, NPC, location, coordinates, prerequisites, reward summary, and Source link. Ordinary skill-level weapon skills, equipment-bound relic skills, mythic unlocks, and later-era skills are outside this bounded checklist.
+
+Ashita v4 exposes `IPlayer:HasWeaponSkill(id)`, but that is not a permanent cross-job ownership record. The server's [0x00AC command-data description](https://github.com/atom0s/XiPackets/blob/ebe2216a991ff88254ad600cc5bae8e3d9e80306/world/server/0x00AC/README.md) documents the buffer as the client's unlocked **and available** commands related to the current main/support job; equipment can further affect some weapon skills. HXIChecklist therefore does not use `HasWeaponSkill` to mark completion. It reads the already validated current/completed bit for the unlock quest: completed is `Unlocked`, current is `In progress`, and neither bit is `Locked`. Missing quest-log/cache evidence stays `UNKNOWN`.
+
+These fourteen rows intentionally mirror quests already present under Quests > Type: WS. The category is marked non-additive, so its own 14-row progress summary remains useful while the profile remains at 1,195 deduplicated goals and the header's known-goal denominator stays unchanged for the same character state. No packet reader, cache schema, setting, manual mark, or user data is added.
+
+Offline validation passed 60 Python tests, 24 Lua fixture files, parsing all 28 runtime files as Lua 5.1, and the whitespace check. Synthetic coverage pins every weapon-skill ID and quest mapping, completion/current/open states, non-duplicated global totals, weapon filters, expansion, draggable columns, visibility filters, and TSV export. In-game display and quest-state comparison remain required.
+
+## Access and travel unlocks (0.25.0 / foundation.25)
+
+This bounded category contains ten permanent Horizon-era travel key items: Airship Pass, Airship Pass for Kazham, Chocobo License, Boarding Permit, and the Holla, Dem, Mea, Vahzl, Yhoator, and Altepa gate crystals. The HorizonXI Wiki lists each under [Permanent Key Items](https://horizonffxi.wiki/Category:Permanent_Key_Items); individual pages provide the displayed acquisition summaries and travel purpose. The exact English resource names and numeric IDs 8, 9, 138, 352-357, and 781 are cross-checked against Windower/Resources `resources_data/key_items.lua` at commit [`67948a3ce609ac614e889002268470859be319d5`](https://github.com/Windower/Resources/blob/67948a3ce609ac614e889002268470859be319d5/resources_data/key_items.lua).
+
+Ownership reuses the existing passive `0x055` key-item reader and per-character cache already used by Maps. Runtime lookup verifies every numeric ID against Ashita's English key-item resource name before reading its bit. A missing packet group or name mismatch stays `UNKNOWN`; it is never treated as Locked. The category adds no packet request, action, new cache field, manual mark, or inference from quests and missions.
+
+Temporary mission keys, repeatable or consumed permits, and later-era Jugner, Pashhow, and Meriphataud gate crystals are excluded. The ten direct ownership goals count once in the main profile, bringing it to 1,205 deduplicated goals and 1,219 displayed catalog rows including the fourteen non-additive Weapon Skill mirrors. Travel Services and Gate Crystals views, search/status filters, draggable columns, Source links, and visible-tab TSV export are supported.
+
+Offline validation passed 63 Python tests, 26 Lua fixture files, parsing all 29 runtime files as Lua 5.1, and the whitespace check. Synthetic coverage pins the allowlist, resource IDs and names, grouping, direct key-item states, fail-closed name mismatch, compact two-level navigation, draggable rows, status/view filtering, and TSV output. In-game ownership and layout verification remain required.
+
+## Inventory expansions and magic navigation (0.27.0 / foundation.27)
+
+Reviewed 2026-09-08 using Firecrawl against the HorizonXI Wiki:
+
+- [Inventory](https://horizonffxi.wiki/Inventory): Gobbiebag I–VIII, capacities 35–70. The page explicitly documents the Horizon-specific extension to 70; IX/X are not added as milestones.
+- [Mog Safe](https://horizonffxi.wiki/Mog_Safe): upgrades to 60, 70, and 80 through the three Moogle quests. Acquisition text links to the source rather than choosing between conflicting fame values in existing quest references.
+- [Mog Locker](https://horizonffxi.wiki/Mog_Locker): initial 30 capacity and upgrades to 40–80; lease access is separate. Capacity does not prove an active lease or mission completion.
+
+The local official Ashita-v4beta SDK `IInventory.lua` documents `GetContainerCountMax`; official `invmon.lua` uses zero-based container IDs 0 (Inventory), 1 (Safe), and 4 (Locker). Runtime reads only this getter after login readiness and a valid base-inventory capacity. Zero, invalid, or failed reads remain Unknown. No packets, item contents, manual marks, or capacity cache are introduced. This API evidence and synthetic validation still require in-game comparison.
+
+Seventeen capacity rows count in overall progress. Eleven exact quest IDs (Gobbiebag I–VIII and the three Safe quests) are excluded only from the overall sum; their per-quest-area totals and actual log state remain intact. Unknown source metadata in existing quest rows is not rewritten from capacity. Furniture Storage, duplicate Safe/Satchel capacities, and unverified additional upgrades are excluded.
+
+The existing 316 magic rows are partitioned into 200 Spells, 76 Songs, 17 Summoning, and 23 Ninjutsu. All six spell subtabs and All have independent session-only level ranges. The minimum validated formatted job requirement is used for non-Blue magic; all job requirements remain displayed. Blue Magic keeps its sourced learn levels. Filters and exports use the same row-selection function.
+
+## Crafting and compact UI (0.28.0 / foundation.28)
+
+Firecrawl source review on 2026-09-08 used the Guild Test Items tables on these HorizonXI categories: [Fishing](https://horizonffxi.wiki/Category:Fishing#Guild_Test_Items), [Woodworking](https://horizonffxi.wiki/Category:Woodworking#Guild_Test_Items), [Smithing](https://horizonffxi.wiki/Category:Smithing#Guild_Test_Items), [Goldsmithing](https://horizonffxi.wiki/Category:Goldsmithing#Guild_Test_Items), [Clothcraft](https://horizonffxi.wiki/Category:Clothcraft#Guild_Test_Items), [Leathercraft](https://horizonffxi.wiki/Category:Leathercraft#Guild_Test_Items), [Bonecraft](https://horizonffxi.wiki/Category:Bonecraft#Guild_Test_Items), [Alchemy](https://horizonffxi.wiki/Category:Alchemy#Guild_Test_Items), and [Cooking](https://horizonffxi.wiki/Category:Cooking#Guild_Test_Items). Each provides nine promotion items, Recruit through Veteran, at skill 8–10 through 88–90. No recipe-completion state or permanent guild key items are included.
+
+The local official Ashita-v4beta SDK defines `craftskills_t` in Fishing-to-Cooking order and its SDK test calls `GetCraftSkill(0)`. `craftskill_t:GetSkill()` exposes integer skill bits `(Raw & 0x1FE0) >> 5`; values are not divided by ten. `GetRank()` exposes separate rank bits, with `CraftRank` mapping Amateur=0 through Veteran=9. Next test selection uses this actual rank, never a rank calculated from skill. A supported rank may remain visible if the skill read alone fails, and vice versa. Invalid/unsupported ranks have no inferred next test.
+
+Reads require login status 2 and successful getters; legitimate zero/Amateur values are retained. The SDK does not expose a dedicated craft-data-loaded flag in the reviewed interface, so first-login/zoning readiness needs in-game verification. Crafting is informational, excluded from profile totals and status filters, uses shared search for its table and TSV, and adds no saved fields or gameplay actions. Source-listed test levels are reference requirements, not confirmation of full eligibility.
+
+The blue header uses the actual addon version. Long profile/category explanations are hover-only, default text is softened, and status colors retain their meanings. Synthetic validation covers all 90 supported craft/rank combinations, zero values, independent read failures, logout, search/export, the compact header, and balanced text-style pushes/pops. Manual layout and skill/rank comparisons remain pending.
+
+## Permanent access expansion (0.29.0 / foundation.29)
+
+Reviewed with Firecrawl on 2026-09-08. Added eight items to Access & Travel (18 total), retaining the original ten IDs and view positions. The six Dynamis items are [Vial of Shrouded Sand](https://horizonffxi.wiki/Vial_of_Shrouded_Sand), [Hydra Corps Command Scepter](https://horizonffxi.wiki/Hydra_Corps_Command_Scepter), [Eyeglass](https://horizonffxi.wiki/Hydra_Corps_Eyeglass), [Lantern](https://horizonffxi.wiki/Hydra_Corps_Lantern), [Tactical Map](https://horizonffxi.wiki/Hydra_Corps_Tactical_Map), and [Insignia](https://horizonffxi.wiki/Hydra_Corps_Insignia). The city-clear items jointly gate Beaucedine; the Insignia is a Xarcabard prerequisite. No single row claims full entry eligibility. [Moongate Pass](https://horizonffxi.wiki/Moongate_Pass) and [Portal Charm](https://horizonffxi.wiki/Portal_Charm) provide permanent door access.
+
+The local Ashita-v3 bundled Windower `addons/findall/windower/key_items.lua` resource table identifies Portal Charm=195, Moongate Pass=485, the five Hydra items=486–490, and Vial=492, all categorized Permanent Key Items. The existing runtime reader validates each ID against the current client resource name before using incoming/cached key-item ownership. This combines explicit resource IDs with HorizonXI-specific relevance; no packet or tracking changes were made.
+
+Excluded: Hydra Battle Standard (491, no access requirement verified in this pass), the debug item (347), Prismatic Hourglass (no current HorizonXI page evidence), and later-era slivers. The [Limbus source](https://horizonffxi.wiki/Limbus) ties Sea access to CoP Chapter 8 and explicitly consumes Cosmo-Cleanse and the colored cards on entry. Accordingly no Sea or Limbus permanent-key proxy was invented. Mission tracking remains separate.
+
+Crafting, Inventory Expansions, and Skill Levels now inherit the same visible strong/light table-border colors as existing tables. Skill Levels is a three-column resizable table; its existing informational/export semantics remain unchanged. Offline tests cover new IDs/groups, resource-name rejection, group exports, Skill Levels including zero/unavailable values, and balanced global style state. Live rendering and key-item ownership comparison are still required.
 
 ## Maintenance rule
 

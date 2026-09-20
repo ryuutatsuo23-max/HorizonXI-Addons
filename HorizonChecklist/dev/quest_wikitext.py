@@ -89,14 +89,27 @@ def wiki_plain(value):
         parts = split_top(value[start+2:end-2])
         name = parts[0].lower().replace('_', ' ').strip()
         args = parts[1:]
-        if name in ('keyitem', 'key item') and not args:
+        named = {}
+        for arg in args:
+            if '=' in arg:
+                key, content = arg.split('=', 1)
+                named[key.strip().lower()] = content.strip()
+        if name == '!':
+            replacement = '|'
+        elif name in ('keyitem', 'key item') and not args:
             replacement = ''
         elif name in ('item tooltip', 'keyitem', 'key item') and args:
             replacement = wiki_plain(args[0])
         elif name in ('location', 'location tooltip', 'position') and args:
             positional = [arg for arg in args if '=' not in arg]
-            replacement = ' / '.join(wiki_plain(arg) for arg in positional)
-        elif name in ('changes', 'hxi', 'icon'):
+            if positional:
+                replacement = ' / '.join(wiki_plain(arg) for arg in positional)
+            else:
+                locations = [named.get('area') or named.get('zone')]
+                locations.extend(named.get('pos' + ('' if index == 1 else ' ' + str(index)))
+                                 for index in range(1, 5))
+                replacement = ' / '.join(wiki_plain(arg) for arg in locations if arg)
+        elif name in ('changes', 'hxi', 'icon', 'rare', 'exclusive'):
             replacement = ''
         else:
             raise UnverifiedField('Unsupported/uncertain template: ' + name)
@@ -148,6 +161,73 @@ def api_pages(paths):
     return pages
 
 
+def _location_templates(raw):
+    found, cursor = [], 0
+    pattern = re.compile(r'\{\{\s*(location(?:[ _]tooltip)?|position)\s*[|}]', re.I)
+    while True:
+        match = pattern.search(raw, cursor)
+        if not match:
+            return found
+        end = template_end(raw, match.start())
+        parts = split_top(raw[match.start() + 2:end - 2])
+        positional, named = [], {}
+        for part in parts[1:]:
+            if '=' in part:
+                key, value = part.split('=', 1)
+                named[key.strip().lower()] = value.strip()
+            else:
+                positional.append(part.strip())
+        found.append((parts[0].strip().lower().replace('_', ' '), positional, named))
+        cursor = end
+
+
+def wiki_location_details(raw):
+    """Return an explicit wiki location and coordinate without inferring either."""
+    if not raw or not raw.strip():
+        return None, None
+    try:
+        value = wiki_plain(raw)
+    except UnverifiedField:
+        return None, None
+    if not value:
+        return None, None
+    explicitly_unspecified = bool(re.search(r'\(\s*-\s*\)\s*$', value))
+    if explicitly_unspecified:
+        value = re.sub(r'\s*\(\s*-\s*\)\s*$', '', value)
+    coordinates = []
+    for name, positional, named in _location_templates(raw):
+        if name == 'location tooltip':
+            candidates = [named.get('pos')]
+            candidates.extend(named.get('pos ' + str(index)) for index in range(2, 5))
+        else:
+            candidates = positional[1:2]
+            candidates.extend(named.get('pos ' + str(index)) for index in range(2, 5))
+        for candidate in candidates:
+            if not candidate:
+                continue
+            try:
+                candidate = wiki_plain(candidate)
+            except UnverifiedField:
+                continue
+            if candidate in ('-', '—'):
+                explicitly_unspecified = True
+                continue
+            if candidate and candidate not in coordinates:
+                coordinates.append(candidate)
+    if not coordinates:
+        coordinates = re.findall(r'(?<![A-Za-z])([A-P]-\d{1,2})(?!\d)', value, re.I)
+    if coordinates:
+        coordinate_choice = '|'.join(re.escape(item) for item in coordinates)
+        value = re.sub(r'\s*\([^()]*(?:' + coordinate_choice + r')[^()]*\)', '', value, flags=re.I)
+    for coordinate in coordinates:
+        value = re.sub(r'\s*/\s*' + re.escape(coordinate) + r'\b', '', value, flags=re.I)
+    if explicitly_unspecified:
+        value = re.sub(r'\s*(?:;\s*|\(\s*)[-—]\s*\)?\s*$', '', value)
+    value = re.sub(r'\s*,\s*$', '', value).strip()
+    coordinate_text = ' / '.join(coordinates) if coordinates else ('N/A' if explicitly_unspecified else None)
+    return value or None, coordinate_text
+
+
 def wiki_details(wikitext, issues=None):
     fields = header_fields(wikitext)
     result, requirements, unverified = {}, [], []
@@ -183,4 +263,12 @@ def wiki_details(wikitext, issues=None):
         requirements.append('Some infobox requirements remain unverified; see Source')
     if requirements:
         result['prerequisites'] = '; '.join(requirements).rstrip('. ') + '. Source summary only; other conditions may apply.'
+    npc = clean('start') or clean('starting npc') or clean('start npc')
+    if npc:
+        result['npc'] = 'N/A' if npc.lower() in ('none', 'n/a') else npc
+    location, coordinates = wiki_location_details(fields.get('start location') or fields.get('location') or '')
+    if location:
+        result['quest_location'] = location
+    if coordinates:
+        result['npc_coordinates'] = coordinates
     return result

@@ -29,7 +29,7 @@ for _, entry in ipairs(data.entries) do
         error('Unexpected availability: ' .. entry.name);
     end
 end
-assert(counts.numeric == 32 and counts.not_listed == 47 and counts.unknown_fame == 67);
+assert(counts.numeric == 36 and counts.not_listed == 43 and counts.unknown_fame == 67);
 assert(counts.unknown == 63 and counts.listed == 83);
 assert(by_index[0].name == 'Crest of Davoi' and by_index[0].fame_level == 2);
 assert(by_index[27].name == 'The Gobbiebag Part I' and by_index[27].fame_level == 3);
@@ -37,6 +37,7 @@ assert(by_index[68].name == 'Ducal Hospitality');
 assert(by_index[84].name == 'Chameleon Capers' and by_index[84].fame_label == 'Unknown');
 assert(by_index[128].name == 'In Defiant Challenge');
 assert(by_index[132].name == 'Shattering Stars');
+assert(by_index[12].fame_level == 1 and by_index[12].fame_region == 'Jeuno');
 assert(by_index[186].name == 'The Flying Machine of Eld' and by_index[186].availability == 'unknown');
 assert(by_index[33] == nil and by_index[122] == nil and by_index[165] == nil);
 print('jeuno_quest_data fixture passed');

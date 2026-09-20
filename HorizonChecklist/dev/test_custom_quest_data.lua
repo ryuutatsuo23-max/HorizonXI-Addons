@@ -89,6 +89,13 @@ ashita = { time = { tick64 = function() return 1000 end }, events = {
 local function reload()
     callbacks = {};
     dofile('HXIChecklist/HXIChecklist.lua');
+    -- Startup is now hidden; explicitly open before exercising UI actions.
+    callbacks.command({ command = {
+        args = function() return {
+            { any = function(_, name) return name == '/hxichecklist' end },
+            'show',
+        } end,
+    } });
     callbacks.d3d_present();
 end
 reload();

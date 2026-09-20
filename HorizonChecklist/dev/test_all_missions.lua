@@ -17,6 +17,8 @@ for catalog_index, data in ipairs(catalogs) do
     for _, row in ipairs(data.entries) do
         assert(row.kind == 'mission' and row.mission_area and row.mission_number);
         assert(row.npc and row.npc_coordinates and row.rewards and row.prerequisites);
+        assert(row.npc ~= 'See Source' and row.quest_location ~= 'See Source'
+            and row.npc_coordinates ~= 'See Source');
         assert(row.source_url:find('https://horizonffxi.wiki/', 1, true) == 1);
         assert(not seen[row.id]); seen[row.id] = true;
     end
@@ -27,6 +29,17 @@ assert(promathia.entries[11].mission_number == '3-3');
 assert(promathia.entries[11].current_ids[1] == 325
     and promathia.entries[11].current_ids[#promathia.entries[11].current_ids] == 349);
 assert(zilart.entries[2].mission_index == 4 and zilart.entries[18].mission_index == 31);
+assert(zilart.entries[9].source_url == "https://horizonffxi.wiki/Ro%27Maeve(Mission)");
+assert(zilart.entries[14].name == 'Ark Angels'
+    and zilart.entries[14].source_url == 'https://horizonffxi.wiki/Ark_Angels');
+assert(sandoria.entries[10].npc == 'Nelcabrit, then the embassy back door'
+    and sandoria.entries[10].npc_coordinates == "G-9 (San d'Oria Embassy)");
+assert(windurst.entries[10].npc == 'Pakh Jatalfih, then the embassy back door'
+    and windurst.entries[10].npc_coordinates == 'I-9 (Windurst Embassy)');
+assert(ahturhgan.entries[2].npc == 'Naja Salaheem'
+    and ahturhgan.entries[2].npc_coordinates == 'I-10');
+assert(promathia.entries[2].npc == 'No separate start listed'
+    and promathia.entries[2].quest_location == 'Continues from previous mission');
 assert(ahturhgan.entries[1].description:find('planned Aht Urhgan', 1, true));
 
 local function packet(kind, options)

@@ -33,7 +33,7 @@ for _, entry in ipairs(data.entries) do
     end
 end
 
-assert(numeric_fame == 65 and not_listed == 22 and unknown_fame == 3);
+assert(numeric_fame == 74 and not_listed == 13 and unknown_fame == 3);
 assert(unknown_availability == 1);
 assert(unavailable == 4);
 assert(by_index[0].name == 'Hat in Hand');
@@ -42,6 +42,7 @@ assert(by_index[19].name == "The Postman Always K.O.'s Twice");
 assert(by_index[60].name == 'Paying Lip Service');
 assert(by_index[94].name == 'Lure of the Wildcat (Windurst)');
 assert(by_index[94].availability == 'wiki_listed');
+assert(by_index[25].fame_level == 1 and by_index[25].fame_region == 'Norg');
 assert(by_index[95].name == 'Babban Ny Mheillea');
 assert(by_index[95].availability == 'wiki_listed');
 assert(by_index[96].name == 'Trust: Windurst');

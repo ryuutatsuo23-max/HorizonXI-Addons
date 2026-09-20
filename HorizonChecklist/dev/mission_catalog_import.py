@@ -7,11 +7,25 @@ import re
 import sys
 from pathlib import Path
 
+from mission_wikitext import details, source_title
 from quest_detail_table import lua_string, plain
+from quest_wikitext import api_pages
 
 
 ROOT = Path(__file__).resolve().parents[1]
 WIKI = 'https://horizonffxi.wiki/'
+MISSION_START_OVERRIDES = {
+    ('sandoria', '4-1'): {
+        'npc': 'Nelcabrit, then the embassy back door',
+        'quest_location': "Ru'Lude Gardens",
+        'npc_coordinates': "G-9 (San d'Oria Embassy)",
+    },
+    ('windurst', '4-1'): {
+        'npc': 'Pakh Jatalfih, then the embassy back door',
+        'quest_location': "Ru'Lude Gardens",
+        'npc_coordinates': 'I-9 (Windurst Embassy)',
+    },
+}
 
 
 def cells(line):
@@ -19,8 +33,10 @@ def cells(line):
 
 
 def link(value):
-    matches = re.findall(r'\[([^\[\]]+)\]\((https://horizonffxi\.wiki/[^\s)]+)(?:\s+"[^"]*")?\)', value)
-    return matches[-1] if matches else (None, None)
+    matches = re.findall(
+        r'\[([^\[\]]+)\]\((https://horizonffxi\.wiki/(?:[^()\s]+|\([^()\s]*\))+)(?:\s+"[^"]*")?\)',
+        value)
+    return matches[0] if matches else (None, None)
 
 
 def reward(value):
@@ -63,6 +79,7 @@ def nation(path, area, nation_name):
         index = indices[len(rows)]
         row = common(area, index, number, name, plain(values[1]), values[2], url, previous)
         row['mission_rank'] = rank
+        row['mission_area_name'] = nation_name
         row['npc'] = 'Any %s Gate Guard' % nation_name
         row['quest_location'] = '%s gate-guard locations' % nation_name
         row['prerequisites'] = '%s allegiance; sufficient rank points may be needed. ' % nation_name + row['prerequisites']
@@ -70,6 +87,24 @@ def nation(path, area, nation_name):
         previous = name
     if len(rows) != 20:
         raise ValueError('%s: expected 20 nation missions, got %d' % (area, len(rows)))
+    return rows
+
+
+def add_details(rows, pages):
+    for row in rows:
+        title = source_title(row['source_url'])
+        wikitext = pages.get(title)
+        if not wikitext:
+            raise ValueError('%s: no cached source page for %s' % (row['id'], title))
+        page_details = details(wikitext, row)
+        # Category tables are the reviewed canonical reward source. Mission
+        # headers fill only category gaps so less-structured page markup cannot
+        # degrade an already readable reward summary.
+        if not row['rewards'].startswith('Not listed'):
+            page_details.pop('rewards', None)
+        row.update(page_details)
+        row.update(MISSION_START_OVERRIDES.get((row['mission_area'], row['mission_number']), {}))
+        row.pop('mission_area_name', None)
     return rows
 
 
@@ -176,6 +211,7 @@ def render(name, source_url, rows, views, reviewed_note):
         'local data = {};', '',
         '-- Packet IDs: XIchecklist 04baf17b2b0373883407a94ce0b6a72274a31ba6.',
         '-- Names/types/rewards: HorizonXI category table, reviewed 2026-09-07.',
+        '-- NPC/location/coordinates/prerequisites: linked Mission Header data, reviewed 2026-09-07.',
         '-- ' + reviewed_note,
         'data.source_url = ' + lua_string(source_url) + ';',
         'data.views = {',
@@ -205,28 +241,32 @@ def render(name, source_url, rows, views, reviewed_note):
 
 def main():
     cache = ROOT / '.firecrawl'
+    detail_pages = {
+        area: api_pages(sorted(cache.glob(area + '-mission-api-*.md')))
+        for area in ('sandoria', 'windurst', 'zilart', 'promathia', 'ahturhgan')
+    }
     nation_views = [{'id': 'all', 'name': 'All Ranks'}] + [
         {'id': 'rank_%d' % rank, 'name': 'Rank %d' % rank, 'mission_rank': rank}
         for rank in range(1, 10)
     ]
     jobs = [
         ('sandoria', 'Category:San_d%27Oria_Missions',
-         nation(cache / 'horizon-sandoria-missions.md', 'sandoria', "San d'Oria"), nation_views,
+         add_details(nation(cache / 'horizon-sandoria-missions.md', 'sandoria', "San d'Oria"), detail_pages['sandoria']), nation_views,
          'Journey Abroad stages 6-9 share row 5; only bit 5 completes that row.'),
         ('windurst', 'Category:Windurst_Missions',
-         nation(cache / 'horizon-windurst-missions.md', 'windurst', 'Windurst'), nation_views,
+         add_details(nation(cache / 'horizon-windurst-missions.md', 'windurst', 'Windurst'), detail_pages['windurst']), nation_views,
          'Three Kingdoms stages 6-9 share row 5; only bit 5 completes that row.'),
         ('zilart', 'Category:Rise_of_the_Zilart_Missions',
-         zilart(cache / 'horizon-zilart-missions.md'), [{'id': 'all', 'name': 'All Missions'}],
+         add_details(zilart(cache / 'horizon-zilart-missions.md'), detail_pages['zilart']), [{'id': 'all', 'name': 'All Missions'}],
          'Only explicit packet IDs and completion bits are used.'),
         ('promathia', 'Category:Chains_of_Promathia_Missions',
-         promathia(cache / 'horizon-promathia-missions.md'),
+         add_details(promathia(cache / 'horizon-promathia-missions.md'), detail_pages['promathia']),
          [{'id': 'all', 'name': 'All Chapters'}] + [
              {'id': 'chapter_%d' % chapter, 'name': 'Chapter %d' % chapter,
               'mission_group': 'Chapter %d' % chapter} for chapter in range(1, 9)],
          'Current-only tracking: no completion state is inferred.'),
         ('ahturhgan', 'Category:Treasures_of_Aht_Urhgan_Missions',
-         ahturhgan(cache / 'horizon-ahturhgan-missions.md'), [{'id': 'all', 'name': 'All Missions'}],
+         add_details(ahturhgan(cache / 'horizon-ahturhgan-missions.md'), detail_pages['ahturhgan']), [{'id': 'all', 'name': 'All Missions'}],
          'The source page labels this planned content; availability is not inferred.'),
     ]
     for name, page, rows, views, note in jobs:

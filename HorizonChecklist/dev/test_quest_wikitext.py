@@ -44,6 +44,18 @@ class QuestWikitextTests(unittest.TestCase):
         self.assertNotIn('Previous quest', row['prerequisites'])
         self.assertIn('other conditions may apply', row['prerequisites'])
 
+    def test_start_location_extracts_explicit_npc_zone_and_coordinates(self):
+        row = wiki_details(
+            "{{Quest Header|Start=[[Curilla]]|Start Location={{Location|Chateau d'Oraguille|I-9}}|Rewards=A}}"
+        )
+        self.assertEqual(row['npc'], 'Curilla')
+        self.assertEqual(row['quest_location'], "Chateau d'Oraguille")
+        self.assertEqual(row['npc_coordinates'], 'I-9')
+        self.assertEqual(
+            wiki_details('{{Quest Header|Start Location={{Location|Altar Room|-}}}}')['npc_coordinates'],
+            'N/A',
+        )
+
     def test_borghertz_template_preserves_optional_and_started(self):
         row = wiki_details('{{Borghertz Quest|job=Warrior|previous quest=[[Earlier]]|hands item=[[Gloves]]|hands key=[[Key]]|item 2=[[Legs]]}}')
         self.assertIn('Must have started Earlier', row['prerequisites'])

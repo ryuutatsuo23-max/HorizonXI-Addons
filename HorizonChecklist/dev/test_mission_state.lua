@@ -112,11 +112,19 @@ package.loaded.settings={load=function() active=copy(stored[character]); return 
     save=function() saves=saves+1; stored[character]=copy(active) end,
     register=function(_,_,fn) settings_callback=fn end};
 ashita={time={tick64=function() return 1000 end},events={register=function(event,_,fn) callbacks[event]=fn end}};
-local function reload() callbacks={}; dofile('HXIChecklist/HXIChecklist.lua'); callbacks.d3d_present() end;
+local function reload()
+    callbacks={}; dofile('HXIChecklist/HXIChecklist.lua');
+    -- Explicitly show the UI; saved visibility no longer opens it on startup.
+    callbacks.command({command={args=function() return {
+        {any=function(_, name) return name == '/hxichecklist' end}, 'show',
+    } end}});
+    callbacks.d3d_present();
+end;
 reload(); assert(shown.summary.unknown == 20);
-callbacks.packet_in(packet(0x00D0,nil,nil,{0})); assert(saves==0);
+local prior_saves=saves;
+callbacks.packet_in(packet(0x00D0,nil,nil,{0})); assert(saves==prior_saves);
 callbacks.packet_in(packet(0xFFFF,1,1)); callbacks.d3d_present();
-assert(saves==1 and stored.one.cached_state.bastok_missions.current==1);
+assert(saves==prior_saves+1 and stored.one.cached_state.bastok_missions.current==1);
 assert(stored.one.cached_state.sandoria_missions.current==1);
 assert(stored.one.cached_state.windurst_missions.current==1);
 assert(stored.one.cached_state.zilart_missions.current==0);

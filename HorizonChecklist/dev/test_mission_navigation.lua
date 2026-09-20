@@ -56,7 +56,7 @@ local function frame(interaction, width)
     local actions=setmetatable({open_source=function(url) seen.opened=url end},
         {__index=function() return function() error('Mission UI must not save, refresh, or mark completion') end end});
     ui.render({version='test',scope_note='test'},{summary=summary,categories=categories},{entries={}},settings,state,actions,imgui);
-    assert(table.concat(seen.tabs,'|')=='Magic Skills|Maps|Quests|Missions|Skill Levels');
+    assert(table.concat(seen.tabs,'|')=='Quests|Missions|Magic Skills|Crafting|Others/Key Items');
     return seen;
 end
 local first=frame();

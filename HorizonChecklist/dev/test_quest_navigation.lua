@@ -25,6 +25,8 @@ local categories = {
     category('outlands_quests', 'Outlands Quests', 'Norg'),
     category('ahturhgan_quests', 'Aht Urhgan Quests', 'Aht Urhgan Whitegate'),
     category('custom_quests', 'Horizon Custom Quests', 'Windurst Woods'),
+    { id = 'blue_magic', name = 'Blue Magic', summary = summary, entries = {},
+        views = { { id = 'all', name = 'All Levels' } } },
 };
 categories[7].entries[1].fame_region = 'Selbina';
 categories[8].entries[1].fame_region = 'Norg';
@@ -51,6 +53,10 @@ local function frame(area_choice, location_choice, active_tab, hover_fame, toggl
         BeginTabBar = function() return true end,
         BeginTabItem = function(name)
             seen.tabs[#seen.tabs + 1] = name;
+            if name == 'Spells' then
+                return active_tab == 'Magic Skills';
+            end
+            if name == 'Blue Magic' then return false end;
             return name == (active_tab or 'Quests');
         end,
         BeginCombo = function(label, preview)
@@ -110,7 +116,10 @@ local function frame(area_choice, location_choice, active_tab, hover_fame, toggl
     end });
     ui.render({ version = 'test', scope_note = 'test' }, snapshot, { entries = {} },
         settings, state, actions, imgui);
-    assert(table.concat(seen.tabs, '|') == 'Magic Skills|Maps|Quests|Missions|Skill Levels');
+    local expected_tabs = active_tab == 'Magic Skills'
+        and 'Quests|Missions|Magic Skills|Spells|All##spell-all|Blue Magic|Crafting|Others/Key Items'
+        or 'Quests|Missions|Magic Skills|Crafting|Others/Key Items';
+    assert(table.concat(seen.tabs, '|') == expected_tabs);
     return seen;
 end
 
@@ -124,7 +133,8 @@ local windurst = frame('windurst_quests', 'local');
 assert(state.selected_quest_area == 'windurst_quests');
 assert(state.selected_views.windurst_quests == 2);
 assert(windurst.columns['Windurst Fame']);
-assert(windurst.texts['Windurst Quests description']);
+assert(windurst.texts['Windurst Quests (?)']);
+assert(not windurst.texts['Windurst Quests description']);
 assert(windurst.tables['##windurst_questsRows']);
 local back = frame('bastok_quests');
 assert(back.combos['Location##bastok_quests'] == 'Bastok Markets');
@@ -170,7 +180,7 @@ assert(aht.tables['##ahturhgan_questsRows']);
 assert(frame('outlands_quests').combos['Location##outlands_quests'] == 'Norg');
 assert(frame('ahturhgan_quests').combos['Location##ahturhgan_quests'] == 'Aht Urhgan Whitegate');
 assert(frame('bastok_quests').texts['Fame 2'], 'Numeric fame remains unchanged.');
-assert(magic.combos['Category##magic_skills'] == 'All Magic');
+assert(magic.combos['Category##magic_skills'] == nil);
 assert(categories[3].views[1].name == 'All Quests');
 assert(snapshot.summary == summary and summary.known_total == 2);
 print('quest navigation fixture passed');
@@ -208,7 +218,7 @@ local filtered = frame('bastok_quests', 'all', nil, nil, nil, 'Artifact');
 assert(filtered.texts['First artifact'] and filtered.texts['Second artifact']);
 assert(filtered.texts['Outside artifact'] and not filtered.texts['Unlock']);
 assert(filtered.texts['Completed artifact']);
-assert(filtered.texts['1/2 known goals complete | 0 unknown | 0 unavailable']);
+assert(filtered.texts['1/2 complete | 0 unknown | 0 unavailable']);
 assert(state.selected_quest_types.bastok_quests == 'Artifact');
 local local_only = frame(nil, 'local');
 assert(local_only.texts['First artifact'] and not local_only.texts['Outside artifact']);

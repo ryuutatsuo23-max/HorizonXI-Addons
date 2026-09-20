@@ -204,6 +204,41 @@ local function direct_state(entry)
         end
     end
 
+    if entry.kind == 'inventory_expansion' then
+        return require('inventory_capacity').read(entry);
+    end
+
+    if entry.kind == 'job_unlock' then
+        if type(entry.job_id) ~= 'number'
+            or entry.job_id ~= math.floor(entry.job_id)
+            or entry.job_id < 7 or entry.job_id > 18 then
+            return 'unknown', 'The job identifier is invalid.';
+        end
+
+        -- Every character begins with WAR at level 1. Treat a zero or failed
+        -- WAR read as unloaded job data rather than marking every advanced job locked.
+        local base_ok, base_level = pcall(function()
+            return player:GetJobLevel(1);
+        end);
+        if not base_ok or type(base_level) ~= 'number' or base_level < 1 then
+            return 'unknown', 'Character job levels have not been received yet.';
+        end
+
+        local level_ok, level = pcall(function()
+            return player:GetJobLevel(entry.job_id);
+        end);
+        if not level_ok or type(level) ~= 'number' or level < 0 then
+            return 'unknown', 'Ashita could not read this character job level.';
+        end
+        level = math.floor(level);
+        if level >= 1 then
+            return 'complete', ('Ashita reports %s at level %d for this character.')
+                :fmt(entry.abbreviation or entry.name, level), level;
+        end
+        return 'missing', ('Ashita reports %s at level 0; the job is locked for this character.')
+            :fmt(entry.abbreviation or entry.name), 0;
+    end
+
     local identifier = resolve_resource_id(entry);
     if identifier == nil then
         return 'unknown', 'The client resource name could not be resolved.';
@@ -290,6 +325,27 @@ local function entry_state(entry, manual_completed)
             return 'unknown', storyline .. ' exposes current mission progress here, but no reviewed completion bitfield. Earlier missions are not inferred complete.';
         end
         return 'mission_not_current', 'No completion bit and not the current ' .. storyline .. ' mission in ' .. source .. '. This does not mean available to start; sequence/order are not used to infer completion.';
+    end
+
+    if entry.kind == 'weapon_skill' then
+        if type(entry.weapon_skill_id) ~= 'number'
+            or entry.weapon_skill_id ~= math.floor(entry.weapon_skill_id)
+            or entry.weapon_skill_id < 1 or entry.weapon_skill_id > 511 then
+            return 'unknown', 'The weapon-skill identifier is invalid.';
+        end
+        local automatic, automatic_note = quest_state.get_area(
+            entry.quest_area, entry.quest_index);
+        if automatic == nil then return 'unknown', automatic_note end;
+        local source = automatic.source == 'cache'
+            and 'the saved character quest cache'
+            or 'the incoming character quest log';
+        if automatic.completed then
+            return 'auto_complete', 'The unlock quest completion bit is set in ' .. source .. '.';
+        end
+        if automatic.current then
+            return 'auto_current', 'The unlock quest current bit is set in ' .. source .. '; the weapon skill is not yet counted as unlocked.';
+        end
+        return 'auto_not_logged', 'Neither unlock-quest bit is set in ' .. source .. '. This does not infer current-job weapon-skill availability.';
     end
 
     if entry.kind == 'manual' then
@@ -395,6 +451,7 @@ function catalog.build_snapshot(profile, manual_completed)
             mission_area = category.mission_area,
             mission_view_label = category.mission_view_label,
             mission_column_label = category.mission_column_label,
+            counts_toward_profile = category.counts_toward_profile,
             views = category.views,
             entries = {},
             summary = {
@@ -409,14 +466,51 @@ function catalog.build_snapshot(profile, manual_completed)
 
         for _, entry in ipairs(category.entries) do
             local item = clone_entry(entry);
-            item.state, item.state_note = entry_state(entry, manual_completed);
+            item.state, item.state_note, item.current_level = entry_state(entry, manual_completed);
             item.state_label = labels[item.state] or item.state;
+            if entry.kind == 'inventory_expansion' then
+                item.current_capacity = item.current_level;
+                item.current_level = nil;
+                if item.state == 'complete' then item.state_label = 'Reached'
+                elseif item.state == 'missing' then item.state_label = 'Not reached' end;
+            end
+            if entry.kind == 'job_unlock' then
+                if item.state == 'complete' then item.state_label = 'Unlocked'
+                elseif item.state == 'missing' then item.state_label = 'Locked' end;
+            end
+            if entry.kind == 'key_item' and entry.access_unlock == true then
+                if item.state == 'complete' then item.state_label = 'Unlocked'
+                elseif item.state == 'missing' then item.state_label = 'Locked' end;
+            end
+            if entry.kind == 'weapon_skill' then
+                if item.state == 'auto_complete' then item.state_label = 'Unlocked'
+                elseif item.state == 'auto_current' then item.state_label = 'In progress'
+                elseif item.state == 'auto_not_logged' then item.state_label = 'Locked' end;
+            end
+            if entry.blue_magic == true then
+                if item.state == 'complete' then item.state_label = 'Learned'
+                elseif item.state == 'missing' then item.state_label = 'Not learned' end;
+            end
             if entry.kind == 'spell' then
-                item.job_levels = resolve_spell_requirements(entry);
+                if entry.blue_magic == true then
+                    item.job_levels = ('BLU Lv.%d'):fmt(entry.learn_level);
+                else
+                    item.job_levels = resolve_spell_requirements(entry);
+                    for level_text in (item.job_levels or ''):gmatch('Lv%.(%d+)') do
+                        local level = tonumber(level_text);
+                        item.minimum_level = math.min(item.minimum_level or level, level);
+                    end
+                    if entry.magic_skill == 'songs' then
+                        -- Parse the validated formatter output, never character job level.
+                        item.song_level = tonumber((item.job_levels or ''):match('BRD Lv%.(%d+)'));
+                    end
+                end
             end
             table.insert(output_category.entries, item);
             add_to_summary(output_category.summary, item);
-            add_to_summary(snapshot.summary, item);
+            if category.counts_toward_profile ~= false and entry.counts_toward_profile ~= false then
+                add_to_summary(snapshot.summary, item);
+            end
         end
         table.insert(snapshot.categories, output_category);
     end

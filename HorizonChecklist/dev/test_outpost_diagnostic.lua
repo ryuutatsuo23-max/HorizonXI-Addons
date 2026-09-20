@@ -1,0 +1,36 @@
+local diagnostic = dofile('HXIChecklist/outpost_diagnostic.lua');
+local function packet()
+    local bytes = {};
+    for i = 1, 52 do bytes[i] = 0 end;
+    bytes[5], bytes[41], bytes[43], bytes[45] = 42, 7, 230, 99;
+    for i = 9, 40 do bytes[i] = i - 9 end;
+    local strings = {};
+    for i, value in ipairs(bytes) do strings[i] = string.char(value) end;
+    return { id = 0x034, data = table.concat(strings) };
+end
+local event = packet();
+assert(diagnostic.status(0) == 'Off');
+assert(not diagnostic.handle_packet(event, 0));
+diagnostic.arm(100);
+assert(not diagnostic.handle_packet({ id = 0x034, data = 'short' }, 101));
+assert(not diagnostic.handle_packet({ id = 0x034, data = event.data, injected = true }, 101));
+assert(not diagnostic.handle_packet({ id = 0x034, data = event.data, blocked = true }, 101));
+assert(not diagnostic.handle_packet({ id = 0x055, data = event.data }, 101));
+local original = event.data;
+assert(diagnostic.handle_packet(event, 102));
+assert(event.data == original and event.blocked == nil and event.data_modified == nil);
+assert(diagnostic.status(103) == 'Captured');
+assert(not diagnostic.handle_packet(event, 104));
+local lines = diagnostic.lines(104);
+assert(#lines == 4 and lines[1]:find('zone=230 menu=99 NPC=42 index=7', 1, true));
+assert(lines[2]:find('00 01 02 03', 1, true) and lines[3]:find('1C 1D 1E 1F', 1, true));
+diagnostic.handle_packet({ id = 0x00A }, 105);
+assert(diagnostic.status(106) == 'Off' and #diagnostic.lines(106) == 1);
+diagnostic.arm(200);
+assert(not diagnostic.handle_packet(event, 260) and diagnostic.status(260) == 'Off');
+diagnostic.arm(300);
+diagnostic.handle_packet({ id = 0x00B }, 301);
+assert(not diagnostic.handle_packet(event, 302));
+diagnostic.arm(400); diagnostic.clear();
+assert(diagnostic.status(401) == 'Off');
+print('One-shot diagnostic: default off, expiry, zoning, bounds, excluded packets, no event mutation passed');

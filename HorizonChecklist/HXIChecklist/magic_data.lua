@@ -427,4 +427,31 @@ table.sort(magic_data.entries, function(left, right)
     return left.name:lower() < right.name:lower();
 end);
 
+-- Keep the source catalog intact; each ownership row belongs to one UI category.
+magic_data.spell_entries = {};
+magic_data.song_entries = {};
+magic_data.summoning_entries = {};
+magic_data.ninjutsu_entries = {};
+magic_data.spell_views = {};
+for _, view in ipairs(magic_data.views) do
+    if view.magic_skill ~= 'songs' and view.magic_skill ~= 'summoning'
+        and view.magic_skill ~= 'ninjutsu' then
+        table.insert(magic_data.spell_views, view);
+    end
+end
+for _, entry in ipairs(magic_data.entries) do
+    local destination = entry.magic_skill == 'songs' and magic_data.song_entries
+        or entry.magic_skill == 'summoning' and magic_data.summoning_entries
+        or entry.magic_skill == 'ninjutsu' and magic_data.ninjutsu_entries
+        or magic_data.spell_entries;
+    table.insert(destination, entry);
+end
+magic_data.song_views = {
+    { id = 'all', name = 'All Levels' },
+    { id = 'levels_1_20', name = 'Levels 1-20', level_min = 1, level_max = 20 },
+    { id = 'levels_21_40', name = 'Levels 21-40', level_min = 21, level_max = 40 },
+    { id = 'levels_41_60', name = 'Levels 41-60', level_min = 41, level_max = 60 },
+    { id = 'levels_61_75', name = 'Levels 61-75', level_min = 61, level_max = 75 },
+};
+
 return magic_data;

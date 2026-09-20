@@ -27,7 +27,7 @@ for _, entry in ipairs(data.entries) do
         assert(entry.availability == 'unknown' and entry.fame_label == 'Unknown');
     else assert(entry.availability == 'wiki_listed') end;
 end
-assert(numeric == 23 and unlisted == 28 and unknown == 6);
+assert(numeric == 25 and unlisted == 26 and unknown == 6);
 assert(locations.Kazham == 14 and locations.Norg == 21 and locations.Rabao == 11);
 assert(locations.Unresolved == 6 and locations["The Shrine of Ru'Avitau"] == 2);
 assert(rows[163].name == 'Divine Might');
@@ -39,6 +39,7 @@ for _, element in ipairs({ {15, 'Fire'}, {148, 'Water'}, {197, 'Wind'} }) do
 end
 assert(rows[193].name == 'The Missing Piece' and rows[193].fame_level == 4);
 assert(rows[193].fame_note:find('individual HorizonXI quest page', 1, true));
+assert(rows[4].fame_level == 6 and rows[11].fame_level == 7);
 assert(rows[136].fame_level == 4 and rows[136].fame_region == 'Norg');
 assert(rows[1].source_url == data.source_url, 'Red links use their actual category evidence.');
 for _, index in ipairs({100, 101, 102, 103, 104, 165}) do

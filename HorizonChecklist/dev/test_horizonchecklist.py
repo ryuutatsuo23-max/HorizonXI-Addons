@@ -7,7 +7,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "HXIChecklist"
 PROFILE = PACKAGE / "horizon_profile.lua"
 MAGIC_DATA = PACKAGE / "magic_data.lua"
+BLUE_MAGIC_DATA = PACKAGE / "blue_magic_data.lua"
 MAP_DATA = PACKAGE / "map_data.lua"
+ACCESS_TRAVEL_DATA = PACKAGE / "access_travel_data.lua"
+JOB_UNLOCK_DATA = PACKAGE / "job_unlock_data.lua"
+WEAPON_SKILL_DATA = PACKAGE / "weapon_skill_data.lua"
 BASTOK_QUEST_DATA = PACKAGE / "bastok_quest_data.lua"
 SANDORIA_QUEST_DATA = PACKAGE / "sandoria_quest_data.lua"
 WINDURST_QUEST_DATA = PACKAGE / "windurst_quest_data.lua"
@@ -32,7 +36,11 @@ class HorizonChecklistSourceTests(unittest.TestCase):
     def setUpClass(cls):
         cls.profile = PROFILE.read_text(encoding="utf-8")
         cls.magic_data = MAGIC_DATA.read_text(encoding="utf-8")
+        cls.blue_magic_data = BLUE_MAGIC_DATA.read_text(encoding="utf-8")
         cls.map_data = MAP_DATA.read_text(encoding="utf-8")
+        cls.access_travel_data = ACCESS_TRAVEL_DATA.read_text(encoding="utf-8")
+        cls.job_unlock_data = JOB_UNLOCK_DATA.read_text(encoding="utf-8")
+        cls.weapon_skill_data = WEAPON_SKILL_DATA.read_text(encoding="utf-8")
         cls.bastok_quest_data = BASTOK_QUEST_DATA.read_text(encoding="utf-8")
         cls.sandoria_quest_data = SANDORIA_QUEST_DATA.read_text(encoding="utf-8")
         cls.windurst_quest_data = WINDURST_QUEST_DATA.read_text(encoding="utf-8")
@@ -55,12 +63,14 @@ class HorizonChecklistSourceTests(unittest.TestCase):
 
     def test_copy_ready_package_contains_only_runtime_lua(self):
         self.assertEqual(
-            {path.name for path in PACKAGE.iterdir()},
+            {path.name for path in PACKAGE.iterdir() if path.is_file()},
             {
                 "HXIChecklist.lua",
+                "access_travel_data.lua",
                 "mission_state.lua",
                 "sandoria_mission_data.lua",
                 "bastok_mission_data.lua",
+                "blue_magic_data.lua",
                 "windurst_mission_data.lua",
                 "zilart_mission_data.lua",
                 "promathia_mission_data.lua",
@@ -68,10 +78,17 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "ahturhgan_quest_data.lua",
                 "bastok_quest_data.lua",
                 "catalog.lua",
+                "outpost_diagnostic.lua",
+                "crafting.lua",
+                "crafting_data.lua",
                 "custom_quest_data.lua",
                 "checklist_ui.lua",
+                "exporter.lua",
                 "horizon_profile.lua",
+                "inventory_expansion_data.lua",
+                "inventory_capacity.lua",
                 "job_levels.lua",
+                "job_unlock_data.lua",
                 "jeuno_quest_data.lua",
                 "key_item_state.lua",
                 "magic_data.lua",
@@ -82,16 +99,27 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 "sandoria_quest_data.lua",
                 "skill_levels.lua",
                 "windurst_quest_data.lua",
+                "weapon_skill_data.lua",
             },
         )
 
     def test_expected_profile_size(self):
-        self.assertIn("addon.version = '0.21.0'", self.main)
-        self.assertIn("version = '2026-09-07-foundation.20'", self.profile)
+        self.assertIn("addon.version = '0.29.1'", self.main)
+        self.assertIn("addon.author = 'DragoHorse'", self.main)
+        self.assertIn("version = '2026-09-08-foundation.29'", self.profile)
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         self.assertEqual(len(spell_ids), 316)
+        blue_spell_ids = re.findall(
+            r"^\s*\{\s*(\d+),\s*\d+,", self.blue_magic_data, re.MULTILINE
+        )
+        self.assertEqual(len(blue_spell_ids), 106)
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',\s*(\d+),", self.map_data, re.MULTILINE)
         self.assertEqual(len(map_ids), 72)
+        self.assertEqual(self.access_travel_data.count("kind = 'key_item'"), 1)
+        self.assertEqual(
+            len(re.findall(r"^\s*\{\s*$", self.access_travel_data, re.MULTILINE)),
+            18,
+        )
         self.assertEqual(self.bastok_quest_data.count("kind = 'manual'"), 93)
         self.assertEqual(self.sandoria_quest_data.count("kind = 'manual'"), 82)
         self.assertEqual(self.windurst_quest_data.count("kind = 'manual'"), 90)
@@ -100,6 +128,71 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual(self.outlands_quest_data.count("kind = 'manual'"), 57)
         self.assertEqual(self.ahturhgan_quest_data.count("kind = 'manual'"), 72)
         self.assertEqual(self.custom_quest_data.count("tracking = 'manual'"), 4)
+        self.assertEqual(
+            len(re.findall(r"\{ '[a-z]+', \d+, '[A-Z]+',", self.job_unlock_data)),
+            12,
+        )
+        self.assertEqual(
+            len(re.findall(r"\{ '[a-z_]+', \d+, '[^']+', '[^']+',", self.weapon_skill_data)),
+            14,
+        )
+
+    def test_job_unlocks_use_direct_character_job_levels(self):
+        expected = {
+            "PLD": (7, "sandoria.quest.029"),
+            "DRK": (8, "bastok.quest.028"),
+            "BST": (9, "jeuno.quest.019"),
+            "BRD": (10, "jeuno.quest.020"),
+            "RNG": (11, "windurst.quest.031"),
+            "SAM": (12, "outlands.quest.129"),
+            "NIN": (13, "bastok.quest.060"),
+            "DRG": (14, "sandoria.quest.093"),
+            "SMN": (15, "windurst.quest.075"),
+            "BLU": (16, "ahturhgan.quest.005"),
+            "COR": (17, "ahturhgan.quest.006"),
+            "PUP": (18, "ahturhgan.quest.007"),
+        }
+        specs = re.findall(
+            r"\{ '[a-z]+', (\d+), '([A-Z]+)', '[^']+', '[^']+', '([^']+)' \}",
+            self.job_unlock_data,
+        )
+        self.assertEqual(
+            {abbr: (int(job_id), quest_id) for job_id, abbr, quest_id in specs},
+            expected,
+        )
+        self.assertIn("entry.kind == 'job_unlock'", self.catalog)
+        self.assertIn("player:GetJobLevel(entry.job_id)", self.catalog)
+        self.assertIn("player:GetJobLevel(1)", self.catalog)
+        self.assertNotIn("quest_state", self.job_unlock_data)
+        self.assertNotIn("mission_state", self.job_unlock_data)
+
+    def test_weapon_skills_use_reviewed_quest_logs_not_current_job_commands(self):
+        expected = {
+            "Asuran Fists": 9,
+            "Evisceration": 25,
+            "Savage Blade": 42,
+            "Ground Strike": 56,
+            "Decimation": 72,
+            "Steel Cyclone": 88,
+            "Spiral Hell": 104,
+            "Impulse Drive": 120,
+            "Blade: Ku": 136,
+            "Tachi: Kasha": 152,
+            "Black Halo": 169,
+            "Retribution": 184,
+            "Empyreal Arrow": 199,
+            "Detonator": 215,
+        }
+        specs = re.findall(
+            r"\{ '[a-z_]+', (\d+), '([^']+)', '[^']+', '[^']+' \}",
+            self.weapon_skill_data,
+        )
+        self.assertEqual({name: int(skill_id) for skill_id, name in specs}, expected)
+        self.assertIn("kind = 'weapon_skill'", self.weapon_skill_data)
+        self.assertIn("quest_state.get_area", self.catalog)
+        self.assertNotIn("player:HasWeaponSkill", self.catalog)
+        self.assertIn("counts_toward_profile = false", self.profile)
+        self.assertIn("category.counts_toward_profile ~= false", self.catalog)
 
     def test_magic_categories_and_counts(self):
         expected = {
@@ -135,7 +228,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
             "Songs",
         ):
             self.assertIn(f"name = '{name}'", self.magic_data)
-        self.assertIn("name = 'Magic Skills'", self.profile)
+        self.assertIn("name = 'Spells'", self.profile)
+        self.assertIn("name = 'Songs'", self.profile)
         self.assertNotIn("name = 'Starter Spells'", self.profile)
 
     def test_magic_rows_use_explicit_unique_client_ids(self):
@@ -158,6 +252,46 @@ class HorizonChecklistSourceTests(unittest.TestCase):
                 self.magic_data,
                 rf"\{{\s*\d+,\s*['\"]{re.escape(excluded)}['\"]",
             )
+
+    def test_blue_magic_catalog_is_live_sourced_and_level_bounded(self):
+        rows = re.findall(
+            r"^\s*\{\s*(\d+),\s*(\d+),\s*'([^']+)',\s*'([^']+)',\s*'([^']+)'",
+            self.blue_magic_data,
+            re.MULTILINE,
+        )
+        self.assertEqual(len(rows), 106)
+        ids = [int(row[0]) for row in rows]
+        levels = [int(row[1]) for row in rows]
+        names = [row[2] for row in rows]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual((min(levels), max(levels)), (1, 75))
+        self.assertIn(("667", "28", "Vanity Dive", "Slashing", "Accuracy Bonus"), rows)
+        self.assertIn(("673", "54", "Quadratic Continuum", "Piercing", "Defense Bonus"), rows)
+        self.assertIn(("681", "56", "Winds of Promyvion", "Light-based", "Auto Refresh"), rows)
+        self.assertIn("skill_id = 43", self.blue_magic_data)
+        self.assertIn("kind = 'spell'", self.blue_magic_data)
+        self.assertIn("blue_magic = true", self.blue_magic_data)
+        self.assertIn("source_url = source_url", self.blue_magic_data)
+        self.assertIn("name = 'Blue Magic'", self.profile)
+        self.assertIn("entry.blue_magic == true", self.catalog)
+        self.assertIn("item.state_label = 'Learned'", self.catalog)
+        self.assertIn("item.state_label = 'Not learned'", self.catalog)
+
+    def test_blue_magic_ui_has_nested_tab_resizable_rows_and_export(self):
+        self.assertIn("'##HXIChecklistMagicTabs'", self.ui)
+        magic_tabs = re.search(
+            r"local magic_category_order = \{(.*?)\};", self.ui, re.DOTALL
+        )[1]
+        self.assertEqual(
+            re.findall(r"id = '([^']+)', label = '([^']+)'", magic_tabs),
+            [("magic_skills", "Spells"), ("songs", "Songs"), ("summoning", "Summoning"), ("ninjutsu", "Ninjutsu"), ("blue_magic", "Blue Magic")],
+        )
+        self.assertIn("view.blue_level_band ~= nil", self.ui)
+        self.assertIn("imgui.BeginTable('##BlueMagicRows', 3, table_flags)", self.ui)
+        self.assertIn("render_blue_magic_entry(item, actions, imgui)", self.ui)
+        self.assertIn("'Level / Type / Trait'", self.ui)
+        self.assertIn("data.file_label = 'blue-magic-'", self.ui)
 
     def test_map_ids_are_explicit_and_stable(self):
         expected = {
@@ -213,6 +347,70 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertNotIn("map.uleguerand_range", self.map_data)
         self.assertNotIn("map.leujaoam_sanctum", self.map_data)
 
+    def test_access_and_travel_scope_uses_reviewed_permanent_key_items(self):
+        expected = {
+            "airship_pass": (8, "airship pass", "travel_services"),
+            "shrouded_sand": (492, "vial of shrouded sand", "dynamis"),
+            "hydra_scepter": (486, "Hydra Corps Command Scepter", "dynamis"),
+            "hydra_eyeglass": (487, "Hydra Corps Eyeglass", "dynamis"),
+            "hydra_lantern": (488, "Hydra Corps Lantern", "dynamis"),
+            "hydra_map": (489, "Hydra Corps Tactical Map", "dynamis"),
+            "hydra_insignia": (490, "Hydra Corps Insignia", "dynamis"),
+            "moongate_pass": (485, "moongate pass", "dungeon_access"),
+            "portal_charm": (195, "portal charm", "dungeon_access"),
+            "airship_pass_kazham": (9, "airship pass for Kazham", "travel_services"),
+            "chocobo_license": (138, "chocobo license", "travel_services"),
+            "boarding_permit": (781, "boarding permit", "travel_services"),
+            "holla_gate_crystal": (352, "Holla gate crystal", "gate_crystals"),
+            "dem_gate_crystal": (353, "Dem gate crystal", "gate_crystals"),
+            "mea_gate_crystal": (354, "Mea gate crystal", "gate_crystals"),
+            "vahzl_gate_crystal": (355, "Vahzl gate crystal", "gate_crystals"),
+            "yhoator_gate_crystal": (356, "Yhoator gate crystal", "gate_crystals"),
+            "altepa_gate_crystal": (357, "Altepa gate crystal", "gate_crystals"),
+        }
+        found = {
+            slug: (int(resource_id), resource_name, group)
+            for slug, resource_id, resource_name, group in re.findall(
+                r"^\s*'([a-z_]+)', (\d+), '[^']+',\s*'([^']+)',\s*'([^']+)'",
+                self.access_travel_data,
+                re.MULTILINE,
+            )
+        }
+        self.assertEqual(found, expected)
+        self.assertIn("access_unlock = true", self.access_travel_data)
+        self.assertIn("entry.kind == 'key_item' and entry.access_unlock == true", self.catalog)
+        self.assertNotIn("Jugner", self.access_travel_data)
+        self.assertNotIn("Pashhow", self.access_travel_data)
+        self.assertNotIn("Meriphataud", self.access_travel_data)
+        self.assertIn("name = 'Access & Travel'", self.profile)
+
+    def test_access_and_travel_uses_resizable_rows_and_visible_export(self):
+        self.assertIn("category.id == 'access_travel'", self.ui)
+        self.assertIn("imgui.BeginTable('##AccessTravelRows', 3, table_flags)", self.ui)
+        self.assertIn("render_access_travel_entry(item, actions, imgui)", self.ui)
+        self.assertIn("'Drag the vertical dividers to resize Unlock, Source, and Obtained columns.'", self.ui)
+        self.assertIn("data.file_label = 'access-travel-'", self.ui)
+        self.assertIn("view.access_group ~= nil", self.ui)
+
+    def test_primary_tabs_and_grouped_secondary_navigation_have_fixed_order(self):
+        quests = self.ui.index("imgui.BeginTabItem('Quests', nil)")
+        missions = self.ui.index("imgui.BeginTabItem('Missions', nil)")
+        magic = self.ui.index("imgui.BeginTabItem('Magic Skills', nil)")
+        others = self.ui.index("imgui.BeginTabItem('Others/Key Items', nil)")
+        self.assertLess(quests, missions)
+        self.assertLess(missions, magic)
+        self.assertLess(magic, others)
+        self.assertIn("'##HXIChecklistOtherTabs'", self.ui)
+        grouped = re.search(
+            r"local other_category_order = \{(.*?)\};", self.ui, re.DOTALL
+        )[1]
+        self.assertEqual(
+            re.findall(r"'([^']+)'", grouped),
+            ["maps", "access_travel", "inventory_expansions", "job_unlocks", "weapon_skills"],
+        )
+        self.assertIn("ui_state.active_tab = 'skill_levels'", self.ui)
+        self.assertIn("active_tab = 'quests'", self.main)
+
     def test_entry_ids_are_unique(self):
         quest_entry_ids = re.findall(
             r"\{\s*id = '([^']+)',(?:\s*reference_id = '[^']+',)?\s*kind = '(?:spell|key_item|manual)'",
@@ -223,13 +421,37 @@ class HorizonChecklistSourceTests(unittest.TestCase):
 
         spell_ids = re.findall(r"^\s*\{\s*(\d+),", self.magic_data, re.MULTILINE)
         generated_ids = [f"spell.{resource_id}" for resource_id in spell_ids]
+        blue_spell_ids = re.findall(
+            r"^\s*\{\s*(\d+),\s*\d+,", self.blue_magic_data, re.MULTILINE
+        )
+        blue_generated_ids = [f"blue_magic.{resource_id}" for resource_id in blue_spell_ids]
         map_ids = re.findall(r"^\s*\{ '(map\.[^']+)',", self.map_data, re.MULTILINE)
         mission_ids = []
         for data in self.mission_data:
             mission_ids.extend(re.findall(r"\{ id = '([^']+)'", data.split('data.entries = {')[1]))
         self.assertEqual(len(mission_ids), 160)
-        all_ids = quest_entry_ids + generated_ids + map_ids + mission_ids
-        self.assertEqual(len(all_ids), 1183)
+        job_abbreviations = re.findall(
+            r"\{ '([a-z]+)', \d+, '[A-Z]+',", self.job_unlock_data
+        )
+        self.assertEqual(len(job_abbreviations), 12)
+        job_ids = [f"job_unlock.{abbreviation}" for abbreviation in job_abbreviations]
+        weapon_skill_ids = [
+            f"weapon_skill.{slug}"
+            for slug in re.findall(
+                r"\{ '([a-z_]+)', \d+, '[^']+', '[^']+',", self.weapon_skill_data
+            )
+        ]
+        self.assertEqual(len(weapon_skill_ids), 14)
+        access_ids = [
+            f"access_travel.{slug}"
+            for slug in re.findall(
+                r"^\s*'([a-z_]+)', \d+,", self.access_travel_data, re.MULTILINE
+            )
+        ]
+        self.assertEqual(len(access_ids), 18)
+        all_ids = (quest_entry_ids + generated_ids + blue_generated_ids + map_ids + mission_ids
+                   + access_ids + job_ids + weapon_skill_ids)
+        self.assertEqual(len(all_ids), 1333)
         self.assertEqual(len(all_ids), len(set(all_ids)))
 
     def test_all_entries_are_sourced(self):
@@ -259,9 +481,17 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual(len(category_sources), 9)
         self.assertIn("source_url = 'https://horizonffxi.wiki/' .. wiki_slug", self.magic_data)
         self.assertIn("availability = 'wiki_listed'", self.magic_data)
+        self.assertIn("source_url = 'https://horizonffxi.wiki/Category:Blue_Magic'", self.blue_magic_data)
+        self.assertIn("availability = 'wiki_listed'", self.blue_magic_data)
         self.assertIn("category_source_url = 'https://horizonffxi.wiki/Category:Magical_Maps'", self.map_data)
         self.assertIn("availability = 'wiki_listed'", self.map_data)
         self.assertIn("source_url = map[5] ~= nil", self.map_data)
+        self.assertIn("source_url = quest.source_url", self.job_unlock_data)
+        self.assertIn("availability = quest.availability", self.job_unlock_data)
+        self.assertIn("source_url = quest.source_url", self.weapon_skill_data)
+        self.assertIn("availability = quest.availability", self.weapon_skill_data)
+        self.assertIn("source_url = 'https://horizonffxi.wiki/'", self.access_travel_data)
+        self.assertIn("availability = 'wiki_listed'", self.access_travel_data)
 
     def test_manual_ids_preserve_pilot_range(self):
         ids = re.findall(r"reference_id = '(HXQ-\d{4})'", self.bastok_quest_data)
@@ -364,7 +594,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("job_levels.format(resource.LevelRequired, 75)", self.catalog)
         self.assertIn("item.job_levels = resolve_spell_requirements(entry)", self.catalog)
         self.assertIn("category.id == 'magic_skills'", self.ui)
-        self.assertIn("imgui.BeginTable('##MagicRows', 3, table_flags)", self.ui)
+        self.assertIn("category.id == 'songs' and '##SongRows' or '##MagicRows'", self.ui)
         self.assertIn("ImGuiTableFlags_Resizable", self.ui)
         self.assertIn("ImGuiTableFlags_BordersInnerV", self.ui)
         self.assertIn("imgui.GetWindowWidth() * 0.35", self.ui)
@@ -409,8 +639,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         ]
         self.assertEqual([index for index, _ in pairs], list(range(93)))
         self.assertEqual(len({name for _, name in pairs}), 93)
-        self.assertEqual(self.bastok_quest_data.count("fame_level = "), 67)
-        self.assertEqual(self.bastok_quest_data.count("fame_label = 'Not listed'"), 21)
+        self.assertEqual(self.bastok_quest_data.count("fame_level = "), 70)
+        self.assertEqual(self.bastok_quest_data.count("fame_label = 'Not listed'"), 18)
         self.assertEqual(self.bastok_quest_data.count("fame_label = 'Unknown'"), 5)
         self.assertIn("name = 'Bastok Quests'", self.profile)
         self.assertNotIn("Bastok Markets Pilot", self.profile)
@@ -468,8 +698,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual(indices, sorted(indices))
         self.assertEqual(indices[0], 0)
         self.assertEqual(indices[-1], 96)
-        self.assertEqual(self.windurst_quest_data.count("fame_level = "), 65)
-        self.assertEqual(self.windurst_quest_data.count("fame_label = 'Not listed'"), 22)
+        self.assertEqual(self.windurst_quest_data.count("fame_level = "), 74)
+        self.assertEqual(self.windurst_quest_data.count("fame_label = 'Not listed'"), 13)
         self.assertEqual(self.windurst_quest_data.count("fame_label = 'Unknown'"), 3)
         self.assertEqual(self.windurst_quest_data.count("availability = 'unknown'"), 1)
         self.assertEqual(self.windurst_quest_data.count("availability = 'reported_inactive'"), 4)
@@ -506,8 +736,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual((indices[0], indices[-1]), (0, 186))
         self.assertNotIn(33, indices)
         self.assertNotIn(122, indices)
-        self.assertEqual(self.jeuno_quest_data.count("fame_level = "), 32)
-        self.assertEqual(self.jeuno_quest_data.count("fame_label = 'Not listed'"), 47)
+        self.assertEqual(self.jeuno_quest_data.count("fame_level = "), 36)
+        self.assertEqual(self.jeuno_quest_data.count("fame_label = 'Not listed'"), 43)
         self.assertEqual(self.jeuno_quest_data.count("fame_label = 'Unknown'"), 67)
         self.assertEqual(self.jeuno_quest_data.count("availability = 'unknown'"), 63)
         self.assertEqual(self.jeuno_quest_data.count("availability = 'wiki_listed'"), 83)
@@ -523,8 +753,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual((indices[0], indices[-1]), (0, 209))
         self.assertNotIn(12, indices)
         self.assertNotIn(1039, indices)
-        self.assertEqual(self.other_quest_data.count("fame_level = "), 19)
-        self.assertEqual(self.other_quest_data.count("fame_label = 'Not listed'"), 41)
+        self.assertEqual(self.other_quest_data.count("fame_level = "), 21)
+        self.assertEqual(self.other_quest_data.count("fame_label = 'Not listed'"), 39)
         self.assertEqual(self.other_quest_data.count("fame_label = 'Unknown'"), 31)
         self.assertEqual(self.other_quest_data.count("availability = 'wiki_listed'"), 56)
         self.assertEqual(self.other_quest_data.count("availability = 'unknown'"), 34)
@@ -544,8 +774,8 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertEqual((indices[0], indices[-1]), (1, 203))
         for placeholder in (0, 5, 128, 198, 204):
             self.assertNotIn(placeholder, indices)
-        self.assertEqual(self.outlands_quest_data.count("fame_level = "), 23)
-        self.assertEqual(self.outlands_quest_data.count("fame_label = 'Not listed'"), 28)
+        self.assertEqual(self.outlands_quest_data.count("fame_level = "), 25)
+        self.assertEqual(self.outlands_quest_data.count("fame_label = 'Not listed'"), 26)
         self.assertEqual(self.outlands_quest_data.count("availability = 'wiki_listed'"), 51)
         self.assertEqual(self.outlands_quest_data.count("availability = 'unknown'"), 6)
         self.assertIn("outlands_quests = 'Outlands'", self.ui)
@@ -555,6 +785,28 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("outlands_quests = T{}", self.main)
         self.assertIn("quest_state.load_area_cache('outlands', state.settings.cached_state.outlands_quests)", self.main)
         self.assertIn("value.cached_state.outlands_quests = value.cached_state.outlands_quests or T{}", self.main)
+
+    def test_quest_gap_pass_only_adds_explicit_source_facts(self):
+        shady = next(line for line in self.bastok_quest_data.splitlines() if "name = 'Shady Business'" in line)
+        crimson = next(line for line in self.sandoria_quest_data.splitlines() if "name = 'The Crimson Trial'" in line)
+        altar = next(line for line in self.other_quest_data.splitlines() if "id = 'other.quest.108'" in line)
+        unresolved = next(line for line in self.bastok_quest_data.splitlines() if "name = 'A Proper Burial'" in line)
+        self.assertIn("fame_level = 1, fame_region = 'Tenshodo'", shady)
+        self.assertIn("npc_coordinates = 'K-6'", crimson)
+        self.assertIn("npc_coordinates = 'N/A'", altar)
+        self.assertIn("availability = 'unknown'", unresolved)
+        self.assertEqual(
+            sum(data.count("availability = 'unknown'") for data in (
+                self.bastok_quest_data,
+                self.sandoria_quest_data,
+                self.windurst_quest_data,
+                self.jeuno_quest_data,
+                self.other_quest_data,
+                self.outlands_quest_data,
+                self.ahturhgan_quest_data,
+            )),
+            107,
+        )
 
     def test_ahturhgan_quests_keep_short_log_and_fame_boundaries(self):
         indices = [int(index) for index in re.findall(r"quest_index = (\d+)", self.ahturhgan_quest_data)]
@@ -630,7 +882,7 @@ class HorizonChecklistSourceTests(unittest.TestCase):
         self.assertIn("skill_snapshot = skill_levels.empty_snapshot()", self.main)
         self.assertIn("state.skill_snapshot = skill_levels.build_snapshot()", self.main)
         self.assertIn("imgui.BeginTabItem('Skill Levels', nil)", self.ui)
-        self.assertIn("excluded from checklist progress", self.ui)
+        self.assertIn("excluded from checklist totals", self.ui)
         self.assertNotIn("skill_levels", self.catalog)
         self.assertNotIn("settings", self.skill_levels.lower())
         self.assertNotIn("cache", self.skill_levels.lower())

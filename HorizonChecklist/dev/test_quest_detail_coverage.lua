@@ -1,7 +1,7 @@
 package.path = 'HXIChecklist/?.lua;' .. package.path;
 local expected = {
-    sandoria = {82, 69, 79, 76}, windurst = {90, 84, 87, 85},
-    jeuno = {146, 79, 78, 72}, other = {91, 56, 60, 55},
+    sandoria = {82, 78, 79, 76}, windurst = {90, 84, 87, 85},
+    jeuno = {146, 79, 78, 72}, other = {91, 57, 60, 55},
     outlands = {57, 47, 46, 47}, ahturhgan = {72, 41, 41, 40},
 };
 local all = {};

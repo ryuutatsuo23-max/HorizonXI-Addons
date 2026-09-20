@@ -16,6 +16,7 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 
 ## Magic Skills
 
+- [ ] Confirm the top-level `Magic Skills` tab contains `Spells & Songs` and `Blue Magic` subtabs without widening the main tab bar.
 - [ ] Open `Magic Skills` and confirm its compact `Category` selector contains, in order: All Magic, Dark, Divine, Elemental, Enfeebling, Enhancing, Healing, Summoning, Ninjutsu, Songs.
 - [ ] Switch among several categories and confirm the selector does not widen the addon window or show a horizontal tab strip.
 - [ ] With completed entries visible, confirm `All Magic` contains 316 rows and the individual categories contain 15, 8, 60, 19, 76, 22, 17, 23, and 76 rows respectively.
@@ -35,6 +36,18 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Confirm the resize hint and brighter vertical separators are clearly visible.
 - [ ] Confirm multi-job requirements use commas and no slash separators remain.
 
+## Blue Magic
+
+- [ ] Open `Magic Skills` > `Blue Magic` and confirm the level selector contains All Levels, Levels 1-20, Levels 21-40, Levels 41-60, and Levels 61-75.
+- [ ] With completed and missing rows visible, confirm All Levels contains 106 rows and the four bands contain 20, 20, 28, and 38 rows.
+- [ ] Compare several learned and unlearned spells against the in-game Blue Magic list. Learned rows should say `Learned`; unlearned rows should say `Not learned`; unloaded or mismatched spell data must remain `UNKNOWN`.
+- [ ] Confirm Foot Kick shows `Level 1 / Slashing / Lizard Killer`, Vanity Dive shows Horizon level 28, Quadratic Continuum shows level 54, and Winds of Promyvion shows level 56.
+- [ ] Confirm Quadratic Continuum and Winds of Promyvion resolve normally rather than showing `UNKNOWN` from the client's abbreviated resource names.
+- [ ] Search by spell name, type, trait, and level; then switch level bands and confirm both filters apply together.
+- [ ] Drag both vertical dividers and resize/scale the window. Spell names, Source buttons, and Level / Type / Trait text should not overlap.
+- [ ] Export All Levels and one filtered level band; confirm status, spell, learn level, type, set trait, and source columns match the visible rows.
+- [ ] Confirm Source opens the HorizonXI Blue Magic category. The addon must not claim an exact learning monster or zone in this version.
+
 ## Skill Levels
 
 - [ ] Open `Skill Levels` and confirm it lists, in order: Divine, Healing, Enhancing, Enfeebling, Elemental, Dark, Summoning, Ninjutsu, Singing, String Instrument, and Wind Instrument.
@@ -46,10 +59,10 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 
 ## Quest navigation
 
-- [ ] Confirm the top-level tabs are `Magic Skills`, `Maps`, `Quests`, and `Skill Levels`.
+- [ ] Confirm the top-level tabs are `Quests`, `Missions`, `Magic Skills`, and `Others/Key Items`.
 - [ ] Open `Quests` and switch the `Area` dropdown among Bastok, San d'Oria, Windurst, Jeuno, and Other Areas; confirm descriptions, area totals, rows, and Fame labels follow the selected area without changing overall progress.
 - [ ] Choose a different `Location` in each area, switch away and back, and confirm each selection is retained during the session.
-- [ ] Confirm Magic Skills and Maps still use their existing `Category` selectors.
+- [ ] Confirm Spells & Songs and Maps still use their existing `Category` selectors.
 - [ ] Test a narrow window at 75%, 100%, and 150% scale; confirm dropdowns, Source buttons, and draggable dividers remain usable.
 
 ## Maps and quest live state
@@ -202,7 +215,99 @@ Use a local private Ashita v4 server/client first. This is not a HorizonXI appro
 - [ ] Reload without zoning after logs are cached, then switch characters and back. Each mission storyline must restore independently without leaking state or altering the existing Bastok cache.
 - [ ] Confirm no Wings of the Goddess, Assault, add-on scenario, Adoulin, or Rhapsodies rows were added, and ordinary play produces no addon-generated packet requests, actions, chat, targeting, or movement.
 
+### Visible tab export (0.22.0)
+
+- [ ] Copy all 26 runtime Lua files, reload, and confirm the addon loads with profile `2026-09-07-foundation.21` without changing existing character data.
+- [ ] Select Quests, choose an Area, Location, and Type, set the visibility and Accepted-only filters, and enter a search term. Click **Export visible** and confirm the chat message reports the exact visible row count.
+- [ ] Disable Completed, Unknown, Unavailable, and **Show missing/not accepted/not current**; confirm only Accepted quests or Current missions remain. Then disable **Show accepted/current** and enable the other-open filter; confirm only Missing, Not Accepted, Not Current, or unmarked manual rows remain as applicable.
+- [ ] Open the generated `.tsv` in `addons/HXIChecklist/exports/`. Confirm its rows match the currently displayed quests and include status, area, location, type, required fame, NPC, coordinates, rewards, prerequisites, and Source URL columns.
+- [ ] Repeat with Magic Skills, Maps, Missions, and Skill Levels. Confirm category/storyline selectors and Current-only are honored, tabs do not export one another, and tab/newline characters cannot split a value into unintended rows or columns.
+- [ ] Run `/hc export`, export twice within one second if practical, and confirm it creates a new uniquely named file rather than overwriting an earlier export.
+- [ ] Confirm exporting does not change progress totals, filters, settings, manual quest marks, cached logs, or gameplay state.
+- [ ] Reload and confirm the two new visibility choices are restored without changing older settings files that did not contain them.
+- [ ] Confirm local `exports/` files are ignored by Git and excluded from any release ZIP; they may contain personal character progress.
+
+### Mission detail enrichment (foundation.21)
+
+- [ ] Reload HXIChecklist and confirm profile `2026-09-07-foundation.21`; existing character progress, manual marks, filters, exports, and mission state must remain unchanged.
+- [ ] Expand several rows in every Missions storyline. Confirm the NPC/target, location, coordinates, rewards, and prerequisites remain readable at 75/100/150% scale and narrow/wide widths.
+- [ ] Check a nation gate-guard mission. Its coordinate field should say `Varies by gate guard`; San d'Oria and Windurst Magicite should instead show Nelcabrit G-9 and Pakh Jatalfih I-9 respectively.
+- [ ] Check a mission with a source-listed coordinate, such as Immortal Sentries. It should show Naja Salaheem, Salaheem's Sentinels / Aht Urhgan Whitegate, and I-10.
+- [ ] Check a mission whose header has no separate start. It should explicitly say `No separate start listed` and `Continues from previous mission`, not invent an NPC or coordinate.
+- [ ] Open Zilart mission 9 and mission 14 Source buttons. Confirm they lead to `Ro'Maeve(Mission)` and `Ark Angels` respectively.
+- [ ] Confirm Current/Completed/Unknown states and progress totals are identical to the prior profile; this pass changes reference details only.
+
+### Conservative quest-gap resolution (foundation.22)
+
+- [ ] Reload HXIChecklist and confirm profile `2026-09-07-foundation.22`; existing character progress, manual marks, filters, exports, quest logs, and mission state must remain unchanged.
+- [ ] Expand Bastok's `Shady Business`. Confirm Required Fame shows `Tenshodo Fame 1` and its explanatory note says the linked Quest Header supplied that value.
+- [ ] Expand San d'Oria rows whose headers supplied missing starts, such as `Enveloped in Darkness` (I-9), `Prelude of Black and White` (H-8), and `Methods Create Madness` (F-7).
+- [ ] Check representative recovered fame values in Windurst, Jeuno, Other Areas, and Outlands. Region labels must follow the explicit header, including Norg or Tavnazian Safehold where applicable.
+- [ ] Confirm the row whose source explicitly gives `Altar Room (-)` displays coordinate `N/A`, rather than inventing a grid coordinate.
+- [ ] Enable Show unknown and confirm unresolved rows such as `A Proper Burial` remain Unknown. The profile must still contain 107 Unknown quest availability rows; the three `Verification Needed` Other Areas entries must not be promoted.
+- [ ] Confirm remaining `Not listed` and blank detail fields are still explicit or absent when neither the refreshed category nor linked Quest Header supplies a safe value.
+- [ ] Open several Source buttons and compare the displayed fact to the linked HorizonXI page. Report source drift separately; do not infer availability from a wiki listing.
+
+### Job unlocks (0.23.0 / foundation.23)
+
+- [ ] Copy all runtime Lua files, reload, and confirm version `0.23.0` with profile `2026-09-07-foundation.23`. Existing quest/mission caches, manual marks, settings, and exports must remain unchanged.
+- [ ] Open **Job Unlocks** and confirm exactly 12 rows: PLD, DRK, BST, BRD, RNG, SMN, SAM, NIN, DRG, BLU, COR, and PUP. Starting jobs and DNC/SCH must not appear.
+- [ ] Compare several jobs against the in-game Jobs list. Any job with a level of at least 1 must show `Unlocked` and its current level; an unavailable advanced job must show `Locked`.
+- [ ] Test immediately after login and while zoning. If character job levels have not arrived, rows must remain `UNKNOWN` rather than briefly showing every job locked.
+- [ ] Switch among All, Original, Rise of the Zilart, and Treasures of Aht Urhgan views. Confirm counts 12, 5, 4, and 3, and verify search plus the existing status visibility filters.
+- [ ] Expand representative rows from each era and compare unlock quest, NPC, location, coordinates, rewards, prerequisites, and Source link with the referenced quest. These details must not affect unlock state.
+- [ ] Drag both table dividers at 75/100/150% scale and narrow/wide widths. Job, Source, and Unlock Quest / Level columns must remain readable and aligned.
+- [ ] Export the visible Job Unlocks rows and confirm the TSV includes status, job, abbreviation, current level, era, unlock quest, details, and Source URL.
+- [ ] Confirm ordinary use does not write new job state to character settings, request packets, or alter gameplay state.
+
+### Quest-unlocked weapon skills (0.24.0 / foundation.24)
+
+- [ ] Copy all runtime Lua files, reload, and confirm version `0.24.0` with profile `2026-09-07-foundation.24`. Existing character settings, quest/mission caches, manual marks, and exports must remain intact.
+- [ ] Open **Weapon Skills** and confirm exactly 14 rows, covering Hand-to-Hand, Dagger, Sword, Great Sword, Axe, Great Axe, Scythe, Polearm, Katana, Great Katana, Club, Staff, Archery, and Marksmanship.
+- [ ] Compare completed WSNM quests with their mirror rows. Completed must show `Unlocked`, an accepted but unfinished unlock quest must show `In progress`, and a quest with neither bit set must show `Locked`.
+- [ ] Confirm the overall header totals are unchanged from foundation.23. The Weapon Skills tab has its own 14-row summary, but the mirrored quests must not be counted twice globally.
+- [ ] Change main/sub jobs and equipped weapons. Weapon-skill completion rows must remain based on quest history; currently usable command-list changes must not turn completed skills into Locked.
+- [ ] Switch among All Weapon Types and every individual weapon filter. Verify search and the existing completed, accepted/current, missing/open, unknown, and unavailable filters.
+- [ ] Expand representative rows and compare NPC, location, coordinates, rewards, prerequisites, and Source with the matching unlock quest.
+- [ ] Drag both dividers at 75/100/150% scale and narrow/wide widths. Weapon Skill, Source, and Weapon / Unlock Quest columns must remain readable and aligned.
+- [ ] Export the visible rows and confirm the TSV includes status, weapon skill, weapon type, unlock quest, details, and Source URL.
+- [ ] Confirm the category does not request packets, invoke weapon skills, target, move, send chat, or add a new saved-state field.
+
+### Access and travel unlocks (0.25.0 / foundation.25)
+
+- [ ] Copy all runtime Lua files, reload, and confirm version `0.25.0` with profile `2026-09-08-foundation.25`. Existing settings, key-item/quest/mission caches, manual marks, and exports must remain intact.
+- [ ] Confirm the top-level tabs are ordered Quests, Missions, Magic Skills, and Others/Key Items. Inside Others/Key Items, confirm Maps, Access & Travel, Job Unlocks, Weapon Skills, and Skill Levels are available without crowding the main tab bar.
+- [ ] Open **Access & Travel** and confirm exactly 10 rows: four Travel Services and six Gate Crystals. Jugner, Pashhow, Meriphataud, temporary mission keys, and repeatable permits must not appear.
+- [ ] Compare the Airship Pass, Airship Pass for Kazham, Chocobo License, and Boarding Permit rows with the character's Key Items menu. Owned keys must show `Unlocked`; an observed absent key in a received packet group must show `Locked`.
+- [ ] Compare the Holla, Dem, Mea, Vahzl, Yhoator, and Altepa crystals. Confirm the displayed acquisition text and Source links match the relevant HorizonXI pages.
+- [ ] On a first-time character before the relevant `0x055` group arrives, or after deliberately breaking a resource-name fixture, confirm affected rows stay `UNKNOWN` rather than Locked.
+- [ ] Switch among All Unlocks, Travel Services, and Gate Crystals. Verify counts 10, 4, and 6 plus search and the existing status visibility filters.
+- [ ] Drag both table dividers at 75/100/150% scale and narrow/wide widths. Unlock, Source, and Obtained columns must remain readable and aligned.
+- [ ] Export each view and confirm the TSV includes status, unlock, category, acquisition, travel use, and Source URL.
+- [ ] Confirm the category does not request packets, change gameplay state, or create a new saved-data field; it must reuse the existing character key-item cache.
+
+## Magic ranges and inventory expansions (0.27.0)
+
+- [ ] Confirm Magic Skills order: Spells, Songs, Summoning, Ninjutsu, Blue Magic. Under Spells, confirm All plus six schools, each with independent level ranges.
+- [ ] Compare a multi-job spell's lowest requirement against the range. Verify boundaries 20/21, 40/41, 60/61 and the corresponding visible export. All Levels must include rows lacking level metadata.
+- [ ] After login/zoning, compare displayed Gobbiebag, Mog Safe, and Mog Locker capacities with the in-game menus. Locker zero/unreadable must remain Unknown; capacity alone must never claim current lease access.
+- [ ] Check thresholds (for example, capacity 60 reaches Gobbiebag I–VI but not VII/VIII), container selection, status/search filters, draggable columns, and TSV export.
+- [ ] Confirm the eleven linked quest rows still show their real quest-log status and local quest totals. Overall progress counts the capacity milestones once.
+- [ ] Test another character and an unloaded/login screen to ensure no previous character capacity persists. No new saves or gameplay actions should occur.
+
+## Crafting and compact UI (0.28.0)
+
+- [ ] Confirm the blue heading is `HXIChecklist v0.28.0`, the long intro is hidden, and ordinary text is softer. Hover the heading/category `(?)` for notes; verify tooltips wrap normally.
+- [ ] Compare all nine craft skills and ranks with the in-game skill menu, including an untrained craft. Confirm integer skill values are displayed without decimal rescaling.
+- [ ] Compare the next promotion item with the guild NPC/Source. The selection must follow the actual rank, including after an early test, not a rank inferred from skill.
+- [ ] Verify Veteran shows no further listed test and unknown ranks do not select an item. Test first login, zoning, character switching, and refresh for stale/unloaded values.
+- [ ] Check search by craft/item, TSV export, Source buttons, and draggable columns at normal/narrow widths and 75–150% scale. Crafting must not alter checklist totals or saved data.
+
 ## Safety observation
+
+- [ ] For v0.29.0, compare Crafting/Inventory/Skill Levels dividers at narrow/wide widths and 75–150% scale. Skill Levels should show Skill, Level, Status with draggable columns; verify 0 remains a visible value.
+- [ ] Compare Dynamis and Dungeon Access key items against the character key-item list after zoning. Check all four city items separately; one item must not imply full Beaucedine access. Unresolved resource names must stay Unknown.
+- [ ] Export the new groups and confirm six Dynamis rows and two Dungeon Access rows before visibility filters. No Sea/Limbus consumed entry items should be included.
 
 - [ ] Confirm ordinary play produces no addon-generated actions, targeting, movement, or chat.
 - [ ] Confirm unload/reload does not alter game state.

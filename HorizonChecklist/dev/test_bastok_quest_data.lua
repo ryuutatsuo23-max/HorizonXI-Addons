@@ -42,8 +42,8 @@ for index, entry in ipairs(data.entries) do
     end
 end
 
-assert(numeric_fame == 67, 'expected 67 numeric Bastok fame requirements');
-assert(not_listed_fame == 21, 'expected 21 table rows without a listed fame level');
+assert(numeric_fame == 70, 'expected 70 numeric Bastok fame requirements');
+assert(not_listed_fame == 18, 'expected 18 rows without a source-listed fame level');
 assert(unknown_fame == 5, 'expected five quests without a sourced fame row');
 assert(coordinates == 88 and rewards == 88 and prerequisites == 81,
     'detail coverage must remain explicit and must not invent fields for unresolved quests');
@@ -56,6 +56,8 @@ assert(data.entries[90].name == 'Synergistic Pursuits');
 assert(data.entries[93].name == 'Trust: Bastok');
 assert(data.entries[88].availability == 'unknown',
     'A Proper Burial must remain explicit unknown');
+assert(data.entries[9].fame_level == 1 and data.entries[9].fame_region == 'Tenshodo',
+    'Shady Business must retain its linked-header Tenshodo fame');
 assert(data.entries[77].availability == 'reported_inactive',
     'All by Myself pilot boundary must remain unavailable');
 
